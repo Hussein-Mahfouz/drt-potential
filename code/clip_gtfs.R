@@ -3,11 +3,16 @@ library(gtfstools)
 library(sf)
 
 
+# Download the GTFS feed
+gh_release_download(tag = "gtfs-feeds",
+                    pattern = "gtfs_england_06_23.zip",
+                    dest = "data_raw")
+
 
 # Function to read in multiple feeds
 read_gtfs_feeds <- function(feed_dir){
   #INPUT:
-    # feed_dir: foder where gtfs feeds are stored
+    # feed_dir: folder where gtfs feeds are stored
   # OUTPUT:
     # list of gtfs feeds
   # ----- 1. get relative paths of all gtfs feeds
