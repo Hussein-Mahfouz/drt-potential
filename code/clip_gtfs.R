@@ -1,79 +1,47 @@
+###################################################################################################
+###    The purpose of this script is to clip gtfs feeds based on a defined polygon geometry.    ###
+###################################################################################################
+
 library(tidyverse)
 library(gtfstools)
 library(sf)
 
+# ----- load in necessary functions (by sourcing all scripts in the R/ directory)
+file.sources <- dir("R/", ".R$", full.names = TRUE)
+sapply(file.sources, source)
 
-# Download the GTFS feed
-gh_release_download(tag = "gtfs-feeds",
+# ----- Download the GTFS feed
+gh_release_download(tag = "initial-inputs",
                     pattern = "gtfs_england_06_23.zip",
-                    dest = "data_raw")
+                    dest = "data/raw")
 
 
-# Function to read in multiple feeds
-read_gtfs_feeds <- function(feed_dir){
-  #INPUT:
-    # feed_dir: folder where gtfs feeds are stored
-  # OUTPUT:
-    # list of gtfs feeds
-  # ----- 1. get relative paths of all gtfs feeds
-  feeds <- dir(feed_dir, ".zip$", full.names = TRUE)
-  # ----- 2. read in the feeds
-  # ----- check that there are zip files in the path provided
-  if(length(feeds) > 0){
-    gtfs_feeds <- purrr::map(feeds, gtfstools::read_gtfs)
-    return(gtfs_feeds)
-    } else{
-      # ----- Error message if there are no zip files in the provided directory
-      stop("There are no zip files in the feed directory provided. Check {feed_dir} variable")
-
-    }
-
-}
+# ----- read in the gtfs feed
+gtfs_feed <- read_gtfs_feeds(feed_dir = "data/raw/")
 
 
-gtfs_feed <- read_gtfs_feeds(feed_dir = "data_raw/")
+# ----- filter the feed to a specified study area
 
+# load in the study area boundary
+study_area <- st_read("data/interim/study_area_boundary.geojson")
 
+# filter uk gtfs to the boundary
+gtfs_clipped <- gtfs_feed[[1]] %>%
+  gtfstools::filter_by_sf(geom = study_area)
 
-
-# get UK boundaries
-   # city
-   # combined authority
-   # region
-# add to release
-
-# Sources
-
- # https://github.com/humaniverse/geographr
-
-
-
-
-uk_cities <- sf::st_read("data_raw/Counties_and_Unitary_Authorities_(December_2022)_EN_BUC.geojson")
-
-leeds <- uk_cities %>% filter(CTYUA22NM == "Leeds")
-wy <- uk_cities %>% filter(CTYUA22NM %in% c("Leeds", "Bradford", "Calderdale", "Kirklees", "Wakefield"))
-
-# filter uk gtfs to specific region
-gtfs_leeds <- gtfs_feed[[1]] %>%
-  gtfstools::filter_by_sf(geom = leeds)
-
-gtfs_wy <- gtfs_feed[[1]] %>%
-  gtfstools::filter_by_sf(geom = wy)
+# ----- check the clipping worked
 
 # convert to shapes and plot
-shapes_uk <- gtfs_feed[[1]] %>%
+shapes_gtfs_clipped <- gtfs_clipped %>%
   gtfstools::convert_shapes_to_sf()
 
-shapes_wy <- gtfs_wy %>%
-  gtfstools::convert_shapes_to_sf()
+plot(st_geometry(study_area))
+plot(st_geometry(shapes_gtfs_clipped), add = TRUE, col = "red")
 
-shapes_leeds <- gtfs_leeds %>%
-  gtfstools::convert_shapes_to_sf()
 
-plot(st_geometry(wy))
-plot(st_geometry(shapes_uk), add = TRUE, col = "grey")
-plot(st_geometry(shapes_wy), add = TRUE, col = "red")
-plot(st_geometry(shapes_leeds), add = TRUE, col = "green")
+
+# ----- save the gtfs feed
+gtfstools::write_gtfs(gtfs_clipped, "data/interim/study_area_gtfs.zip")
+
 
 

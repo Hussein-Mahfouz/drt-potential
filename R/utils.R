@@ -21,6 +21,4 @@ gh_release_download = function(tag, pattern, dest) {
   system(msg)
 }
 
-gh_release_download(tag = "gtfs-feeds",
-                    pattern = "gtfs_england_06_23.zip",
-                    dest = "data_raw")
+

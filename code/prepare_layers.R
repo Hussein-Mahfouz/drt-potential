@@ -1,3 +1,9 @@
+###################################################################################################
+###    The purpose of this script is to prepare the base layers used in the analysis. This      ###
+###    includes creating a layer of Output Areas, and joining columns on the other              ###
+###    corresponding statistical areas that match with each OA                                  ###
+###################################################################################################
+
 source("R/utils.R")
 
 
