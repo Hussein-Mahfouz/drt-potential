@@ -12,11 +12,16 @@ library(tidyverse)
 
 # ----- download data from github release
 
-# gtfs data
+# gtfs data (bus)
 gh_release_download(tag = "initial-inputs",
                     pattern = "gtfs_england_06_23.zip",
-                    dest = "data/raw")
+                    dest = "data/raw/gtfs/bus/")
 
+# gtfs data (rail)  [EDIT]
+
+gh_release_download(tag = "initial-inputs",
+                    pattern = "gtfs_rail_ttis823.zip",
+                    dest = "data/raw/gtfs/rail/")
 
 # OA boundaries
 gh_release_download(tag = "initial-inputs",
