@@ -1,5 +1,5 @@
 ### The purpose of this script is to convert the stop_times gtfs file to a frequencies gtfs file. This ###
-### is becasue the time_window( parameter in r5r::travel_time_matrix needs a frequency based gtfs file ###
+### is because the time_window( parameter in r5r::travel_time_matrix needs a frequency based gtfs file ###
 ### See this issue: https://github.com/Hussein-Mahfouz/drt-potential/issues/11                         ###
 
 library(tidyverse)
@@ -7,7 +7,8 @@ library(tidyverse)
 
 gtfs <- tidytransit::read_gtfs("data/interim/study_area_gtfs_bus.zip")
 
-
+# one option is to use the stop_times.txt and count the number of departures per trip_id. This only works if we have two trip_ids that match onto
+# each route_id. In this gtfs feed, each vehicle trip has a unique trip_id
 
 # get the id of the first stop in the trip's stop sequence
 first_stop_id <- gtfs$stop_times %>%
@@ -58,7 +59,7 @@ x <- departures %>% left_join(first_stop,
 
 # check out
    # https://r-transit.github.io/tidytransit/reference/filter_stop_times.html
-   # https://ipeagit.github.io/gtfstools/reference/filter_by_time_of_day.html
+   # https://ipeagit.github.io/gtfstools/reference/filter_by_time_of_day.html   (this is better)
 
 
 
@@ -72,3 +73,48 @@ stop_times = gtfs_obj$stop_times %>%
   #filter(trip_id %in% trips$trip_id) %>%
   filter(departure_time >= start_time & arrival_time <= end_time) #%>%
   left_join(trips[c("trip_id", "route_id", "direction_id", "service_id")], "trip_id")
+
+
+# hacking away - 12/10/2023
+
+
+
+
+# ----- what time intervals do we want to calculate headway for?
+
+time_ranges <- tibble(start_time = c("00:00:00", "05:00:00", "07:00:00", "09:00:00", "12:00:00", "15:00:00", "19:00:00", "21:00:00"),
+                      end_time = c("05:00:00", "07:00:00", "09:00:00", "12:00:00", "15:00:00", "19:00:00", "21:00:00", "23:59:00")) %>%
+  mutate(across(everything(), hms::as_hms))
+
+
+# --- Create column with start_time at first stop
+
+
+# --- Create a column to identify same trips (trips with the same stop sequence)
+
+trips_stop_sequence <- gtfs$stop_times %>% group_by(trip_id) %>%
+  mutate(stop_id_order = paste0(stop_id, collapse = '-')) %>%
+  ungroup()
+
+# keep only one row per unique trip
+trips_stop_sequence <- trips_stop_sequence %>%
+  filter(stop_sequence == 0)
+
+# --- Assign a time range to a trip based on the departure from the first stop
+
+trips_time_ranges <- trips_stop_sequence %>%
+  inner_join(time_ranges,
+             join_by(arrival_time >= start_time, arrival_time < end_time))
+
+# --- get the headway of each trip
+
+# calculate number of buses for each unique trip + time range combination
+trips_headways <- trips_time_ranges %>%
+  group_by(stop_id_order, start_time, end_time) %>%
+  summarise(frequency = n(),
+            trip_id = first(trip_id)) %>%
+  ungroup()
+
+# get the headway
+trips_headways <- trips_headways %>%
+  mutate(headway_secs = as.numeric(end_time - start_time) / frequency)
