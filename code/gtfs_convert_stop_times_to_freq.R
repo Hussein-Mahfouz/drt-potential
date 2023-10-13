@@ -13,6 +13,8 @@ sapply(file.sources, source)
 
 #
 gtfs_bus <- tidytransit::read_gtfs("data/interim/study_area_gtfs_bus.zip")
+#gtfs_bus <- gtfstools::read_gtfs("data/interim/study_area_gtfs_bus.zip")
+
 # rail
 gtfs_rail <- tidytransit::read_gtfs("data/interim/study_area_gtfs_rail.zip")
 

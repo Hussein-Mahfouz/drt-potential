@@ -31,7 +31,8 @@ stop_times_to_frequencies <- function(gtfs,
 
   # keep only one row per unique trip
   trips_stop_sequence <- trips_stop_sequence %>%
-    filter(stop_sequence == 0) %>%
+    # we use stop_sequence == min(stop_sequence) instead of == 0, as stop_sequence doesn't have to start from 0
+    filter(stop_sequence == min(stop_sequence)) %>%
     # some arrival times are bigger than 24 - these cause errors when converting to time
     filter(as.character(arrival_time) <= "23:59:59") %>%
     mutate(arrival_time = hms::as_hms(arrival_time))
@@ -45,11 +46,15 @@ stop_times_to_frequencies <- function(gtfs,
 
   # 3. Get the headway of each trip
 
-  # calculate number of buses for each unique trip + time range combination
+  # add the service_id to each trip
+  trips_time_ranges <- trips_time_ranges %>%
+    left_join(gtfs$trips %>% select(trip_id, service_id), by = "trip_id")
+
+  # calculate number of buses for each unique trip + time range + service_id combination
   message("... calculating headways ... ")
 
   trips_headways <- trips_time_ranges %>%
-    group_by(stop_id_order, start_time, end_time) %>%
+    group_by(stop_id_order, service_id, start_time, end_time) %>%
     summarise(vehicles = n(),
               # we don't need all of the trip IDs (all trips in the same group have the same itinerary)
               trip_id = first(trip_id)) %>%
@@ -65,17 +70,17 @@ stop_times_to_frequencies <- function(gtfs,
   # 4. edit the gtfs feed to produce a frequency-based feed
   message("... replacing stop_times with frequencies ... ")
 
-  # remove stop_times file
-  gtfs_edited <- gtfs[names(gtfs) != "stop_times"]
+  # # remove stop_times file
+  # gtfs <- gtfs[names(gtfs) != "stop_times"]
 
   # add "frequencies" file to the gtfs feed
-  gtfs_edited$frequencies <- trips_headways
+  gtfs$frequencies <- trips_headways
 
   # filter feed to only keep the trip ids in the new "frequencies" file
-  gtfs_edited <- gtfs_edited %>%
+  gtfs <- gtfs %>%
     #gtfstools::filter_by_trip_id(trip_id =  .$frequencies$trip_id)
     tidytransit::filter_feed_by_trips(trip_ids = .$frequencies$trip_id)
 
-  return(gtfs_edited)
+  return(gtfs)
 
 }
