@@ -1,0 +1,237 @@
+#' Calculate travel time matrix for different mode combinations
+#'
+#' Wrapper function around r5r::travel_time_matrix() that allow you to pass multiple mode combinations.
+#' It loops over each combination and calclate a travel time matrix
+#'
+#' @param data_path the path with the osm.pbf and gtfs feeds (optional elevation file should be here also)
+#' @param scenarios a tibble with columns  ~scenario, ~mode,  ~departure_datetime.
+#' departure_datetime should be a character following "dd-mm-yyyy hh:mm:ss"
+#' @param zone_layer an sf point layer. An OD matrix will be created by routing
+#' between all points
+#' @param time_window see r5r::travel_time_matrix()
+#' @param percentiles see r5r::travel_time_matrix()
+#'
+#' @return A dataframe with the travel time between all OD combinations. One column is added for each different
+#' percentiles value (e.g. travel_time_p50 for the 50th percentile)
+#' @examples
+#'
+#' @export
+tt_matrix = function(scenarios,
+                     zone_layer,
+                     time_window = 20,
+                     percentiles = c(25, 50, 75)){
+
+
+  # # stop any running r5 instances
+  # r5r::stop_r5()
+  # setup r5
+  # print("Setting up r5...")
+  # r5r_core <- setup_r5(data_path = data_path,
+  #                      verbose = TRUE,
+  #                      overwrite = TRUE) # turn to true once we have elevation
+
+  # print("r5 graph built...")
+  if(!exists("r5r_core")){
+    stop("No graph detected. You need to build the graph using r5r::setup_r5()")
+  }
+
+  # empty list to store results for each combination
+  results <- vector(mode = "list", length = nrow(scenarios))
+
+  print("Calculating travel times...")
+  # calculate travel time matrix for each combination
+  for(i in 1:nrow(scenarios)){
+    #status updates
+    print(paste0("CALCULATING TRAVEL TIME FOR SCENARIO: ", scenarios$scenario[i], " ....."))
+    # calculate a travel time matrix
+    ttm <- r5r::travel_time_matrix(r5r_core = r5r_core,
+                                   origins = zone_layer ,
+                                   destinations = zone_layer,
+                                   time_window = time_window,
+                                   percentiles = percentiles,
+                                   mode = scenarios$mode[i][[1]],
+                                   departure_datetime = as.POSIXct(scenarios$departure_datetime[i][[1]],
+                                                                   format = "%d-%m-%Y %H:%M:%S"),
+                                   max_walk_time = 10, #max_walk_dist,
+                                   max_trip_duration = 75,
+                                   # number of threads (all - 1)
+                                   #n_threads = parallel::detectCores() - 1,
+                                   # to suppress r5 output. Change to true if debugging
+                                   verbose = FALSE,
+                                   # slow down function by ~20%
+                                   progress = TRUE)
+
+    # add column with combination name / number
+    ttm$combination <- scenarios$scenario[i]
+
+    # add ttm to results list
+    results[[i]] <- ttm
+    #status updates
+    print(paste0("COMPLETED SCENARIO: ", scenarios$scenario[i], " ....."))
+
+  }
+  # # stop r5
+  # r5r::stop_r5(r5r_core)
+  # # java garbage collector to free up memory
+  # rJava::.jgc(R.gc = TRUE)
+
+  # combine list into 1 dataframe
+  results <- bind_rows(results)
+
+  # # pivot wider to get 1 row per OD pair
+  # results <- results %>% pivot_wider(names_from = combination,
+  #                                      values_from = matches("*travel_time"))
+
+  return(results)
+
+}
+
+
+
+
+
+
+#' Calculate travel time matrix for different mode combinations
+#'
+#' Wrapper function around r5r::travel_time_matrix() that allow you to pass multiple mode combinations.
+#' It loops over each combination and calclate a travel time matrix
+#'
+#' @param data_path the path with the osm.pbf and gtfs feeds (optional elevation file should be here also)
+#' @param scenarios a tibble with columns  ~scenario, ~mode,  ~departure_datetime.
+#' departure_datetime should be a character following "dd-mm-yyyy hh:mm:ss"
+#' @param zone_layer an sf point layer. An OD matrix will be created by routing
+#' between all points
+#' @param time_window see r5r::travel_time_matrix()
+#' @param percentiles see r5r::travel_time_matrix()
+#'
+#' @return A dataframe with the travel time between all OD combinations. One column is added for each different
+#' percentiles value (e.g. travel_time_p50 for the 50th percentile)
+#' @examples
+#'
+#' @export
+
+
+#' Calculate EXPANDED travel time matrix for different mode combinations
+#'
+#' This includes access_time, egress_time, waiting_time, ride_time, and routes used
+#'
+#' @param scenarios a tibble with columns  ~scenario, ~mode,  ~departure_datetime.
+#' @param zone_layer an sf point layer. An OD matrix will be created by routing
+#' @param time_window see r5r::travel_time_matrix()
+#'
+#' @return A dataframe with the expanded travel time between all OD combinations. One row exists for each minute in a time
+#' window (e.g. 7:30, 7:31, 7:32)
+#' @examples
+#'
+#' @export
+tt_matrix_expanded = function(scenarios,
+                              zone_layer,
+                              time_window = 20){
+
+
+  # # stop any running r5 instances
+  # r5r::stop_r5()
+  # setup r5
+  # print("Setting up r5...")
+  # r5r_core <- setup_r5(data_path = data_path,
+  #                      verbose = TRUE,
+  #                      overwrite = TRUE) # turn to true once we have elevation
+
+  # print("r5 graph built...")
+  if(!exists("r5r_core")){
+    stop("No graph detected. You need to build the graph using r5r::setup_r5()")
+  }
+
+  # empty list to store results for each combination
+  results <- vector(mode = "list", length = nrow(scenarios))
+
+  print("Calculating travel times...")
+  # calculate travel time matrix for each combination
+  for(i in 1:nrow(scenarios)){
+    #status updates
+    print(paste0("CALCULATING TRAVEL TIME FOR SCENARIO: ", scenarios$scenario[i], " ....."))
+    # calculate a travel time matrix
+    ttm <- r5r::expanded_travel_time_matrix(r5r_core = r5r_core,
+                                            origins = zone_layer,
+                                            destinations = zone_layer,
+                                            time_window = time_window,
+                                            mode = scenarios$mode[i][[1]],
+                                            departure_datetime = as.POSIXct(scenarios$departure_datetime[i][[1]],
+                                                                            format = "%d-%m-%Y %H:%M:%S"),
+                                            max_walk_time = 10, #max_walk_dist,
+                                            max_trip_duration = 120,
+                                            # number of threads (all - 1)
+                                            #n_threads = parallel::detectCores() - 1,
+                                            # draws will all be the same as this is not a frequency based feed. see r5r documentation
+                                            draws_per_minute = 1,
+                                            breakdown = TRUE,
+                                            # to suppress r5 output. Change to true if debugging
+                                            verbose = FALSE,
+                                            # slow down function by ~20%
+                                            progress = TRUE)
+
+    # add column with combination name / number
+    ttm$combination <- scenarios$scenario[i]
+
+    # add ttm to results list
+    results[[i]] <- ttm
+    #status updates
+    print(paste0("COMPLETED SCENARIO: ", scenarios$scenario[i], " ....."))
+
+  }
+  # # stop r5
+  # r5r::stop_r5(r5r_core)
+  # # java garbage collector to free up memory
+  # rJava::.jgc(R.gc = TRUE)
+
+  # combine list into 1 dataframe
+  results <- bind_rows(results)
+
+  return(results)
+
+}
+
+
+
+
+#' Summarise results from tt_matrix_expanded() - which is a arapper arounf r5r::expanded_travel_time_matrix()
+#'
+#' @param ttm_expanded_results a tibble with the output of r5r::expanded_travel_time_matrix().
+#' columns: "from_id" "to_id" "departure_time" "draw_number" "access_time" "wait_time" "ride_time"
+#' "transfer_time" "egress_time" "routes" "n_rides" "total_time" "combination"
+#'
+#' @return a dataframe with summarised results. All time (numeric columns) are summarised to return the mode by group.
+#' The grouping is done by "from_id", "to_id" and "combination"
+#' @examples
+#'
+#' @export
+summarise_ttm_expanded = function(ttm_expanded_results){
+
+  # Define a custom function to calculate the mode
+  get_mode <- function(v) {
+    uniq_v <- unique(v)
+    uniq_v[which.max(tabulate(match(v, uniq_v)))]
+  }
+
+  # expanded travel_time_matrix returns the results for each minute in a time_window (unlike
+  # travel_time_matrix which aggregates the results internally). We need to get averages for all the time columns
+  results_summarised <- ttm_expanded_results %>%
+    group_by(from_id, to_id, combination) %>%
+    summarise(
+      # different route combinations will exist depending on start time. we slect the most popular one
+      routes = get_mode(routes),
+      # the times are e.g. 7:30, 7:31. 7:32 - we take the first one
+      departure_time = first(departure_time),
+      # get the mode of all these variables using the function defined above
+      across(where(is.numeric), ~median(., na.rm = TRUE))) %>%
+    select(from_id, to_id, combination, routes, matches("time"))
+
+  return(results_summarised)
+
+
+
+}
+
+
+
+
