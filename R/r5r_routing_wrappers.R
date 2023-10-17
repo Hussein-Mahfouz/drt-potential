@@ -1,7 +1,7 @@
 #' Calculate travel time matrix for different mode combinations
 #'
 #' Wrapper function around r5r::travel_time_matrix() that allow you to pass multiple mode combinations.
-#' It loops over each combination and calclate a travel time matrix
+#' It loops over each combination and calculate a travel time matrix
 #'
 #' @param data_path the path with the osm.pbf and gtfs feeds (optional elevation file should be here also)
 #' @param scenarios a tibble with columns  ~scenario, ~mode,  ~departure_datetime.
