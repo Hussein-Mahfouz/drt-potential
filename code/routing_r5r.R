@@ -3,6 +3,8 @@
 ###    combination. r5r is used for the calculations                                            ###
 ###################################################################################################
 
+source("R/r5r_routing_wrappers.R")
+
 library(tidyverse)
 library(sf)
 library(r5r)
@@ -40,46 +42,96 @@ prep_base_layer = function(layer, id_col){
 study_area_r5 <- prep_base_layer(layer = study_area, id_col = "OBJECTID")
 
 
+
 # ------------------------------------- DEFINE ROUTING PARAMETERS ------------------------------------- #
 
-max_walk_time <- 10   # meters
-max_trip_duration <- 75 # minutes
-max_lts = 2
-# travel modes
-mode = c("WALK", "TRANSIT")
-mode_egress = "WALK"
+scenarios <- tribble(
+  ~scenario, ~mode,  ~departure_datetime,
+  # public transport at different times of day / week
+  "pt_wkday_morning", c("WALK", "TRANSIT"),  "14-08-2023 07:30:00",
+  "pt_wkday_afternoon", c("WALK", "TRANSIT"),  "14-08-2023 12:30:00",
+  "pt_wkday_evening", c("WALK", "TRANSIT"), "14-08-2023 18:30:00",
+  "pt_wkday_night", c("WALK", "TRANSIT"),  "14-08-2023 23:30:00",
+  "pt_wkend_morning", c("WALK", "TRANSIT"), "13-08-2023 07:30:00",
+  "pt_wkend_evening", c("WALK", "TRANSIT"), "13-08-2023 18:30:00",
+  # car (travel time is the same regardless of day / time) - unless we add congestion
+  "car", c("CAR"), "14-08-2023 07:30:00",
+)
 
-# This needs to be within the start_date and end_date of the calendar.txt
-departure_datetime <- as.POSIXct("09-08-2023 07:30:00",
-                                 format = "%d-%m-%Y %H:%M:%S")
 
-time_window <- 60 # in minutes (adding this value to departure datetime, gives you the end of the time window)
-percentiles <- 75
+# ------------------------------------- BUILD ROUTING GRAPH ------------------------------------- #
 
-# use elevation or not
-elevation = "NONE"    # "TOBLER"
+# stop any running r5 instances
+r5r::stop_r5()
+# java garbage collector to free up memory
+rJava::.jgc(R.gc = TRUE)
 
-# ------------------------------------- CALCULATE TRAVEL TIME MATRIX ------------------------------------- #
-
+# setup r5
+print("Setting up r5...")
 r5r_core <- setup_r5(data_path = graph_path,
                      verbose = TRUE,
-                     elevation = elevation,   # we need to download a tiff file and then turn this to TRUE
                      overwrite = TRUE) # turn to true once we have elevation
 
-ttm <- r5r::travel_time_matrix(r5r_core = r5r_core,
-                               origins = study_area,
-                               destinations = study_area,
-                               time_window = time_window,
-                               percentiles = percentiles,
-                               mode = mode,
-                               mode_egress = mode_egress,
-                               departure_datetime = departure_datetime,
-                               max_walk_time = max_walk_time,
-                               max_trip_duration = max_trip_duration,
-                               max_lts = max_lts,
-                               # number of threads
-                               #n_threads = 2,
+print("Graph built...")
+# ------------------------------------- CALCULATE TRAVEL TIME MATRIX ------------------------------------- #
+
+
+# ----- 1. route using r5r::travel_time_matrix. This only gives you total travel time
+
+# apply the routing function
+tt_results <- tt_matrix(#scenarios = scenarios,
+                        scenarios = scenarios[scenarios$scenario != "car", ],
+                        zone_layer = study_area_r5,
+                        time_window = 20,
+                        percentiles = c(25, 50, 75))
+
+
+# save the results
+arrow::write_parquet(tt_results, "data/processed/travel_times/travel_time_matrix.parquet")
+
+#tt_results <- arrow::read_parquet("data/processed/travel_times/travel_time_matrix.parquet")
+
+# ----- 2. route using r5r::expanded_travel_time_matrix. This gives you travel time broken down by journey components
+
+# apply the routing function
+tt_expanded_results <- tt_matrix_expanded(#scenarios = scenarios,
+                                          scenarios = scenarios[scenarios$scenario != "car", ],
+                                          zone_layer = study_area_r5,
+                                          time_window = 20)
+
+
+# summarise the results to get one row per group. Currently we have one row for each minute in a time_window
+tt_expanded_results_s <- summarise_ttm_expanded(ttm_expanded_results = tt_expanded_results)
+
+# save the results
+write_csv(tt_expanded_results_s, "data/processed/travel_times/travel_time_matrix_expanded.csv")
+
+
+
+
+# stop r5
+r5r::stop_r5(r5r_core)
+# java garbage collector to free up memory
+rJava::.jgc(R.gc = TRUE)
+
+
+
+x <- r5r::detailed_itineraries(r5r_core = r5r_core,
+                               origins = study_area_r5[1:100,],
+                               destinations = study_area_r5[1:100,],
+                               mode = scenarios$mode[1][[1]],
+                               departure_datetime = as.POSIXct(scenarios$departure_datetime[1][[1]],
+                                                               format = "%d-%m-%Y %H:%M:%S"),
+                               time_window = 20,
+                               #suboptimal_miutes = 5,
+                               max_walk_time = 10,
+                               max_trip_duration = 120,
+                               shortest_path = TRUE,
+                               all_to_all = TRUE,
+                               drop_geometry = TRUE,
                                # to suppress r5 output. Change to true if debugging
                                verbose = FALSE,
                                # slow down function by ~20%
                                progress = TRUE)
+
+
