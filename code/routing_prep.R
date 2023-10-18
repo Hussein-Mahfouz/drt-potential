@@ -27,6 +27,3 @@ copy_files(source = "data/external/", dest = "data/interim/routing_graph/", patt
 
 # clear environment
 rm(list = ls())
-
-
-

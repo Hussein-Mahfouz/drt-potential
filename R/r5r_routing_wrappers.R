@@ -53,7 +53,7 @@ tt_matrix = function(scenarios,
                                    departure_datetime = as.POSIXct(scenarios$departure_datetime[i][[1]],
                                                                    format = "%d-%m-%Y %H:%M:%S"),
                                    max_walk_time = 10, #max_walk_dist,
-                                   max_trip_duration = 75,
+                                   max_trip_duration = 120,
                                    # number of threads (all - 1)
                                    #n_threads = parallel::detectCores() - 1,
                                    # to suppress r5 output. Change to true if debugging
@@ -88,29 +88,6 @@ tt_matrix = function(scenarios,
 
 
 
-
-
-
-#' Calculate travel time matrix for different mode combinations
-#'
-#' Wrapper function around r5r::travel_time_matrix() that allow you to pass multiple mode combinations.
-#' It loops over each combination and calclate a travel time matrix
-#'
-#' @param data_path the path with the osm.pbf and gtfs feeds (optional elevation file should be here also)
-#' @param scenarios a tibble with columns  ~scenario, ~mode,  ~departure_datetime.
-#' departure_datetime should be a character following "dd-mm-yyyy hh:mm:ss"
-#' @param zone_layer an sf point layer. An OD matrix will be created by routing
-#' between all points
-#' @param time_window see r5r::travel_time_matrix()
-#' @param percentiles see r5r::travel_time_matrix()
-#'
-#' @return A dataframe with the travel time between all OD combinations. One column is added for each different
-#' percentiles value (e.g. travel_time_p50 for the 50th percentile)
-#' @examples
-#'
-#' @export
-
-
 #' Calculate EXPANDED travel time matrix for different mode combinations
 #'
 #' This includes access_time, egress_time, waiting_time, ride_time, and routes used
@@ -118,15 +95,21 @@ tt_matrix = function(scenarios,
 #' @param scenarios a tibble with columns  ~scenario, ~mode,  ~departure_datetime.
 #' @param zone_layer an sf point layer. An OD matrix will be created by routing
 #' @param time_window see r5r::travel_time_matrix()
+#' @param storage_option character string to define whethe to store results in memory or save them to disk. Options are "memory" and "save"
+#' @param save_format used if storage option is "save". Options are "csv" and "parquet"
+#' @param folder_path Used if storage option = "save". The path of the folder where the results will be saved.
 #'
 #' @return A dataframe with the expanded travel time between all OD combinations. One row exists for each minute in a time
-#' window (e.g. 7:30, 7:31, 7:32)
+#' window (e.g. 7:30, 7:31, 7:32). The results are either a df stored in memory, or files (csv or parquet) saved on disk
 #' @examples
 #'
 #' @export
 tt_matrix_expanded = function(scenarios,
                               zone_layer,
-                              time_window = 20){
+                              time_window = 20,
+                              storage_option,
+                              save_format,
+                              folder_path){
 
 
   # # stop any running r5 instances
@@ -144,6 +127,10 @@ tt_matrix_expanded = function(scenarios,
 
   # empty list to store results for each combination
   results <- vector(mode = "list", length = nrow(scenarios))
+  # folder to save the results on disk
+  if(storage_option == "save"){
+    dir.create(path = folder_path)
+  }
 
   print("Calculating travel times...")
   # calculate travel time matrix for each combination
@@ -173,23 +160,45 @@ tt_matrix_expanded = function(scenarios,
     # add column with combination name / number
     ttm$combination <- scenarios$scenario[i]
 
-    # add ttm to results list
-    results[[i]] <- ttm
+    # ---------- save the output
+
+    # OPTION 1. Save in memory as list of dataframes
+    if(storage_option == "memory"){
+      # add ttm to results list
+      results[[i]] <- ttm
+    }     # save results
+    # OPTION 2. Save to disk
+    else if (storage_option == "save"){
+      # 2a. save as one csv file, and append to it at every loop (very large)
+      if(save_format == "csv"){
+        if(i == 1){
+          write_csv(ttm, file = paste0(folder_path, ".csv"))
+        }
+        else{
+          write_csv(ttm, file = paste0(folder_path, ".csv"), append = TRUE)
+        }}
+      # 2b. save as multiple parquet files in a subdirectory (smaller files, but they can't be appended)
+      else if(save_format == "parquet"){
+        # save the results
+        arrow::write_parquet(ttm, paste0(folder_path, "/travel_time_matrix_expanded_", i, ".parquet"))
+      }
+    }
+
     #status updates
     print(paste0("COMPLETED SCENARIO: ", scenarios$scenario[i], " ....."))
 
+
   }
-  # # stop r5
-  # r5r::stop_r5(r5r_core)
-  # # java garbage collector to free up memory
-  # rJava::.jgc(R.gc = TRUE)
 
-  # combine list into 1 dataframe
-  results <- bind_rows(results)
+  if(storage_option == "memory"){
+    # combine list into 1 dataframe
+    results <- bind_rows(results)
 
-  return(results)
-
+    return(results)
+  }
 }
+
+
 
 
 
@@ -206,7 +215,10 @@ tt_matrix_expanded = function(scenarios,
 #'
 #' @export
 summarise_ttm_expanded = function(ttm_expanded_results){
-
+  message(paste0("coverting to tidytable ... ", Sys.time()))
+  # convert to tidytable to use data.table performance
+  ttm_expanded_results = tidytable::as_tidytable(ttm_expanded_results)
+  message(paste0("conversion done. Summarising results ... "), Sys.time())
   # Define a custom function to calculate the mode
   get_mode <- function(v) {
     uniq_v <- unique(v)
@@ -216,21 +228,36 @@ summarise_ttm_expanded = function(ttm_expanded_results){
   # expanded travel_time_matrix returns the results for each minute in a time_window (unlike
   # travel_time_matrix which aggregates the results internally). We need to get averages for all the time columns
   results_summarised <- ttm_expanded_results %>%
-    group_by(from_id, to_id, combination) %>%
-    summarise(
-      # different route combinations will exist depending on start time. we slect the most popular one
+    tidytable::group_by(from_id, to_id, combination) %>%
+    tidytable::summarise(
+      # different route combinations will exist depending on start time. we select the most popular one using the function defined above
       routes = get_mode(routes),
       # the times are e.g. 7:30, 7:31. 7:32 - we take the first one
-      departure_time = first(departure_time),
-      # get the mode of all these variables using the function defined above
-      across(where(is.numeric), ~median(., na.rm = TRUE))) %>%
-    select(from_id, to_id, combination, routes, matches("time"))
+      departure_time = tidytable::first(departure_time),
+      # get the median of all time variables
+      tidytable::across(tidytable::where(is.numeric), ~median(as.double(.), na.rm = TRUE))) %>%
+    tidytable::ungroup() %>%
+    tidytable::select(from_id, to_id, combination, routes, matches("time"))
+
+  message(paste0("summary done. converting back to tibble ... ", Sys.time()))
+  # covert back to df
+  results_summarised <- as_tibble(results_summarised)
+  message(paste0("conversion done ... ", Sys.time()))
 
   return(results_summarised)
 
-
-
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
