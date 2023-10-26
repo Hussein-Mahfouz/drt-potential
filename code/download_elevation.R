@@ -32,7 +32,10 @@ tm_shape(study_area %>% st_union()) +
   tm_borders()
 
 # --- save
-raster::writeRaster(study_area_elev, "data/interim/routing_graph/elevation.tif", overwrite = TRUE)
+raster::writeRaster(study_area_elev, "data/interim/elevation.tif", overwrite = TRUE)
+
+
+
 
 
 
