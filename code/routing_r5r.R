@@ -18,12 +18,16 @@ graph_path <- paste0("data/interim/routing_graph/")
 travel_time_path <- paste0("data/processed/travel_times/")
 
 geography <- "LSOA"
+
+# create a directory to store the results
+dir.create(paste0(travel_time_path, geography))
+
 # ------------------------------------- PREPARE (BASE) OD MATRIX LAYER ------------------------------------- #
 
 study_area <- st_read("data/interim/study_area_boundary.geojson")
 
 
-# --- edit the sf to match the requested geographic reolution. The original layer is at the OA level, but we may want LSOA or MSOA
+# --- edit the sf to match the requested geographic resolution. The original layer is at the OA level, but we may want LSOA or MSOA
 
 study_area_geographies <- function(study_area,
                                    geography){

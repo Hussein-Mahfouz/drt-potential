@@ -34,5 +34,3 @@ gtfs_freq_rail = stop_times_to_frequencies(gtfs = gtfs_rail,
 tidytransit::write_gtfs(gtfs_freq_bus, "data/interim/gtfs_freq/study_area_gtfs_bus_f.zip")
 tidytransit::write_gtfs(gtfs_freq_rail, "data/interim/gtfs_freq/study_area_gtfs_rail_f.zip")
 
-
-

@@ -5,15 +5,10 @@
 
 # Parameters we will check
 
-# max walk time
-# max trip duration
-# time wndow
-# percentiles?
-#
-
-
-
-
+    # max walk time
+    # max trip duration
+    # time window     # UPDATE; TIME WINDOW NEEDS A FREQUENCY BASED GTFS FILE!
+    # percentiles?
 
 library(tidyverse)
 library(sf)
@@ -59,9 +54,6 @@ study_area_r5 <- prep_base_layer(layer = study_area, id_col = "OBJECTID")
 parameters <- expand_grid(time_w = c(10, 30, 50),      # time_window
                           max_walk = c(10, 15, 20))    # max_walk_time (minutes)
 
-expand_grid(time_w = c(10, 30, 50),      # time_window
-            max_walk = c(10, 15, 20),
-            percentiles = c(25, 50, 75))
 
 # add unique id column
 
@@ -106,7 +98,7 @@ max_trip_duration = 90
 results <- vector(mode = "list", length = nrow(parameters))
 for(i in 1:nrow(parameters)){
   #status updates
-  print(paste0("CALCULATING TRAVEL TIME FOR combination: ", parameters$unique_id[i], " ....."))
+  print(paste0("CALCULATING TRAVEL TIME FOR combination ",i, " of ", nrow(parameters), ": ", parameters$unique_id[i], " ..."))
   # calculate a travel time matrix
   ttm <- r5r::travel_time_matrix(r5r_core = r5r_core,
                                   origins = origins,
@@ -115,7 +107,7 @@ for(i in 1:nrow(parameters)){
                                   departure_datetime = departure_datetime,
                                   max_trip_duration = max_trip_duration,
               # ----------------------- START: parameters that we are testing
-                                  time_window = parameters$time_w[i],
+                                 # time_window = parameters$time_w[i],
                                   percentiles = percentiles,
                                   max_walk_time = parameters$max_walk[i],
                                   #max_trip_duration = parameters$max_dur[i],
@@ -131,9 +123,14 @@ for(i in 1:nrow(parameters)){
   # add ttm to results list
   results[[i]] <- ttm
   #status updates
-  print(paste0("COMPLETED combination: ", parameters$unique_id[i], " ....."))
+  print(paste0("COMPLETED combination: ", parameters$unique_id[i], " ..."))
 
 }
+
+# stop r5
+r5r::stop_r5(r5r_core)
+# java garbage collector to free up memory
+rJava::.jgc(R.gc = TRUE)
 
 
 # combine list into 1 dataframe
