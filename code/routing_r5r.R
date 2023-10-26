@@ -151,10 +151,10 @@ arrow::write_parquet(tt_results, paste0(travel_time_path, geography, "/travel_ti
 
 # Option 2: save to disk
 
-tt_matrix_expanded(#scenarios = scenarios,
-  scenarios = scenarios[scenarios$scenario != "car", ],
+tt_matrix_expanded(scenarios = scenarios,
+  #scenarios = scenarios[scenarios$scenario != "car", ],
   zone_layer = study_area_r5,
-  time_window = 5,
+  time_window = 10,
   storage_option = "save",
   save_format = "parquet",
   folder_path = paste0(travel_time_path, geography, "/travel_time_matrix_expanded"))
@@ -170,7 +170,7 @@ tt_results_expanded <- bind_rows(tt_results_expanded)
 tt_results_expanded_s <- summarise_ttm_expanded(ttm_expanded_results = tt_results_expanded)
 
 # save the results
-arrow::write_parquet(tt_results_expanded_s, paste0(travel_time_path, geography, "/travel_time_matrix_expanded.csv"))
+arrow::write_parquet(tt_results_expanded_s, paste0(travel_time_path, geography, "/travel_time_matrix_expanded.parquet"))
 
 
 
