@@ -16,7 +16,7 @@ library(tmap)
 
 # --- decide on geographic resolution
 
-geography <- "LSOA"
+geography <- "MSOA"
 
 # read in geography
 study_area <- st_read("data/interim/study_area_boundary.geojson")
@@ -62,7 +62,7 @@ tt_matrix_o %>%
   theme(legend.position = "top")
 
 
-tt_matrix_o %>%
+tt_matrix_d %>%
   filter(grepl("pt_", combination)) %>%
   filter(wait_time > 0) %>%
   ggplot(aes(x = wait_time, fill = combination)) +
@@ -108,6 +108,63 @@ tm_shape(tt_matrix_o %>%
             legend.outside = TRUE,
             legend.outside.position = "bottom",
             frame = FALSE)
+
+# which origins have the fewest reachable destinations?
+
+# visualise geographic regions with: reachable_destinations < max(reachable_destinations) / 2
+
+tm_shape(study_area)+
+  tm_borders() +
+tm_shape(tt_matrix_o %>%
+           filter(combination != "car") %>%
+           left_join(study_area %>%
+                       select(OBJECTID) %>%
+                       mutate(OBJECTID = as.character(OBJECTID)),
+                     by = c("from_id" = "OBJECTID")) %>%
+           st_as_sf() %>%
+           filter(reachable_destinations < max(reachable_destinations) / 2)) +
+  tm_fill(col = 'reachable_destinations',
+          title = "Destinations reachable",
+          legend.is.portrait = FALSE) +
+  tm_facets(by="combination",
+            nrow = 2,
+            free.coords=FALSE)  +  # so that the maps aren't different sizes
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Worst Performing Origins\nOrigins with least destinations reachable", # this works if you need it
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            frame = FALSE)
+
+# same analysis but for a specific point in time
+
+tm_shape(study_area) +
+  tm_borders() +
+tm_shape(tt_matrix_o %>%
+             filter(combination == "pt_wkday_morning") %>%
+             left_join(study_area %>%
+                         select(OBJECTID) %>%
+                         mutate(OBJECTID = as.character(OBJECTID)),
+                       by = c("from_id" = "OBJECTID")) %>%
+             st_as_sf() %>%
+           filter(reachable_destinations < max(reachable_destinations) / 2)) +
+  tm_fill(col = 'reachable_destinations',
+          title = "Destinations reachable",
+          legend.is.portrait = FALSE) +
+  # tm_facets(by="ntile",
+  #           nrow = 2,
+  #           free.coords=FALSE)  +  # so that the maps aren't different sizes
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Destinations Reachable - Weekday morning", # this works if you need it
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            frame = FALSE)
+
 
 # average number of transfers from origin (origin anchored)
 
@@ -159,6 +216,7 @@ tm_shape(tt_matrix_d %>%
             legend.outside = TRUE,
             legend.outside.position = "bottom",
             frame = FALSE)
+
 
 
 
