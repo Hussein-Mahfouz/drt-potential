@@ -152,6 +152,8 @@ tm_shape(tt_matrix_o %>%
             frame = FALSE)
 ```
 
+![](images/map_reachable_dest_facet_comb.png)
+
 #### Which origins have the fewest reachable destinations?
 
 Visualise geographic regions with: `reachable_destinations < max(reachable_destinations) / 2`
@@ -191,6 +193,8 @@ tm_shape(tt_matrix_o %>%
             frame = FALSE)
 ```
 
+![](images/map_reachable_dest_fewest_facet_comb.png)
+
 Same analysis but for the weekday morning only
 
 ```{r}
@@ -225,6 +229,8 @@ tm_shape(tt_matrix_o %>%
 
 ```
 
+![](images/map_reachable_dest_fewest_wkday_morning.png)
+
 ### Average number of transfers
 
 ```{r}
@@ -255,6 +261,8 @@ tm_shape(tt_matrix_o %>%
             frame = FALSE)
 ```
 
+![](images/map_transfers_origin_facet_comb.png)
+
 ```{r}
 # average number of transfers to destination (destination anchored)
 
@@ -281,3 +289,5 @@ tm_shape(tt_matrix_d %>%
             legend.outside.position = "bottom",
             frame = FALSE)
 ```
+
+![](images/map_transfers_dest_facet_comb.png)

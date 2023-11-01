@@ -144,6 +144,8 @@ tm_shape(tt_matrix_o %>%
 
 ![](eda_travel_time_files/figure-commonmark/unnamed-chunk-6-1.png)
 
+![](images/map_reachable_dest_facet_comb.png)
+
 #### Which origins have the fewest reachable destinations?
 
 Visualise geographic regions with:
@@ -182,6 +184,8 @@ tm_shape(tt_matrix_o %>%
 
 ![](eda_travel_time_files/figure-commonmark/unnamed-chunk-7-1.png)
 
+![](images/map_reachable_dest_fewest_facet_comb.png)
+
 Same analysis but for the weekday morning only
 
 ``` r
@@ -212,6 +216,8 @@ tm_shape(tt_matrix_o %>%
 ```
 
 ![](eda_travel_time_files/figure-commonmark/unnamed-chunk-8-1.png)
+
+![](images/map_reachable_dest_fewest_wkday_morning.png)
 
 ### Average number of transfers
 
@@ -245,6 +251,8 @@ tm_shape(tt_matrix_o %>%
 
 ![](eda_travel_time_files/figure-commonmark/unnamed-chunk-9-1.png)
 
+![](images/map_transfers_origin_facet_comb.png)
+
 ``` r
 # average number of transfers to destination (destination anchored)
 
@@ -273,3 +281,5 @@ tm_shape(tt_matrix_d %>%
 ```
 
 ![](eda_travel_time_files/figure-commonmark/unnamed-chunk-10-1.png)
+
+![](images/map_transfers_dest_facet_comb.png)
