@@ -237,7 +237,7 @@ summarise_ttm_expanded = function(ttm_expanded_results){
       # get the median of all time variables
       tidytable::across(tidytable::where(is.numeric), ~median(as.double(.), na.rm = TRUE))) %>%
     tidytable::ungroup() %>%
-    tidytable::select(from_id, to_id, combination, routes, matches("time"))
+    tidytable::select(from_id, to_id, combination, routes, matches("time"), n_rides)
 
   message(paste0("summary done. converting back to tibble ... ", Sys.time()))
   # covert back to df
