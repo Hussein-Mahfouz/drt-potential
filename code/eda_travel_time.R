@@ -12,11 +12,13 @@ library(tidyverse)
 library(sf)
 library(tmap)
 
+# where do we want to save the plots?
+plots_path <- "data/processed/plots/eda/"
 # -------------------- read in the outputs
 
 # --- decide on geographic resolution
 
-geography <- "MSOA"
+geography <- "LSOA"
 
 # read in geography
 study_area <- st_read("data/interim/study_area_boundary.geojson")
@@ -61,6 +63,7 @@ tt_matrix_o %>%
   theme_minimal() +
   theme(legend.position = "top")
 
+ggsave(filename = paste0(plots_path, "plot_hist_wait_time_origin_based.png"), width = 8, height = 8)
 
 tt_matrix_d %>%
   filter(grepl("pt_", combination)) %>%
@@ -72,7 +75,7 @@ tt_matrix_d %>%
   theme_minimal() +
   theme(legend.position = "top")
 
-
+ggsave(filename = paste0(plots_path, "plot_hist_wait_time_destination_based.png"), width = 8, height = 8)
 
 
 
@@ -107,14 +110,20 @@ tm_shape(tt_matrix_o %>%
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
-            frame = FALSE)
+            frame = FALSE) -> map_reachable_dest_facet_comb
+
+map_reachable_dest_facet_comb
+
+tmap_save(tm = map_reachable_dest_facet_comb, filename = paste0(plots_path, "map_reachable_dest_facet_comb.png"), width = 15, dpi = 1080)
 
 # which origins have the fewest reachable destinations?
 
 # visualise geographic regions with: reachable_destinations < max(reachable_destinations) / 2
 
-tm_shape(study_area)+
-  tm_borders() +
+# we want to fill all the polygons with high access using the same colour (they are removed in the filtering process below)
+tm_shape(study_area) +
+  tm_fill(col = "darkgreen",
+          alpha = 0.4) +
 tm_shape(tt_matrix_o %>%
            filter(combination != "car") %>%
            left_join(study_area %>%
@@ -136,12 +145,19 @@ tm_shape(tt_matrix_o %>%
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
-            frame = FALSE)
+            frame = FALSE) +
+  tm_add_legend(type = "fill", col = "darkgreen", alpha = 0.4, title = "Zones with good performance") -> map_reachable_dest_fewest_facet_comb
+
+map_reachable_dest_fewest_facet_comb
+
+tmap_save(tm = map_reachable_dest_fewest_facet_comb, filename = paste0(plots_path, "map_reachable_dest_fewest_facet_comb.png"), width = 15, dpi = 1080)
+
 
 # same analysis but for a specific point in time
 
 tm_shape(study_area) +
-  tm_borders() +
+  tm_fill(col = "darkgreen",
+          alpha = 0.4) +
 tm_shape(tt_matrix_o %>%
              filter(combination == "pt_wkday_morning") %>%
              left_join(study_area %>%
@@ -163,7 +179,13 @@ tm_shape(tt_matrix_o %>%
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
-            frame = FALSE)
+            frame = FALSE) +
+  tm_add_legend(type = "fill", col = "darkgreen", alpha = 0.4, title = "Zones with good performance") -> map_reachable_dest_fewest_wkday_morning
+
+map_reachable_dest_fewest_wkday_morning
+
+tmap_save(tm = map_reachable_dest_fewest_wkday_morning, filename = paste0(plots_path, "map_reachable_dest_fewest_wkday_morning.png"), width = 10, dpi = 1080)
+
 
 
 # average number of transfers from origin (origin anchored)
@@ -190,7 +212,12 @@ tm_shape(tt_matrix_o %>%
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
-            frame = FALSE)
+            frame = FALSE) -> map_transfers_origin_facet_comb
+
+map_transfers_origin_facet_comb
+
+tmap_save(tm = map_transfers_origin_facet_comb, filename = paste0(plots_path, "map_transfers_origin_facet_comb.png"), width = 15, dpi = 1080)
+
 
 # average number of transfers to destination (destination anchored)
 
@@ -215,7 +242,13 @@ tm_shape(tt_matrix_d %>%
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
-            frame = FALSE)
+            frame = FALSE) -> map_transfers_dest_facet_comb
+
+map_transfers_dest_facet_comb
+
+tmap_save(tm = map_transfers_dest_facet_comb, filename = paste0(plots_path, "map_transfers_dest_facet_comb.png"), width = 15, dpi = 1080)
+
+
 
 
 

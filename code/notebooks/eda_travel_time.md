@@ -1,6 +1,6 @@
 Exploring travel time results
 ================
-11/1/23
+11/6/23
 
 The purpose of this script is to explore outputs from the routing. I
 look at
@@ -99,7 +99,13 @@ tt_matrix_o %>%
 
 ![](eda_travel_time_files/figure-commonmark/unnamed-chunk-5-1.png)
 
+![](images/plot_hist_wait_time_origin_based.png)
+
 ``` r
+#| warning: false
+#| message: false
+
+# PLOT: BAR - wait time distribution per combination
 tt_matrix_d %>%
   filter(grepl("pt_", combination)) %>%
   filter(wait_time > 0) %>%
@@ -111,7 +117,9 @@ tt_matrix_d %>%
   theme(legend.position = "top")
 ```
 
-![](eda_travel_time_files/figure-commonmark/unnamed-chunk-5-2.png)
+![](eda_travel_time_files/figure-commonmark/unnamed-chunk-6-1.png)
+
+![](images/plot_hist_wait_time_destination_based.png)
 
 ### Number of reachable destinations
 
@@ -142,7 +150,7 @@ tm_shape(tt_matrix_o %>%
             frame = FALSE)
 ```
 
-![](eda_travel_time_files/figure-commonmark/unnamed-chunk-6-1.png)
+![](eda_travel_time_files/figure-commonmark/unnamed-chunk-7-1.png)
 
 ![](images/map_reachable_dest_facet_comb.png)
 
@@ -156,8 +164,9 @@ Visualise geographic regions with:
 
 # visualise geographic regions with: reachable_destinations < max(reachable_destinations) / 2
 
-tm_shape(study_area)+
-  tm_borders() +
+tm_shape(study_area) +
+  tm_fill(col = "darkgreen",
+          alpha = 0.4) +
 tm_shape(tt_matrix_o %>%
            filter(combination != "car") %>%
            left_join(study_area %>%
@@ -179,10 +188,11 @@ tm_shape(tt_matrix_o %>%
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
-            frame = FALSE)
+            frame = FALSE) +
+  tm_add_legend(type = "fill", col = "darkgreen", alpha = 0.4, title = "Zones with good performance")
 ```
 
-![](eda_travel_time_files/figure-commonmark/unnamed-chunk-7-1.png)
+![](eda_travel_time_files/figure-commonmark/unnamed-chunk-8-1.png)
 
 ![](images/map_reachable_dest_fewest_facet_comb.png)
 
@@ -190,7 +200,8 @@ Same analysis but for the weekday morning only
 
 ``` r
 tm_shape(study_area) +
-  tm_borders() +
+  tm_fill(col = "darkgreen",
+          alpha = 0.4) +
 tm_shape(tt_matrix_o %>%
              filter(combination == "pt_wkday_morning") %>%
              left_join(study_area %>%
@@ -212,10 +223,11 @@ tm_shape(tt_matrix_o %>%
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
-            frame = FALSE)
+            frame = FALSE) +
+  tm_add_legend(type = "fill", col = "darkgreen", alpha = 0.4, title = "Zones with good performance")
 ```
 
-![](eda_travel_time_files/figure-commonmark/unnamed-chunk-8-1.png)
+![](eda_travel_time_files/figure-commonmark/unnamed-chunk-9-1.png)
 
 ![](images/map_reachable_dest_fewest_wkday_morning.png)
 
@@ -249,7 +261,7 @@ tm_shape(tt_matrix_o %>%
             frame = FALSE)
 ```
 
-![](eda_travel_time_files/figure-commonmark/unnamed-chunk-9-1.png)
+![](eda_travel_time_files/figure-commonmark/unnamed-chunk-10-1.png)
 
 ![](images/map_transfers_origin_facet_comb.png)
 
@@ -280,6 +292,11 @@ tm_shape(tt_matrix_d %>%
             frame = FALSE)
 ```
 
-![](eda_travel_time_files/figure-commonmark/unnamed-chunk-10-1.png)
+![](eda_travel_time_files/figure-commonmark/unnamed-chunk-11-1.png)
 
 ![](images/map_transfers_dest_facet_comb.png)
+
+### TODO
+
+- MAP: bivariate plot with transfer time and no. of transfers
+  https://r-tmap.github.io/tmap/articles/tmap_sneak_peek.html#multivariate-scales
