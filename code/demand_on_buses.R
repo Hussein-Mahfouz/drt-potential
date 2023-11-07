@@ -34,7 +34,8 @@ gtfs_bus <- gtfstools::read_gtfs(gtfs_paths[grepl("bus", gtfs_paths)])
 #gtfs_rail <- gtfstools::read_gtfs(gtfs_paths[grepl("rail", gtfs_paths)])
 
 # --- filter the feeds to a specific point in time
-gtfs_trip_ids <- gtfs_bus$frequencies %>% filter(start_time == "09:00:00")
+gtfs_trip_ids <- gtfs_bus$frequencies %>%
+  filter(start_time == "09:00:00")
 
 gtfs_bus <- gtfs_bus %>%
   gtfstools::filter_by_trip_id(gtfs_trip_ids$trip_id)
@@ -89,3 +90,94 @@ test_trip_id <- gtfs_trip_ids[1,]
 get_demand = function(trips, demand_matrix){
   results = vector()
 }
+
+
+
+x1 <- gtfs_trips_int %>% filter(trip_id == "VJ1b9f9c9f76ce2c7f21b4346d8cac9ba50ccaf984")
+
+elements = x1$OA21CD
+
+
+# Function to generate valid pairs respecting original order
+generate_ordered_pairs <- function(elements) {
+  valid_pairs <- list()
+  for (i in 1:(length(elements) - 1)) {
+    for (j in (i + 1):length(elements)) {
+      valid_pairs[[length(valid_pairs) + 1]] <- data.frame(Origin = elements[i], Destination = elements[j])
+    }
+  }
+  # turn into a df
+  valid_pairs <- do.call(rbind, valid_pairs)
+  # remove duplicate pairs
+  valid_pairs <- distinct(valid_pairs, Origin, Destination)
+  return(valid_pairs)
+}
+
+x <- generate_ordered_pairs(elements)
+
+# Character list
+# elements <- c("element1", "element2", "element3", "element4")
+
+# Generate valid pairs respecting original order
+pair_df <- generate_ordered_pairs(elements)
+
+# Print the result
+print(pair_df)
+
+
+
+
+
+
+
+
+
+
+# Load the necessary libraries
+library(dplyr)
+library(purrr)
+
+# Assuming you have a dataframe named 'df' and a custom function 'your_custom_function'
+
+
+# Group the dataframe by the values in the "grouping_column"
+grouped_df <-  gtfs_trips_int %>%
+  group_by(trip_id)
+
+# Apply your custom function to each group, which returns a list of dataframes
+result_df <- grouped_df %>%
+  nest() %>%
+  mutate(result = map(data, ~ generate_ordered_pairs(.x$OA21CD))) %>%
+  unnest(result) %>%
+  select(-data)
+
+# Ungroup the dataframe
+result_df <- result_df %>%
+  ungroup()
+
+
+
+# ---------- Function 1: Identify which zones are served by each trip
+
+# each trip passes through a number of zones. We want a list of these zones. We do this by 
+
+  # a) identifying the stops associated with each trip
+  # b) doing a spatial join between stops and zones and using that to match trips to zones
+
+# This gives us a spatial df that has, for each trip, the unique stops that serve
+# it and the zone that the stop falls in
+
+# ---------- Function 2: Identify which OD pairs are served by each trip
+
+# We have data on the zones served by each trip. We also know the order in which
+# the zones are served (through the stop sequence). We use this information to get
+# the OD pairs served by each trip. To obtain OD pairs, we need to respect the order
+# in which zones are served. If a trip follows the itinerary: "zone1", "zone4", "zone8",
+# then it serves
+
+  # zone1 : zone4
+  # zone1 : zone8
+  # zone4 : zone8
+
+# It DOES NOT serve the return journeys (i.e. zone8 : zone4)
+
