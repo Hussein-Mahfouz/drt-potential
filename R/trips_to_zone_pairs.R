@@ -18,7 +18,7 @@
 gtfs_trips_od_coverage = function(gtfs, zones, zone_column){
   # --- 1: Identify which zones are served by each trip
   trips_zones <- gtfs_trips_zone_coverage(gtfs = gtfs, zones = zones)
-  message(paste0("... identified ", zone_column, " zones that are along each trip itinerary"))
+  message(paste0("... identified ", length(zone_column), " zones that are along each trip itinerary"))
   # --- 2: Identify which zones each trip passes by
   message(paste0("identifying od zone pairs that are along each trip itinerary: ..."))
 
@@ -115,8 +115,8 @@ gtfs_trips_zone_coverage = function(gtfs, zones){
 #' @export
 generate_ordered_pairs <- function(zones) {
   valid_pairs <- list()
-  for (i in 1:(length(zones) - 1)) {
-    for (j in (i + 1):length(zones)) {
+  for (i in 1:(length(zones))) {
+    for (j in seq(i,length(zones))) {
       valid_pairs[[length(valid_pairs) + 1]] <- data.frame(Origin = zones[i], Destination = zones[j])
     }
   }
@@ -126,6 +126,50 @@ generate_ordered_pairs <- function(zones) {
   valid_pairs <- distinct(valid_pairs, Origin, Destination)
   return(valid_pairs)
 }
+
+
+#' Function to generate valid pairs respecting original order
+#'
+#' This function is used to determine all OD pairs served directly by a trip
+#' @param zones the row in a df with the zone_id
+#'
+#' @return a df with the following columns: trip_id, Origin, Destination. One row
+#' for each valid OD pair + trip combination
+#' @details We have data on the zones served by each trip. We also know the order in which
+#' the zones are served (through the stop sequence). We use this information to get
+#' the OD pairs served by each trip. To obtain OD pairs, we need to respect the order
+#' in which zones are served. If a trip follows the itinerary: "zone1", "zone4", "zone8",
+#' then it serves:
+#'    zone1 : zone4
+#'    zone1 : zone8
+#'    zone4 : zone8
+#'
+#' It DOES NOT serve the return journeys (i.e. zone8 : zone4)
+#' @examples
+#'
+#' @export
+# generate_ordered_pairs2 <- function(zones) {
+#   # Determine the number of pairs in order to create a vector with pre-allocated size:
+#     # # we use the combinations with replacement function
+#     # combinations <- choose(n + k - 1, k):
+#     # n = total number of elements in the set;
+#     # k = number of elements in each combination
+#   combinations <- choose(length(zones) + 2 - 1, 2)
+#   # empty list to store dataframe result
+#   valid_pairs <- vector(mode = "list", length = combinations)
+#   for (i in 1:(length(zones))) {
+#     # j always starts at the position of i, never before
+#     for (j in seq(i,length(zones))) {
+#       valid_pairs[[j + ((i-1)*length(zones)) ]] <- data.frame(Origin = zones[i], Destination = zones[j])
+#     }
+#   }
+#   # turn into a df
+#   valid_pairs <- do.call(rbind, valid_pairs)
+#   # remove duplicate pairs
+#   valid_pairs <- distinct(valid_pairs, Origin, Destination)
+#   return(valid_pairs)
+#
+# }
 
 
 
