@@ -1,0 +1,109 @@
+---
+title: "Demand on buses"
+subtitle: ""
+date: "`r format(Sys.time(), '%d %m %y')`"
+format:
+  # gfm: default
+  html:
+    toc: true
+# project:
+#   execute-dir: project
+knitr:
+  opts_knit:
+    root.dir: "/home/hussein/Documents/GitHub/drt-potential/"
+---
+
+## Introduction
+
+This code visualises the output from `code/demand_on_buses.R` . The datasets we want to explore together are:
+
+-   [ ] demographic data
+
+-   [ ] travel time data
+
+    -   [x] number of destinations reachable
+
+    -   [x] accessibility to different services
+
+-   [ ] travel demand data
+
+    -   [ ] census
+
+        -   [ ] od demand matrix
+
+        -   [ ] demand aggregated onto buses
+
+    -   [ ] activity-based model
+
+        -   [ ] od demand matrix
+
+        -   [ ] demand aggregated onto buses
+
+## Loading in travel time data
+
+```{r}
+#| warning: false
+#| message: false
+
+source("R/study_area_geographies.R")
+
+
+library(tidyverse)
+library(sf)
+library(tmap)
+
+# where do we want to save the plots?
+plots_path <- "data/processed/plots/eda/"
+
+```
+
+```{r}
+#| warning: false
+#| message: false
+
+# -------------------- read in the outputs
+
+# --- decide on geographic resolution
+
+geography <- "LSOA"
+
+# read in geography
+study_area <- st_read("data/interim/study_area_boundary.geojson")
+# convert to necessary resolution
+study_area <- study_area_geographies(study_area = study_area,
+                                     geography = geography)
+
+# --- routing results
+tt_matrix <- arrow::read_parquet(paste0("data/processed/travel_times/", geography, "/travel_time_matrix_expanded.parquet"))
+
+
+# -------------------- Analysis
+
+# Get median values per origin
+tt_matrix_o <- tt_matrix %>%
+  group_by(from_id, combination, departure_time) %>%
+  summarise(across(c(contains("_time"), n_rides), median, na.rm = TRUE),
+            # number of destinations that can be reached
+            reachable_destinations = n()) %>%
+  ungroup() %>%
+  mutate(n_rides = round(n_rides))
+
+# Get median values per destination
+tt_matrix_d <- tt_matrix %>%
+  group_by(to_id, combination, departure_time) %>%
+  summarise(across(c(contains("_time"), n_rides), median, na.rm = TRUE),
+            # number of origins that can reach the destination
+            reachable_origins = n()) %>%
+  ungroup() %>%
+  mutate(n_rides = round(n_rides))
+
+```
+
+## Loading in travel **demand** data
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
