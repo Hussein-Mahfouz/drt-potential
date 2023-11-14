@@ -10,15 +10,16 @@ source("R/trips_to_zone_pairs.R")
 
 ########## ----------------------- Read in the data ----------------------- ##########
 
+
 # ----------- 1. Study area
 
 # --- administrative boundaries
 study_area <- st_read("data/interim/study_area_boundary.geojson")
 
 # convert to desired resolution
-res = "OA"
+geography = "MSOA"
 study_area = study_area_geographies(study_area = study_area,
-                                    geography = res)
+                                    geography = geography)
 
 # ----------- 2. GTFS feeds
 
@@ -47,15 +48,23 @@ gtfs_bus <- gtfs_bus %>%
 
 # TODO: change to demand + travel time (i.e. demand + supply) - do this in demand_on_buses.R
 
-od_demand <- read_csv("data/raw/travel_demand/od_census_2021/demand_study_area_oa.csv")
+od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
 
+# columns to reference (they differ based on geography)
+from_id_col = paste0(geography, "21CD_home")
+to_id_col = paste0(geography, "21CD_work")
+
+# remove intrazone trips
+
+od_demand <- od_demand %>%
+  filter(.data[[from_id_col]] != .data[[to_id_col]])
 
 ########## ----------------------- Identify which OD demand pairs are served by each bus ----------------------- ##########
 
 
 # ----------- 1. Identify which od pairs are served directly by each trip
 
-od_supply <- gtfs_trips_od_coverage(gtfs = gtfs_bus, zones = study_area, zone_column = "OA21CD")
+od_supply <- gtfs_trips_od_coverage(gtfs = gtfs_bus, zones = study_area, zone_column = paste0(toupper(geography), "21CD"))
 
 
 # ----------- 2. Join OD demand onto the supply data ########## ----- (sd = supply_demand) ----- ##########
@@ -63,13 +72,12 @@ od_supply <- gtfs_trips_od_coverage(gtfs = gtfs_bus, zones = study_area, zone_co
 od_sd <- od_supply %>%
   #left_join(od_demand,
   inner_join(od_demand,
-            by = c("Origin" = "Output Areas code", "Destination" = "OA of workplace code"))
-
+             by = c("Origin" = from_id_col, "Destination" = to_id_col))
 
 # ----------- 3. Get the total potential ridership on each unique trip (sd = supply_demand)
 trips_sd <- od_sd %>%
-  group_by(trip_id, start_time) %>%
-  summarise(potential_demand = sum(Count, na.rm = TRUE)) %>%
+  group_by(trip_id, start_time, combination) %>%
+  summarise(potential_demand = sum(commute_all, na.rm = TRUE)) %>%
   ungroup()
 
 
@@ -91,7 +99,7 @@ trips_sd_sf <- trips_sd %>%
 
 
 # ----------- 5. Save the output
-st_write(trips_sd_sf, "data/processed/travel_demand/trips_potential_demand_census.geojson", delete_dsn = TRUE)
+st_write(trips_sd_sf, paste0("data/processed/travel_demand/trips_potential_demand_census_", geography, ".geojson"), delete_dsn = TRUE)
 
 
 
@@ -155,8 +163,6 @@ tm_shape(trips_sd_sf ) +
 # layer 2 (lines): od matrix
 
 # layer 3 (lines): potential ridership on buses
-
-od matrix
 
 
 
