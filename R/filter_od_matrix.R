@@ -25,6 +25,8 @@ filter_matrix_by_distance = function(zones, od_matrix, dist_threshold){
                                      by = c("Origin" = "O", "Destination" = "D"))
   # remove OD pairs below the theshold distance
   od_matrix_dist = dplyr::filter(od_matrix_dist, distance_m >= dist_threshold)
+  # turn into sf
+  od_matrix_dist = sf::st_as_sf(od_matrix_dist)
 
   return(od_matrix_dist)
 }

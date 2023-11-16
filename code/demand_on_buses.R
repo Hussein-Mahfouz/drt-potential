@@ -6,6 +6,7 @@ library(tmap)
 
 source("R/study_area_geographies.R")
 source("R/trips_to_zone_pairs.R")
+source("R/filter_od_matrix.R")
 
 
 ########## ----------------------- Read in the data ----------------------- ##########
@@ -39,14 +40,14 @@ gtfs_bus <- gtfstools::read_gtfs(gtfs_paths[grepl("bus", gtfs_paths)])
 
 # --- filter the feeds to a specific point in time
 gtfs_trip_ids <- gtfs_bus$frequencies %>%
-  filter(start_time == "09:00:00")
+  filter(start_time == "07:30:00")
 
 gtfs_bus <- gtfs_bus %>%
   gtfstools::filter_by_trip_id(gtfs_trip_ids$trip_id)
 
 # ----------- 3.  Census OD data
 
-# TODO: change to demand + travel time (i.e. demand + supply) - do this in demand_on_buses.R
+# Demand (census) + supply (travel time) data
 
 od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
 
@@ -66,10 +67,37 @@ od_demand <- od_demand %>%
 
 od_supply <- gtfs_trips_od_coverage(gtfs = gtfs_bus, zones = study_area, zone_column = paste0(toupper(geography), "21CD"))
 
+# trip_id refers to each unique bus that goes from A to B - we want one row for each trip that goees from A -> B (think directional route_id)
+
+# add other columns that can help identify a unique trip
+od_supply <- od_supply %>%
+  inner_join(gtfs_bus$trips %>%
+               select(trip_id, route_id, trip_headsign, shape_id),
+             by = "trip_id")
+
+# identify unique trips using distinct
+od_supply <- od_supply %>%
+  distinct(Origin, Destination, start_time, route_id, trip_headsign, .keep_all = TRUE)
+
+
+# save the output
+arrow::write_parquet(od_supply, paste0("data/interim/travel_demand/", toupper(geography), "/od_pairs_bus_coverage.parquet"))
+#od_supply <- arrow::read_parquet( paste0("data/interim/travel_demand/", toupper(geography), "/od_pairs_bus_coverage.parquet"))
+# --- remove od pairs with very short distance
+
+# value for dist_threshold based on NTS0308 "Trip length distribution"
+# https://www.gov.uk/government/statistics/annual-bus-statistics-year-ending-march-2022/annual-bus-statistics-year-ending-march-2022
+
+od_supply_filtered = filter_matrix_by_distance(zones = study_area,
+                                               od_matrix = od_supply,
+                                               dist_threshold = 1000)
+
+
 
 # ----------- 2. Join OD demand onto the supply data ########## ----- (sd = supply_demand) ----- ##########
 
-od_sd <- od_supply %>%
+od_sd <- od_supply_filtered %>%
+  st_drop_geometry() %>%
   #left_join(od_demand,
   inner_join(od_demand,
              by = c("Origin" = from_id_col, "Destination" = to_id_col))
@@ -121,8 +149,10 @@ tmap_mode("plot")
 tm_shape(study_area) +
   tm_borders(alpha = 0.1) +
 tm_shape(trips_sd_sf %>%
-           filter(start_time == "09:00:00")) +
+           filter(start_time == "07:30:00")) +
   tm_lines(col = "potential_demand",
+           lwd = "potential_demand",
+           scale = 3,
            legend.is.portrait = FALSE,
            alpha = 0.4) +
   tm_layout(fontfamily = 'Georgia',
@@ -130,7 +160,7 @@ tm_shape(trips_sd_sf %>%
             main.title.size = 1.3,
             main.title.color = "azure4",
             main.title.position = "left",
-           # legend.outside = TRUE,
+            #legend.outside = TRUE,
             #legend.outside.position = "bottom",
             frame = FALSE)
 
@@ -140,7 +170,7 @@ tm_shape(trips_sd_sf %>%
 # NOTE: this is just a placeholder. The data needs to come from an activity based model.
 # Currently the census data does not represent a specific time of day
 
-tm_shape(trips_sd_sf ) +
+tm_shape(trips_sd_sf) +
   tm_lines(col = "potential_demand",
            alpha = 0.6,
            legend.col.is.portrait = FALSE) +

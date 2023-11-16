@@ -7,7 +7,7 @@
 
 
 source("R/study_area_geographies.R")
-
+source("R/filter_od_matrix.R")
 
 library(tidyverse)
 library(sf)
@@ -30,6 +30,8 @@ study_area <- study_area_geographies(study_area = study_area,
                                      geography = geography)
 
 
+########### ------------------------ Travel time and travel demand data ------------------------ ###########
+
 # ---------------------- Loading in travel time and travel demand data
 
 
@@ -42,12 +44,15 @@ to_id_col = paste0(geography, "21CD_work")
 
 # -------------------- Analysis
 
+
 # Get median values per origin
 ttd_matrix_o <- ttd_matrix %>%
   group_by(across(from_id_col), combination, departure_time) %>%
   summarise(across(c(contains("_time"), n_rides), median, na.rm = TRUE),
             # number of destinations that can be reached
             reachable_destinations = n(),
+            # TODO: number of destinations that can be reached directly
+            # reachable_destinations_direct = count(n_rides == 1),
             commute_all = sum(commute_all)) %>%
   ungroup() %>%
   mutate(n_rides = round(n_rides))
@@ -71,22 +76,72 @@ ttd_matrix_d <- ttd_matrix %>%
 #   ungroup() %>%
 #   mutate(n_rides = round(n_rides))
 
+########### ------------------------ Bus coverage of travel demand ------------------------ ###########
 
-# ----------------------- Plots
+
+# --- data on which OD pairs are covered by direct buses
+od_supply <- arrow::read_parquet(paste0("data/interim/travel_demand/", toupper(geography), "/od_pairs_bus_coverage.parquet"))
+
+
+# get number of unique trips (directional routes) that serve each OD pair, and their headway
+od_supply_avg <- od_supply %>%
+  group_by(Origin, Destination, start_time) %>%
+  summarise(number_of_trips = n(),
+            headway_sec_avg = round(mean(headway_secs)),
+            headway_sec_min = min(headway_secs),
+            bus_per_hr_avg = round(3600/headway_sec_avg),
+            bus_per_hr_min = round(3600/headway_sec_min)) %>%
+  ungroup()
+
+# filter od pairs by euclidian distance
+od_supply_filtered = filter_matrix_by_distance(zones = study_area,
+                                               od_matrix = od_supply_avg,
+                                               dist_threshold = 1000)
+
+
+
+
+########## --------------- Combine ttd matrices with bus service provision matrix --------------- ##########
+
+# combine ttd matrix with matrix showing bus provision for ODs
+od_sd <- od_supply_filtered %>%
+  #TODO: check if we need an inner join (we only have 1 start time atm)
+  left_join(ttd_matrix,
+            by = c("Origin" = from_id_col,
+                   "Destination" = to_id_col,
+                   "start_time" = "departure_time"))
+
+
+########## --------------- Plots --------------- ##########
 
 # --------------- Preprocessing
 
 # ---------- get desire lines
 
-ttd_matrix_od <- od::od_to_sf(x = ttd_matrix,
-                              z = study_area %>% st_cast("MULTIPOLYGON"))
+od_sd_sf <- od::od_to_sf(x = od_sd %>% st_drop_geometry(),
+                         z = study_area %>% st_cast("MULTIPOLYGON"),
+                         crs = 4326)
+
+# ---------- create factor column for demand (for facet plots)
+
+od_sd_sf <- od_sd_sf %>%
+  mutate(commute_all_fct = cut_interval(commute_all, n = 5),
+         bus_per_hr_min_fct = cut_interval(bus_per_hr_min, n = 5))
 
 # ---------- get data for specific scenario
+
+ttd_matrix_od = od::od_to_sf(x = ttd_matrix,
+                             z = study_area %>% st_cast("MULTIPOLYGON"))
 
 # pt weekday morning
 ttd_matrix_od_1 <- ttd_matrix_od %>%
   filter(combination == "pt_wkday_morning") %>%
   filter(.data[[from_id_col]] != .data[[to_id_col]])
+
+
+ttd_matrix_od_2 = filter_matrix_by_distance(zones = study_area,
+                                            od_matrix = st_drop_geometry(ttd_matrix_od),
+                                            dist_threshold = 1000)
 
 # Which OD pairs are served by a direct bus?
 #
@@ -99,23 +154,23 @@ ttd_matrix_od_1 <- ttd_matrix_od %>%
 # color = travel demand on OD pair
 #
 
-tm_shape(ttd_matrix_od_1) +
+tm_shape(ttd_matrix_od) +
   tm_lines(col = "grey80",
            alpha = 0.05) +
-tm_shape(ttd_matrix_od_1 %>%
-           filter(commute_all > quantile(commute_all, probs = 0.90))) +
+tm_shape(ttd_matrix_od %>%
+           filter(commute_all > quantile(commute_all, probs = 0.90, na.rm = TRUE))) +
   tm_lines(col = "commute_all",
            lwd = "commute_all",
            scale = 10)
 
 
-ttd_matrix_od_1 %>%
+ttd_matrix_od %>%
   filter(commute_all > quantile(commute_all, probs = 0.95)) -> x
 
-ttd_matrix_od_1 %>%
+ttd_matrix_od %>%
   mutate(factor_column = cut_interval(commute_all, n = 4)) -> x
 
-tt
+
 tm_shape(x) +
   tm_lines(col = "grey80",
            alpha = 0.02) +
@@ -139,16 +194,48 @@ tm_shape(x) +
 #
 # color: served by direct bus (color gradient = bus frequency)
 
+tm_shape(od_sd_sf) +
+  tm_lines(col = "grey90",
+           alpha = 0.5) +
+tm_shape(od_sd_sf) +
+  tm_lines(col = "number_of_trips",
+           lwd = "bus_per_hr_min",
+           scale = 5)
 
+tm_shape(od_sd_sf) +
+  tm_lines(col = "grey90",
+           alpha = 0.5) +
+tm_shape(od_sd_sf) +
+  tm_lines(col = "number_of_trips",
+           lwd = "bus_per_hr_min",
+           scale = 5) +
+tm_facets(by = "commute_all_fct",
+          free.coords = FALSE,
+            nrow = 2)
+
+tm_shape(od_sd_sf) +
+  tm_lines(col = "grey90",
+           alpha = 0.5) +
+  tm_shape(od_sd_sf) +
+  tm_lines(col = "commute_all",
+           lwd = "number_of_trips",
+           scale = 5) +
+  tm_facets(by = "bus_per_hr_min_fct",
+            free.coords = FALSE,
+            nrow = 2)
 
 tm_shape(study_area) +
-  tm_polygons() +
-tm_shape(x %>% filter(combination == "pt_wkday_morning",
-                      commute_all >= 100)) +
-  tm_lines(col = "commute_all")
+  tm_borders(col = "grey80",
+           alpha = 0.5) +
+tm_shape(od_sd_sf) +
+  tm_lines(col = "grey90",
+           alpha = 0.5) +
+  tm_shape(od_sd_sf) +
+  tm_lines(col = "commute_all",
+           lwd = "bus_per_hr_min",
+           scale = 5) +
+  tm_facets(by = "bus_per_hr_min_fct",
+            free.coords = FALSE,
+            nrow = 2)
 
 
-
-x = od::od_data_df
-z = od::od_data_zones
-desire_lines = od::od_to_sf(x, z)
