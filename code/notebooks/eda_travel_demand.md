@@ -1,22 +1,44 @@
-# This code visualises the output from code/demand_on_buses.R . The datasets we want to explore together are:
-    # demographic data
-    # travel time data
-    # number of destinations reachable
-    # accessibility to different services
-    # travel demand data
+Demand on buses
+================
+11/17/23
 
+## Introduction
 
+This code visualises the output from `code/demand_on_buses.R` . The
+datasets we want to explore together are:
+
+- [ ] demographic data
+
+- [ ] travel time data
+
+  - [x] number of destinations reachable
+
+  - [ ] accessibility to different services
+
+- [ ] travel demand data
+
+  - [ ] census
+
+    - [ ] od demand matrix
+
+    - [ ] demand aggregated onto buses
+
+  - [ ] activity-based model
+
+    - [ ] od demand matrix
+
+    - [ ] demand aggregated onto buses
+
+``` r
 source("R/study_area_geographies.R")
 source("R/filter_od_matrix.R")
 
 library(tidyverse)
 library(sf)
 library(tmap)
+```
 
-# where do we want to save the plots?
-plots_path <- "data/processed/plots/eda/demand/"
-
-
+``` r
 # -------------------- read in the outputs
 
 # --- decide on geographic resolution
@@ -25,19 +47,29 @@ geography <- "MSOA"
 
 # read in geography
 study_area <- st_read("data/interim/study_area_boundary.geojson")
+```
+
+    Reading layer `study_area_boundary' from data source 
+      `/home/hussein/Documents/GitHub/drt-potential/data/interim/study_area_boundary.geojson' 
+      using driver `GeoJSON'
+    Simple feature collection with 2607 features and 15 fields
+    Geometry type: MULTIPOLYGON
+    Dimension:     XY
+    Bounding box:  xmin: -1.800359 ymin: 53.69898 xmax: -1.290394 ymax: 53.94587
+    Geodetic CRS:  WGS 84
+
+``` r
 # convert to necessary resolution
 study_area <- study_area_geographies(study_area = study_area,
                                      geography = geography)
 
 study_area <- study_area %>%
   st_cast("MULTIPOLYGON")
+```
 
+## Loading in travel time and travel demand data
 
-########### ------------------------ Travel time and travel demand data ------------------------ ###########
-
-# ---------------------- Loading in travel time and travel demand data
-
-
+``` r
 # --- travel time and demand (ttd) matrix
 
 ttd_matrix <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
@@ -72,19 +104,11 @@ ttd_matrix_d <- ttd_matrix %>%
             reachable_origins = n()) %>%
   ungroup() %>%
   mutate(n_rides = round(n_rides))
+```
 
-# # Get median values per destination (edited to account for r warnings about depreciated fns)
-# ttd_matrix_d <- ttd_matrix %>%
-#   group_by(across(all_of(to_id_col)), combination, departure_time) %>%
-#   summarise(across(c(contains("_time"), n_rides), \(x) median(x, na.rm = TRUE)),
-#             # number of origins that can reach the destination
-#             reachable_origins = n()) %>%
-#   ungroup() %>%
-#   mutate(n_rides = round(n_rides))
+## Loading in bus coverage of travel demand
 
-########### ------------------------ Bus coverage of travel demand ------------------------ ###########
-
-
+``` r
 # --- data on which OD pairs are covered by direct buses
 od_supply <- arrow::read_parquet(paste0("data/interim/travel_demand/", toupper(geography), "/od_pairs_bus_coverage.parquet"))
 
@@ -104,9 +128,6 @@ od_supply_filtered = filter_matrix_by_distance(zones = study_area,
                                                od_matrix = od_supply_avg,
                                                dist_threshold = 1000)
 
-
-########## --------------- Combine ttd matrices with bus service provision matrix --------------- ##########
-
 # combine ttd matrix with matrix showing bus provision for ODs
 od_sd <- od_supply_filtered %>%
   #TODO: check if we need an inner join (we only have 1 start time atm)
@@ -114,27 +135,36 @@ od_sd <- od_supply_filtered %>%
             by = c("Origin" = from_id_col,
                    "Destination" = to_id_col,
                    "start_time" = "departure_time"))
+```
 
+## Loading in travel demand aggregated onto bus routes
 
-########### ------------------------ Travel demand aggregated onto bus routes ------------------------ ###########
-
-
-# ----------- 5. Save the output
+``` r
 trips_sd_sf <- st_read(paste0("data/processed/travel_demand/trips_potential_demand_census_", geography, ".geojson"))
+```
 
+    Reading layer `trips_potential_demand_census_MSOA' from data source 
+      `/home/hussein/Documents/GitHub/drt-potential/data/processed/travel_demand/trips_potential_demand_census_MSOA.geojson' 
+      using driver `GeoJSON'
+    Simple feature collection with 1443 features and 7 fields (with 418 geometries empty)
+    Geometry type: LINESTRING
+    Dimension:     XY
+    Bounding box:  xmin: -2.090494 ymin: 53.72063 xmax: -0.4052888 ymax: 54.29559
+    Geodetic CRS:  WGS 84
+
+``` r
 # If we want to get the total demand per day let's try and group by shape_id (same trip at different time has a different trip_id)
 trips_sd_sf_shape_sum <- trips_sd_sf %>%
   group_by(shape_id) %>%
   summarise(potential_demand = sum(potential_demand, na.rm = TRUE)) %>%
   ungroup()
+```
 
+## Plots
 
+### Preprocessing
 
-
-########## --------------- Plots --------------- ##########
-
-# --------------- Preprocessing
-
+``` r
 # ---------- get desire lines
 
 od_sd_sf <- od::od_to_sf(x = od_sd %>% st_drop_geometry(),
@@ -153,10 +183,11 @@ od_sd_sf <- od_sd_sf %>%
 # TODO: remove this when we have multiple start times (currently the od_supply df only has 7:30 - WHY? )
 od_sd_sf <- od_sd_sf %>%
   filter(combination == "pt_wkday_morning")
+```
 
-# ---------------------------- MAP 1: OD pairs with the highest level of commuting
+### MAP 1: OD pairs with the highest level of commuting
 
-
+``` r
 tm_shape(study_area) +
   tm_borders(col = "grey80",
              alpha = 0.5) +
@@ -178,16 +209,16 @@ tm_shape(od_sd_sf) +
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
-            frame = FALSE) -> map_desire_commuting
+            frame = FALSE)
+```
 
-map_desire_commuting
+![](eda_travel_demand_files/figure-commonmark/unnamed-chunk-7-1.png)
 
-tmap_save(tm = map_desire_commuting, filename = paste0(plots_path, "map_desire_commuting.png"), width = 15, dpi = 1080)
+![](images/map_desire_commuting.png)
 
+### MAP 2: OD pairs by number of buses (transfers) required to connect them
 
-
-# ---------------------------- MAP 2: OD pairs by number of buses (transfers) required to connect them
-
+``` r
 tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
@@ -212,18 +243,16 @@ tm_shape(od_sd_sf) +
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
-            frame = FALSE)  -> map_desire_commuting_facet_transfers
+            frame = FALSE)  
+```
 
-map_desire_commuting_facet_transfers
+![](eda_travel_demand_files/figure-commonmark/unnamed-chunk-8-1.png)
 
-tmap_save(tm =map_desire_commuting_facet_transfers, filename = paste0(plots_path, "map_desire_commuting_facet_transfers.png"), width = 15, dpi = 1080)
+![](images/map_desire_commuting_facet_transfers.png)
 
+### MAP 3: OD pairs NOT served by a direct bus
 
-
-
-# ---------------------------- MAP 3: OD pairs NOT served by a direct bus
-
-
+``` r
 tm_shape(study_area) +
   tm_borders(col = "grey60",
            alpha = 0.5) +
@@ -242,18 +271,16 @@ tm_shape(od_sd_sf %>%
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
-            frame = FALSE) -> map_desire_commuting_no_direct_bus
+            frame = FALSE)
+```
 
-map_desire_commuting_no_direct_bus
+![](eda_travel_demand_files/figure-commonmark/unnamed-chunk-9-1.png)
 
-tmap_save(tm =map_desire_commuting_no_direct_bus, filename = paste0(plots_path, "map_desire_commuting_no_direct_bus.png"), width = 15, dpi = 1080)
+![](images/map_desire_commuting_no_direct_bus.png)
 
+### MAP 4: No. of direct bus reoutes serving OD pair (faceted) by no. of commuters
 
-
-
-# ---------------------------- MAP 4: No. of direct bus reoutes serving OD pair (faceted) by no. of commuters
-
-
+``` r
 tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
@@ -279,19 +306,16 @@ tm_layout(fontfamily = 'Georgia',
           legend.outside = TRUE,
           legend.outside.position = "bottom",
           legend.stack = "horizontal",
-          frame = FALSE) -> map_desire_direct_bus_facet_commuting
+          frame = FALSE)
+```
 
-map_desire_direct_bus_facet_commuting
+![](eda_travel_demand_files/figure-commonmark/unnamed-chunk-10-1.png)
 
-tmap_save(tm =map_desire_direct_bus_facet_commuting, filename = paste0(plots_path, "map_desire_direct_bus_facet_commuting.png"), width = 15, dpi = 1080)
+![](images/map_desire_direct_bus_facet_commuting.png)
 
+### MAP 5: Fastest vs direct routes
 
-
-
-
-
-# ---------------------------- MAP 5: Fastest vs direct routes
-
+``` r
 tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
@@ -314,24 +338,16 @@ tm_shape(od_sd_sf) +
             legend.outside = TRUE,
             legend.outside.position = "bottom",
             legend.stack = "horizontal",
-            frame = FALSE) -> map_desire_direct_bus_facet_transfers
+            frame = FALSE) 
+```
 
-map_desire_direct_bus_facet_transfers
+![](eda_travel_demand_files/figure-commonmark/unnamed-chunk-11-1.png)
 
-tmap_save(tm =map_desire_direct_bus_facet_transfers, filename = paste0(plots_path, "map_desire_direct_bus_facet_transfers.png"), width = 15, dpi = 1080)
+![](images/map_desire_direct_bus_facet_transfers.png)
 
+### MAP 6: Demand Aggregated onto bus routes
 
-
-
-
-
-
-
-# ---------------------------- MAP 6: Demand Aggregated onto bus routes
-
-
-
-
+``` r
 tm_shape(study_area) +
   tm_borders(alpha = 0.1) +
   tm_shape(trips_sd_sf %>%
@@ -351,16 +367,9 @@ tm_shape(study_area) +
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
-            frame = FALSE) -> map_potential_demand_bus_routes
+            frame = FALSE)
+```
 
-map_potential_demand_bus_routes
+![](eda_travel_demand_files/figure-commonmark/unnamed-chunk-12-1.png)
 
-tmap_save(tm =map_potential_demand_bus_routes, filename = paste0(plots_path, "map_potential_demand_bus_routes.png"), width = 15, dpi = 1080)
-
-
-
-
-
-
-
-
+![](images/map_potential_demand_bus_routes.png)
