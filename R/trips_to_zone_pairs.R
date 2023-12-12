@@ -6,6 +6,17 @@
 #' each trip in the gtfs feed. It uses the \code{gtfs_trips_zone_coverage} and
 #' the \code{generate_ordered_pairs} functions defined below.
 #'
+#' We have data on the zones served by each trip. We also know the order in which
+#' the zones are served (through the stop sequence). We use this information to get
+#' the OD pairs served by each trip. To obtain OD pairs, we need to respect the order
+#' in which zones are served. If a trip follows the itinerary: "zone1", "zone4", "zone8",
+#' then it serves:
+
+#' zone1 : zone4
+#' zone1 : zone8
+#' zone4 : zone8
+
+#' It DOES NOT serve the return journeys (i.e. zone8 : zone4)
 #'
 #' @param gtfs a gtfs feed with a frequencies.txt file
 #' @param zones a zonal sf layer of our study area
@@ -38,7 +49,6 @@ gtfs_trips_od_coverage = function(gtfs, zones, zone_column){
   return(trips_zones_unnested)
 }
 
-# ---------- Function 1: Identify which zones are served by each trip
 
 #' Identify which zones are served by each trip
 #'
@@ -75,21 +85,6 @@ gtfs_trips_zone_coverage = function(gtfs, zones){
 
   return(gtfs_trips_int)
 }
-
-
-# ---------- Function 2: Identify which OD pairs are served by each trip
-
-# We have data on the zones served by each trip. We also know the order in which
-# the zones are served (through the stop sequence). We use this information to get
-# the OD pairs served by each trip. To obtain OD pairs, we need to respect the order
-# in which zones are served. If a trip follows the itinerary: "zone1", "zone4", "zone8",
-# then it serves
-
-# zone1 : zone4
-# zone1 : zone8
-# zone4 : zone8
-
-# It DOES NOT serve the return journeys (i.e. zone8 : zone4)
 
 
 
