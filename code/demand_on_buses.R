@@ -1,3 +1,14 @@
+###################################################################################################
+###    The purpose of this script is to calculate the travel demand on bus routes by projecting ###
+###    demand from each OD pair onto buses that directly serve that pair                        ###
+###    We do this in two ways. Take an OD pair with demand = 20 that is served by 3 routes.     ###
+###    Route A (freq = 6 buses/hour), Route B (freq = 3/hr, Route C (freq = 3/hr):              ###
+
+###       (1) All-to-all: If an OD  pair has demand = 20 and is served by two direct routes,    ###
+###          each of these routes is assigned the 20                                            ###
+###       (2) Frequency-based: Demand (Route A) = Total Demand * freq A / sum(freq A, freq B, freq C)
+###                                             = (20 * 6) / 12 = 10
+###################################################################################################
 
 library(tidyverse)
 library(sf)
@@ -18,9 +29,12 @@ source("R/filter_od_matrix.R")
 study_area <- st_read("data/interim/study_area_boundary.geojson")
 
 # convert to desired resolution
-geography = "MSOA"
+geography = "LSOA"
 study_area = study_area_geographies(study_area = study_area,
                                     geography = geography)
+
+study_area <- study_area %>%
+  st_cast("MULTIPOLYGON")
 
 # ----------- 2. GTFS feeds
 
@@ -56,7 +70,7 @@ from_id_col = paste0(geography, "21CD_home")
 to_id_col = paste0(geography, "21CD_work")
 
 # remove intrazone trips
-
+# TODO: do we need to do this?
 od_demand <- od_demand %>%
   filter(.data[[from_id_col]] != .data[[to_id_col]])
 
@@ -83,6 +97,7 @@ od_supply <- od_supply %>%
 # save the output
 arrow::write_parquet(od_supply, paste0("data/interim/travel_demand/", toupper(geography), "/od_pairs_bus_coverage.parquet"))
 #od_supply <- arrow::read_parquet( paste0("data/interim/travel_demand/", toupper(geography), "/od_pairs_bus_coverage.parquet"))
+
 # --- remove od pairs with very short distance
 
 # value for dist_threshold based on NTS0308 "Trip length distribution"
@@ -103,10 +118,30 @@ od_sd <- od_supply_filtered %>%
              by = c("Origin" = from_id_col, "Destination" = to_id_col))
 
 # ----------- 3. Get the total potential ridership on each unique trip (sd = supply_demand)
-trips_sd <- od_sd %>%
+
+# Method 1: all_to_all
+trips_sd_1 <- od_sd %>%
   group_by(trip_id, start_time, combination) %>%
-  summarise(potential_demand = sum(commute_all, na.rm = TRUE)) %>%
+  summarise(potential_demand_all_to_all = sum(commute_all, na.rm = TRUE)) %>%
   ungroup()
+
+# Method 2: frequency-based
+trips_sd_2 <- od_sd %>%
+  group_by(start_time, combination, Origin, Destination) %>%
+  # get number of passengers on each route for each OD pair
+  mutate(group_id = cur_group_id(),
+         frequency_min = 3600/headway_secs,
+         commute_route = round((commute_all * frequency_min) / sum(frequency_min))) %>%
+  ungroup() %>%
+  # sum over the route
+  group_by(trip_id, start_time, combination) %>%
+  summarise(potential_demand_freq_based = sum(commute_route, na.rm = TRUE)) %>%
+  ungroup()
+
+
+# add all to one df
+trips_sd <- trips_sd_1 %>%
+  left_join(trips_sd_2, by = c("trip_id", "start_time", "combination"))
 
 
 # ----------- 4. Add geometry to plot results
