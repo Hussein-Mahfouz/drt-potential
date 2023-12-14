@@ -111,11 +111,17 @@ od_supply_filtered = filter_matrix_by_distance(zones = study_area,
 
 # ----------- 2. Join OD demand onto the supply data ########## ----- (sd = supply_demand) ----- ##########
 
+# od_sd <- od_supply_filtered %>%
+#   st_drop_geometry() %>%
+#   #left_join(od_demand,
+#   inner_join(od_demand,
+#              by = c("Origin" = from_id_col, "Destination" = to_id_col))
+
 od_sd <- od_supply_filtered %>%
   st_drop_geometry() %>%
   #left_join(od_demand,
   inner_join(od_demand,
-             by = c("Origin" = from_id_col, "Destination" = to_id_col))
+             by = c("Origin" = from_id_col, "Destination" = to_id_col, "start_time" = "departure_time"))
 
 # ----------- 3. Get the total potential ridership on each unique trip (sd = supply_demand)
 
@@ -169,10 +175,8 @@ st_write(trips_sd_sf, paste0("data/processed/travel_demand/trips_potential_deman
 # If we want to get the total demand per day let's try and group by shape_id (same trip at different time has a different trip_id)
 trips_sd_sf_shape_sum <- trips_sd_sf %>%
   group_by(shape_id) %>%
-  summarise(potential_demand = sum(potential_demand, na.rm = TRUE)) %>%
+  summarise(across(contains("potential_demand"), ~ sum(.x, na.rm = TRUE))) %>%
   ungroup()
-
-
 
 # ----------- 5. Plots
 
@@ -185,8 +189,8 @@ tm_shape(study_area) +
   tm_borders(alpha = 0.1) +
 tm_shape(trips_sd_sf %>%
            filter(start_time == "07:30:00")) +
-  tm_lines(col = "potential_demand",
-           lwd = "potential_demand",
+  tm_lines(col = "potential_demand_freq_based",
+           lwd = "potential_demand_freq_based",
            scale = 3,
            legend.is.portrait = FALSE,
            alpha = 0.4) +
@@ -200,13 +204,45 @@ tm_shape(trips_sd_sf %>%
             frame = FALSE)
 
 
-# ----- b)  potential ridership on all different trips - facet by time of day
+# ----- b)  potential ridership on all different trips - facet by method
+
+trips_sd_sf_long <- trips_sd_sf %>%
+  pivot_longer(cols = contains("potential_demand"),
+               names_to = "method",
+               values_to = "potential_demand")
+
+
+tm_shape(study_area) +
+  tm_borders(alpha = 0.1) +
+tm_shape(trips_sd_sf_long) +
+  tm_lines(col = "potential_demand",
+           alpha = 0.8,
+           #palette = "Blues",
+           style = "quantile",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by="method",
+            ncol = 2,
+            free.coords=FALSE)+
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Potential ridership on trips using different methods", # this works if you need it
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.text.size = 1,
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            frame = FALSE)
+
+
+# ----- c)  potential ridership on all different trips - facet by time of day
 
 # NOTE: this is just a placeholder. The data needs to come from an activity based model.
 # Currently the census data does not represent a specific time of day
 
+tm_shape(study_area) +
+  tm_borders(alpha = 0.1) +
 tm_shape(trips_sd_sf) +
-  tm_lines(col = "potential_demand",
+  tm_lines(col = "potential_demand_freq_based",
            alpha = 0.6,
            legend.col.is.portrait = FALSE) +
   tm_facets(by="start_time",
@@ -231,3 +267,82 @@ tm_shape(trips_sd_sf) +
 
 
 
+
+# ----------- Redundancy: How many routes serve each OD pair
+
+
+# Get number of routes that directly serve each OD pair
+od_no_of_routes <- od_sd %>%
+  group_by(Origin, Destination, start_time, combination) %>%
+  summarise(route_options = n(),
+            #route_options_fct = cut_width(route_options, width = 3, boundary = 0),
+            route_options_fct = cut(route_options, breaks = seq(0, 50, by = 3)),
+            headway_minimum = min(headway_secs),
+            headway_med = median(headway_secs))
+
+# add geometry
+od_no_of_routes <- od_no_of_routes %>%
+  inner_join(od_supply_filtered %>%
+               select(Origin, Destination),
+             by = c("Origin", "Destination")) %>%
+  st_as_sf()
+
+
+# Plot OD pairs by the number of routes serving them
+tm_shape(study_area) +
+  tm_borders(alpha = 0.1) +
+  tm_shape(od_no_of_routes %>%
+             filter(route_options <= 10)) +
+  tm_lines(col = "headway_med",
+           title.col = "Median headway of routes serving OD pair",
+           alpha = 0.6,
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by="route_options_fct",
+            nrow = 2,
+            free.coords=FALSE)+
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "No. of routes Serving each OD pair", # this works if you need it
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            # legend title
+            legend.text.size = 1,
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            frame = FALSE)
+
+
+# CONTINUE HERE!!
+
+# Get OD pairs that are only served by one route - and add the route geometry
+od_one_route <- od_sd %>%
+  group_by(Origin, Destination, start_time, combination) %>%
+  mutate(route_options = n()) %>%
+  filter(route_options == 1)
+
+
+# Group by route and get sum of demand (for these specific OD pairs)
+
+
+
+ods_one_route <- routes_per_od %>%
+  filter(route_options == 1)
+
+od_sd %>%
+  group_by(Origin, Destination, start_time, combination) %>%
+  summarise(group = cur_group_id(),
+         options = n()) -> x1
+
+od_supply %>%
+  filter(Origin != Destination) %>%
+  group_by(Origin, Destination, start_time) %>%
+  mutate(group = cur_group_id(),
+         options = n()) -> x2
+
+od_supply %>%
+  filter(Origin != Destination) %>%
+  group_by(Origin, Destination, start_time) %>%
+  mutate(group = cur_group_id(),
+         options = n()) -> x3
+
+x3 %>% filter(options == 1) -> x4
