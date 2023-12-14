@@ -278,7 +278,9 @@ od_no_of_routes <- od_sd %>%
             #route_options_fct = cut_width(route_options, width = 3, boundary = 0),
             route_options_fct = cut(route_options, breaks = seq(0, 50, by = 3)),
             headway_minimum = min(headway_secs),
-            headway_med = median(headway_secs))
+            headway_minimum_fct = cut(headway_minimum, breaks = seq(0, 12000, by = 600)),
+            headway_med = median(headway_secs),
+            headway_med_fct = cut(headway_med, breaks = seq(0, 12000, by = 600)))
 
 # add geometry
 od_no_of_routes <- od_no_of_routes %>%
@@ -312,14 +314,55 @@ tm_shape(study_area) +
             frame = FALSE)
 
 
-# CONTINUE HERE!!
+# CONTINUE HERE!! (Edit the plots)
+
 
 # Get OD pairs that are only served by one route - and add the route geometry
-od_one_route <- od_sd %>%
-  group_by(Origin, Destination, start_time, combination) %>%
-  mutate(route_options = n()) %>%
+od_one_route <- od_no_of_routes %>%
   filter(route_options == 1)
 
+
+# Plot
+
+# Plot OD pairs by the number of routes serving them
+tm_shape(study_area) +
+  tm_borders(alpha = 0.1) +
+  tm_shape(od_one_route) +
+  tm_lines(col = "headway_med",
+           title.col = "Median headway of routes serving OD pair",
+           alpha = 0.6,
+           legend.col.is.portrait = FALSE) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "OD pairs served by only one route", # this works if you need it
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            # legend title
+            legend.text.size = 1,
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            frame = FALSE)
+
+tm_shape(study_area) +
+  tm_borders(alpha = 0.1) +
+  tm_shape(od_one_route) +
+  tm_lines(col = "headway_med",
+           title.col = "Median headway of routes serving OD pair",
+           alpha = 0.6,
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by="headway_med_fct",
+            nrow = 2,
+            free.coords=FALSE)+
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "OD pairs served by only one route", # this works if you need it
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            # legend title
+            legend.text.size = 1,
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            frame = FALSE)
 
 # Group by route and get sum of demand (for these specific OD pairs)
 
