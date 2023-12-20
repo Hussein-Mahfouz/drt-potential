@@ -186,11 +186,6 @@ od_sd_sf <- od_sd_sf %>%
 ### MAP 1: OD pairs with the highest level of commuting
 
 ``` r
-#| eval: false
-#| warning: false
-#| message: false
-
-
 tm_shape(study_area) +
   tm_borders(col = "grey80",
              alpha = 0.5) +
@@ -214,12 +209,6 @@ tm_shape(od_sd_sf) +
             legend.outside.position = "bottom",
             frame = FALSE)
 ```
-
-    Legend labels were too wide. Therefore, legend.text.size has been set to 0.48. Increase legend.width (argument of tm_layout) to make the legend wider and therefore the labels larger.
-
-![](eda_travel_demand_files/figure-commonmark/unnamed-chunk-7-1.png)
-
-![](images/map_desire_commuting.png)
 
 ### MAP 2a: OD pairs by number of buses (transfers) required to connect them
 
