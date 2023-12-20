@@ -27,11 +27,11 @@ This code visualises the output from `code/demand_on_buses.R` . The datasets we 
 
 -   [ ] travel demand data
 
-    -   [ ] census
+    -   [x] census
 
-        -   [ ] od demand matrix
+        -   [x] od demand matrix
 
-        -   [ ] demand aggregated onto buses
+        -   [x] demand aggregated onto buses
 
     -   [ ] activity-based model
 
@@ -129,9 +129,10 @@ od_supply <- arrow::read_parquet(paste0("data/interim/travel_demand/", toupper(g
 # get number of unique trips (directional routes) that serve each OD pair, and their headway
 od_supply_avg <- od_supply %>%
   group_by(Origin, Destination, start_time) %>%
-  summarise(number_of_trips = n(),
+  summarise(route_options = n(),
             headway_sec_avg = round(mean(headway_secs)),
             headway_sec_min = min(headway_secs),
+            headway_sec_med = median(headway_secs),
             bus_per_hr_avg = round(3600/headway_sec_avg),
             bus_per_hr_min = round(3600/headway_sec_min)) %>%
   ungroup()
@@ -150,6 +151,13 @@ od_sd <- od_supply_filtered %>%
                    "start_time" = "departure_time"))
 
 
+# create factor column for demand (for facet plots)
+od_sd <- od_sd %>%
+  mutate(commute_all_fct = cut_interval(commute_all, n = 3))
+
+
+
+
 ```
 
 ## Loading in travel demand aggregated onto bus routes
@@ -163,14 +171,15 @@ trips_sd_sf <- st_read(paste0("data/processed/travel_demand/trips_potential_dema
 # If we want to get the total demand per day let's try and group by shape_id (same trip at different time has a different trip_id)
 trips_sd_sf_shape_sum <- trips_sd_sf %>%
   group_by(shape_id) %>%
-  summarise(potential_demand = sum(potential_demand, na.rm = TRUE)) %>%
+  summarise(across(contains("potential_demand"), ~ sum(.x, na.rm = TRUE))) %>%
   ungroup()
+
 
 ```
 
 ## Plots
 
-### Preprocessing
+### Pre-processing
 
 ```{r}
 #| warning: false
@@ -181,14 +190,6 @@ trips_sd_sf_shape_sum <- trips_sd_sf %>%
 od_sd_sf <- od::od_to_sf(x = od_sd %>% st_drop_geometry(),
                          z = study_area %>% st_cast("MULTIPOLYGON"),
                          crs = 4326)
-
-# ---------- create factor column for demand (for facet plots)
-
-od_sd_sf <- od_sd_sf %>%
-  mutate(commute_all_fct = cut_interval(commute_all, n = 3),
-         bus_per_hr_min_fct = cut_interval(bus_per_hr_min, n = 3))
-
-
 
 # ----------- prep the layer
 # TODO: remove this when we have multiple start times (currently the od_supply df only has 7:30 - WHY? )
@@ -230,7 +231,7 @@ tm_shape(od_sd_sf) +
 
 ![](images/map_desire_commuting.png)
 
-### MAP 2: OD pairs by number of buses (transfers) required to connect them
+### MAP 2a: OD pairs by number of buses (transfers) required to connect them
 
 ```{r}
 #| warning: false
@@ -266,6 +267,42 @@ tm_shape(od_sd_sf) +
 
 ![](images/map_desire_commuting_facet_transfers.png)
 
+### MAP 2b: Focus on OD pairs with no direct routes
+
+```{r}
+#| warning: false
+#| message: false
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(od_sd_sf) +
+  tm_lines(col = "grey80",
+           alpha = 0.02) +
+  tm_shape(od_sd_sf  %>%
+             filter(n_rides > 1)) +
+  tm_lines(col = "commute_all",
+           title.col = "No. of commuters \n(census 2021)",
+           lwd = "commute_all",
+           legend.lwd.show = FALSE,
+           legend.col.is.portrait = FALSE,
+           palette = "YlOrRd",
+           scale = 10) +
+  tm_facets(by = "n_rides",
+            free.coords = FALSE,
+            nrow = 1)  +  # so that the maps aren't different sizes
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Minimum number of buses required \nto reach destination", # this works if you need it
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            frame = FALSE)
+```
+
+![](images/map_desire_commuting_mult_rides_facet_transfers.png)
+
 ### MAP 3: OD pairs NOT served by a direct bus
 
 ```{r}
@@ -296,7 +333,7 @@ tm_shape(od_sd_sf %>%
 
 ![](images/map_desire_commuting_no_direct_bus.png)
 
-### MAP 4: No. of direct bus reoutes serving OD pair (faceted) by no. of commuters
+### MAP 4: No. of direct bus routes serving OD pair (faceted) by no. of commuters
 
 ```{r}
 #| warning: false
@@ -309,7 +346,7 @@ tm_shape(od_sd_sf) +
   tm_lines(col = "grey90",
            alpha = 0.5) +
 tm_shape(od_sd_sf) +
-  tm_lines(col = "number_of_trips",
+  tm_lines(col = "route_options",
            lwd = "bus_per_hr_min",
            title.col = "No. of different DIRECT bus \nroutes serving OD pair",
            title.lwd = "Frequency of best route\n(Buses / hr)",
@@ -343,7 +380,7 @@ tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
 tm_shape(od_sd_sf) +
-  tm_lines(col = "number_of_trips",
+  tm_lines(col = "route_options",
            lwd = "bus_per_hr_min",
            title.col = "No. of different DIRECT bus \nroutes serving OD pair",
            title.lwd = "Frequency of best route\n(Buses / hr)",
@@ -367,33 +404,93 @@ tm_shape(od_sd_sf) +
 
 ![](images/map_desire_direct_bus_facet_transfers.png)
 
-### MAP 6: Demand Aggregated onto bus routes
+### MAP 6: Demand aggregated onto bus routes
+
+We calculate the travel demand on bus routes by projecting demand from each OD pair onto buses that directly serve that pair. We do this in two ways.
+
+Take an OD pair with demand = 20 that is served by 3 routes. Route A (freq = 6 buses/hour), Route B (freq = 3/hr, Route C (freq = 3/hr):
+
+1.  All-to-all: If an OD pair has demand = 20 and is served by two direct routes, each of these routes is assigned the 20
+
+2.  Frequency-based: `Demand (Route A) = Total Demand * freq A / sum(freq A, freq B, freq C) = (20 * 6) / 12 = 10`
 
 ```{r}
 #| warning: false
 #| message: false
 
+trips_sd_sf_long <- trips_sd_sf %>%
+  pivot_longer(cols = contains("potential_demand"),
+               names_to = "method",
+               values_to = "potential_demand")
+
+
 tm_shape(study_area) +
   tm_borders(alpha = 0.1) +
-  tm_shape(trips_sd_sf %>%
+  tm_shape(trips_sd_sf_long %>%
              filter(start_time == "07:30:00")) +
   tm_lines(col = "potential_demand",
-           lwd = "potential_demand",
-           title.col = "Potential demand",
-           legend.lwd.show = FALSE,
-           legend.col.is.portrait = FALSE,
-           scale = 3,
-           legend.is.portrait = FALSE,
-           alpha = 0.4) +
+           alpha = 0.8,
+           #palette = "Blues",
+           style = "quantile",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by="method",
+            ncol = 2,
+            free.coords=FALSE)+
   tm_layout(fontfamily = 'Georgia',
-            main.title = "Potential Ridership on Different Trips", # this works if you need it
+            main.title = "Potential ridership on trips using different methods", # this works if you need it
             main.title.size = 1.3,
             main.title.color = "azure4",
             main.title.position = "left",
+            legend.text.size = 1,
             legend.outside = TRUE,
             legend.outside.position = "bottom",
             frame = FALSE)
 
 ```
 
-![](images/map_potential_demand_bus_routes.png)
+![](images/map_potential_demand_bus_routes_facet_mathod.png)
+
+### MAP 7: Headway of routes serving OD pairs
+
+```{r}
+#| warning: false
+#| message: false
+
+
+# Convert columns to factors for facet plotting
+od_no_of_routes <- od_sd %>%
+  mutate(route_options_fct = cut(route_options, breaks = seq(0, 10, by = 2)),
+         #bus_per_hr_min_fct = cut_interval(bus_per_hr_min, n = 3),
+         bus_per_hr_min_fct = cut(bus_per_hr_min, breaks = seq(0, 10, by = 2)),
+         headway_sec_min_fct = cut(headway_sec_min, breaks = seq(0, 12000, by = 600), dig.lab = 5),
+         headway_sec_med_fct = cut(headway_sec_med, breaks = seq(0, 6000, by = 600), dig.lab = 5))
+
+
+tm_shape(study_area) +
+  tm_borders(alpha = 0.2) +
+  tm_shape(od_no_of_routes %>%
+             filter(route_options <= 1)) +
+  tm_lines(col = "headway_sec_min",
+           title.col = "Headway of (only) route serving OD pair",
+           alpha = 0.6,
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by="headway_sec_med_fct",
+            nrow = 2,
+            free.coords=FALSE)+
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Headway of routes serving OD pairs.\nData filtered to OD pairs served by only one route", # this works if you need it
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            # legend title
+            legend.text.size = 1,
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            frame = FALSE) 
+```
+
+![](images/map_od_pairs_one_route_facet_headway.png)
+
+Notes
+
+-   Group by route and get sum of demand (for OD pairs served by one route only)

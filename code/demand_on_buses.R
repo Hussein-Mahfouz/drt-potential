@@ -29,7 +29,7 @@ source("R/filter_od_matrix.R")
 study_area <- st_read("data/interim/study_area_boundary.geojson")
 
 # convert to desired resolution
-geography = "LSOA"
+geography = "MSOA"
 study_area = study_area_geographies(study_area = study_area,
                                     geography = geography)
 
@@ -178,214 +178,194 @@ trips_sd_sf_shape_sum <- trips_sd_sf %>%
   summarise(across(contains("potential_demand"), ~ sum(.x, na.rm = TRUE))) %>%
   ungroup()
 
-# ----------- 5. Plots
-
-# ----- a)  potential ridership on all different trips
-
-# to minimise overlaps, we keep only one time of day
-tmap_mode("plot")
-
-tm_shape(study_area) +
-  tm_borders(alpha = 0.1) +
-tm_shape(trips_sd_sf %>%
-           filter(start_time == "07:30:00")) +
-  tm_lines(col = "potential_demand_freq_based",
-           lwd = "potential_demand_freq_based",
-           scale = 3,
-           legend.is.portrait = FALSE,
-           alpha = 0.4) +
-  tm_layout(fontfamily = 'Georgia',
-            main.title = "Potential Ridership on Different Trips", # this works if you need it
-            main.title.size = 1.3,
-            main.title.color = "azure4",
-            main.title.position = "left",
-            #legend.outside = TRUE,
-            #legend.outside.position = "bottom",
-            frame = FALSE)
-
-
-# ----- b)  potential ridership on all different trips - facet by method
-
-trips_sd_sf_long <- trips_sd_sf %>%
-  pivot_longer(cols = contains("potential_demand"),
-               names_to = "method",
-               values_to = "potential_demand")
-
-
-tm_shape(study_area) +
-  tm_borders(alpha = 0.1) +
-tm_shape(trips_sd_sf_long) +
-  tm_lines(col = "potential_demand",
-           alpha = 0.8,
-           #palette = "Blues",
-           style = "quantile",
-           legend.col.is.portrait = FALSE) +
-  tm_facets(by="method",
-            ncol = 2,
-            free.coords=FALSE)+
-  tm_layout(fontfamily = 'Georgia',
-            main.title = "Potential ridership on trips using different methods", # this works if you need it
-            main.title.size = 1.3,
-            main.title.color = "azure4",
-            main.title.position = "left",
-            legend.text.size = 1,
-            legend.outside = TRUE,
-            legend.outside.position = "bottom",
-            frame = FALSE)
-
-
-# ----- c)  potential ridership on all different trips - facet by time of day
-
-# NOTE: this is just a placeholder. The data needs to come from an activity based model.
-# Currently the census data does not represent a specific time of day
-
-tm_shape(study_area) +
-  tm_borders(alpha = 0.1) +
-tm_shape(trips_sd_sf) +
-  tm_lines(col = "potential_demand_freq_based",
-           alpha = 0.6,
-           legend.col.is.portrait = FALSE) +
-  tm_facets(by="start_time",
-            nrow = 2,
-            free.coords=FALSE)+
-  tm_layout(fontfamily = 'Georgia',
-            main.title = "Potential Ridership on Different Trips", # this works if you need it
-            main.title.size = 1.3,
-            main.title.color = "azure4",
-            main.title.position = "left",
-            legend.text.size = 1,
-            legend.outside = TRUE,
-            legend.outside.position = "bottom",
-            frame = FALSE)
-
-
-# layer 1 (fill): destinations reachable | accessibility | population
-
-# layer 2 (lines): od matrix
-
-# layer 3 (lines): potential ridership on buses
-
-
-
-
-# ----------- Redundancy: How many routes serve each OD pair
-
-
-# Get number of routes that directly serve each OD pair
-od_no_of_routes <- od_sd %>%
-  group_by(Origin, Destination, start_time, combination) %>%
-  summarise(route_options = n(),
-            #route_options_fct = cut_width(route_options, width = 3, boundary = 0),
-            route_options_fct = cut(route_options, breaks = seq(0, 50, by = 3)),
-            headway_minimum = min(headway_secs),
-            headway_minimum_fct = cut(headway_minimum, breaks = seq(0, 12000, by = 600)),
-            headway_med = median(headway_secs),
-            headway_med_fct = cut(headway_med, breaks = seq(0, 12000, by = 600)))
-
-# add geometry
-od_no_of_routes <- od_no_of_routes %>%
-  inner_join(od_supply_filtered %>%
-               select(Origin, Destination),
-             by = c("Origin", "Destination")) %>%
-  st_as_sf()
-
-
-# Plot OD pairs by the number of routes serving them
-tm_shape(study_area) +
-  tm_borders(alpha = 0.1) +
-  tm_shape(od_no_of_routes %>%
-             filter(route_options <= 10)) +
-  tm_lines(col = "headway_med",
-           title.col = "Median headway of routes serving OD pair",
-           alpha = 0.6,
-           legend.col.is.portrait = FALSE) +
-  tm_facets(by="route_options_fct",
-            nrow = 2,
-            free.coords=FALSE)+
-  tm_layout(fontfamily = 'Georgia',
-            main.title = "No. of routes Serving each OD pair", # this works if you need it
-            main.title.size = 1.3,
-            main.title.color = "azure4",
-            main.title.position = "left",
-            # legend title
-            legend.text.size = 1,
-            legend.outside = TRUE,
-            legend.outside.position = "bottom",
-            frame = FALSE)
-
-
-# CONTINUE HERE!! (Edit the plots)
-
-
-# Get OD pairs that are only served by one route - and add the route geometry
-od_one_route <- od_no_of_routes %>%
-  filter(route_options == 1)
-
-
-# Plot
-
-# Plot OD pairs by the number of routes serving them
-tm_shape(study_area) +
-  tm_borders(alpha = 0.1) +
-  tm_shape(od_one_route) +
-  tm_lines(col = "headway_med",
-           title.col = "Median headway of routes serving OD pair",
-           alpha = 0.6,
-           legend.col.is.portrait = FALSE) +
-  tm_layout(fontfamily = 'Georgia',
-            main.title = "OD pairs served by only one route", # this works if you need it
-            main.title.size = 1.3,
-            main.title.color = "azure4",
-            main.title.position = "left",
-            # legend title
-            legend.text.size = 1,
-            legend.outside = TRUE,
-            legend.outside.position = "bottom",
-            frame = FALSE)
-
-tm_shape(study_area) +
-  tm_borders(alpha = 0.1) +
-  tm_shape(od_one_route) +
-  tm_lines(col = "headway_med",
-           title.col = "Median headway of routes serving OD pair",
-           alpha = 0.6,
-           legend.col.is.portrait = FALSE) +
-  tm_facets(by="headway_med_fct",
-            nrow = 2,
-            free.coords=FALSE)+
-  tm_layout(fontfamily = 'Georgia',
-            main.title = "OD pairs served by only one route", # this works if you need it
-            main.title.size = 1.3,
-            main.title.color = "azure4",
-            main.title.position = "left",
-            # legend title
-            legend.text.size = 1,
-            legend.outside = TRUE,
-            legend.outside.position = "bottom",
-            frame = FALSE)
-
-# Group by route and get sum of demand (for these specific OD pairs)
-
-
-
-ods_one_route <- routes_per_od %>%
-  filter(route_options == 1)
-
-od_sd %>%
-  group_by(Origin, Destination, start_time, combination) %>%
-  summarise(group = cur_group_id(),
-         options = n()) -> x1
-
-od_supply %>%
-  filter(Origin != Destination) %>%
-  group_by(Origin, Destination, start_time) %>%
-  mutate(group = cur_group_id(),
-         options = n()) -> x2
-
-od_supply %>%
-  filter(Origin != Destination) %>%
-  group_by(Origin, Destination, start_time) %>%
-  mutate(group = cur_group_id(),
-         options = n()) -> x3
-
-x3 %>% filter(options == 1) -> x4
+# ###########  ---------------------------  5. Plots  --------------------------- ##########
+#
+#
+# # ----- a)  potential ridership on all different trips
+#
+# # to minimise overlaps, we keep only one time of day
+# tmap_mode("plot")
+#
+# tm_shape(study_area) +
+#   tm_borders(alpha = 0.1) +
+# tm_shape(trips_sd_sf %>%
+#            filter(start_time == "07:30:00")) +
+#   tm_lines(col = "potential_demand_freq_based",
+#            lwd = "potential_demand_freq_based",
+#            scale = 3,
+#            legend.is.portrait = FALSE,
+#            alpha = 0.4) +
+#   tm_layout(fontfamily = 'Georgia',
+#             main.title = "Potential Ridership on Different Trips",
+#             main.title.size = 1.3,
+#             main.title.color = "azure4",
+#             main.title.position = "left",
+#             #legend.outside = TRUE,
+#             #legend.outside.position = "bottom",
+#             frame = FALSE)
+#
+#
+# # ----- b)  potential ridership on all different trips - facet by method
+#
+# trips_sd_sf_long <- trips_sd_sf %>%
+#   pivot_longer(cols = contains("potential_demand"),
+#                names_to = "method",
+#                values_to = "potential_demand")
+#
+#
+# tm_shape(study_area) +
+#   tm_borders(alpha = 0.1) +
+# tm_shape(trips_sd_sf_long) +
+#   tm_lines(col = "potential_demand",
+#            alpha = 0.8,
+#            #palette = "Blues",
+#            style = "quantile",
+#            legend.col.is.portrait = FALSE) +
+#   tm_facets(by="method",
+#             ncol = 2,
+#             free.coords=FALSE)+
+#   tm_layout(fontfamily = 'Georgia',
+#             main.title = "Potential ridership on trips using different methods", # this works if you need it
+#             main.title.size = 1.3,
+#             main.title.color = "azure4",
+#             main.title.position = "left",
+#             legend.text.size = 1,
+#             legend.outside = TRUE,
+#             legend.outside.position = "bottom",
+#             frame = FALSE)
+#
+#
+# # ----- c)  potential ridership on all different trips - facet by time of day
+#
+# # NOTE: this is just a placeholder. The data needs to come from an activity based model.
+# # Currently the census data does not represent a specific time of day
+#
+# tm_shape(study_area) +
+#   tm_borders(alpha = 0.1) +
+# tm_shape(trips_sd_sf) +
+#   tm_lines(col = "potential_demand_freq_based",
+#            alpha = 0.6,
+#            legend.col.is.portrait = FALSE) +
+#   tm_facets(by="start_time",
+#             nrow = 2,
+#             free.coords=FALSE)+
+#   tm_layout(fontfamily = 'Georgia',
+#             main.title = "Potential Ridership on Different Trips", # this works if you need it
+#             main.title.size = 1.3,
+#             main.title.color = "azure4",
+#             main.title.position = "left",
+#             legend.text.size = 1,
+#             legend.outside = TRUE,
+#             legend.outside.position = "bottom",
+#             frame = FALSE)
+#
+#
+# # layer 1 (fill): destinations reachable | accessibility | population
+#
+# # layer 2 (lines): od matrix
+#
+# # layer 3 (lines): potential ridership on buses
+#
+#
+#
+#
+# # ----------- Redundancy: How many routes serve each OD pair
+#
+#
+# # Get number of routes that directly serve each OD pair
+# od_no_of_routes <- od_sd %>%
+#   group_by(Origin, Destination, start_time, combination) %>%
+#   summarise(route_options = n(),
+#             #route_options_fct = cut_width(route_options, width = 3, boundary = 0),
+#             route_options_fct = cut(route_options, breaks = seq(0, 50, by = 3)),
+#             headway_minimum = min(headway_secs),
+#             headway_minimum_fct = cut(headway_minimum, breaks = seq(0, 12000, by = 600)),
+#             headway_med = median(headway_secs),
+#             headway_med_fct = cut(headway_med, breaks = seq(0, 12000, by = 600)))
+#
+# # add geometry
+# od_no_of_routes <- od_no_of_routes %>%
+#   inner_join(od_supply_filtered %>%
+#                select(Origin, Destination),
+#              by = c("Origin", "Destination")) %>%
+#   st_as_sf()
+#
+#
+# # Plot OD pairs by the number of routes serving them
+# tm_shape(study_area) +
+#   tm_borders(alpha = 0.2) +
+#   tm_shape(od_no_of_routes %>%
+#              filter(route_options <= 10)) +
+#   tm_lines(col = "headway_med",
+#            title.col = "Median headway of routes serving OD pair",
+#            alpha = 0.6,
+#            legend.col.is.portrait = FALSE) +
+#   tm_facets(by="route_options_fct",
+#             nrow = 2,
+#             free.coords=FALSE)+
+#   tm_layout(fontfamily = 'Georgia',
+#             main.title = "No. of routes Serving each OD pair", # this works if you need it
+#             main.title.size = 1.3,
+#             main.title.color = "azure4",
+#             main.title.position = "left",
+#             # legend title
+#             legend.text.size = 1,
+#             legend.outside = TRUE,
+#             legend.outside.position = "bottom",
+#             frame = FALSE)
+#
+#
+# # CONTINUE HERE!! (Edit the plots)
+#
+#
+# # Get OD pairs that are only served by one route - and add the route geometry
+# od_one_route <- od_no_of_routes %>%
+#   filter(route_options == 1)
+#
+#
+# # Plot
+#
+# # --- Plot OD pairs by the number of routes serving them
+# tm_shape(study_area) +
+#   tm_borders(alpha = 0.1) +
+#   tm_shape(od_one_route) +
+#   tm_lines(col = "headway_med",
+#            title.col = "Median headway of routes serving OD pair",
+#            alpha = 0.6,
+#            legend.col.is.portrait = FALSE) +
+#   tm_layout(fontfamily = 'Georgia',
+#             main.title = "OD pairs served by only one route", # this works if you need it
+#             main.title.size = 1.3,
+#             main.title.color = "azure4",
+#             main.title.position = "left",
+#             # legend title
+#             legend.text.size = 1,
+#             legend.outside = TRUE,
+#             legend.outside.position = "bottom",
+#             frame = FALSE)
+#
+# # facet by route headway
+# tm_shape(study_area) +
+#   tm_borders(alpha = 0.1) +
+#   tm_shape(od_one_route) +
+#   tm_lines(col = "headway_med",
+#            title.col = "Median headway of routes serving OD pair",
+#            alpha = 0.6,
+#            legend.col.is.portrait = FALSE) +
+#   tm_facets(by="headway_med_fct",
+#             nrow = 2,
+#             free.coords=FALSE)+
+#   tm_layout(fontfamily = 'Georgia',
+#             main.title = "OD pairs served by only one route", # this works if you need it
+#             main.title.size = 1.3,
+#             main.title.color = "azure4",
+#             main.title.position = "left",
+#             # legend title
+#             legend.text.size = 1,
+#             legend.outside = TRUE,
+#             legend.outside.position = "bottom",
+#             frame = FALSE)
+#
+# # Group by route and get sum of demand (for OD pairs served by one route only)
+#
+#
