@@ -210,6 +210,8 @@ tm_shape(od_sd_sf) +
             frame = FALSE)
 ```
 
+![](images/map_desire_commuting.png)
+
 ### MAP 2a: OD pairs by number of buses (transfers) required to connect them
 
 ``` r
