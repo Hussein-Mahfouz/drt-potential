@@ -186,6 +186,11 @@ od_sd_sf <- od_sd_sf %>%
 ### MAP 1: OD pairs with the highest level of commuting
 
 ``` r
+#| eval: false
+#| warning: false
+#| message: false
+
+
 tm_shape(study_area) +
   tm_borders(col = "grey80",
              alpha = 0.5) +
@@ -210,6 +215,8 @@ tm_shape(od_sd_sf) +
             frame = FALSE)
 ```
 
+    Legend labels were too wide. Therefore, legend.text.size has been set to 0.48. Increase legend.width (argument of tm_layout) to make the legend wider and therefore the labels larger.
+
 ![](eda_travel_demand_files/figure-commonmark/unnamed-chunk-7-1.png)
 
 ![](images/map_desire_commuting.png)
@@ -217,6 +224,10 @@ tm_shape(od_sd_sf) +
 ### MAP 2a: OD pairs by number of buses (transfers) required to connect them
 
 ``` r
+#| eval: false
+#| warning: false
+#| message: false
+
 tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
@@ -251,6 +262,10 @@ tm_shape(od_sd_sf) +
 ### MAP 2b: Focus on OD pairs with no direct routes
 
 ``` r
+#| eval: false
+#| warning: false
+#| message: false
+
 tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
@@ -286,6 +301,10 @@ tm_shape(study_area) +
 ### MAP 3: OD pairs NOT served by a direct bus
 
 ``` r
+#| eval: false
+#| warning: false
+#| message: false
+
 tm_shape(study_area) +
   tm_borders(col = "grey60",
            alpha = 0.5) +
@@ -314,6 +333,10 @@ tm_shape(od_sd_sf %>%
 ### MAP 4: No. of direct bus routes serving OD pair (faceted) by no. of commuters
 
 ``` r
+#| eval: false
+#| warning: false
+#| message: false
+
 tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
@@ -349,6 +372,10 @@ tm_layout(fontfamily = 'Georgia',
 ### MAP 5: Fastest vs direct routes
 
 ``` r
+#| eval: false
+#| warning: false
+#| message: false
+
 tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
@@ -394,6 +421,10 @@ Take an OD pair with demand = 20 that is served by 3 routes. Route A
     `Demand (Route A) = Total Demand * freq A / sum(freq A, freq B, freq C) = (20 * 6) / 12 = 10`
 
 ``` r
+#| eval: false
+#| warning: false
+#| message: false
+
 trips_sd_sf_long <- trips_sd_sf %>%
   pivot_longer(cols = contains("potential_demand"),
                names_to = "method",
@@ -423,6 +454,12 @@ tm_shape(study_area) +
             frame = FALSE)
 ```
 
+    Warning: The shape trips_sd_sf_long %>% filter(start_time == "07:30:00")
+    contains empty units.
+
+    Warning in split.default(x = seq_len(nrow(x)), f = f, drop = drop, ...): data
+    length is not a multiple of split variable
+
 ![](eda_travel_demand_files/figure-commonmark/unnamed-chunk-13-1.png)
 
 ![](images/map_potential_demand_bus_routes_facet_mathod.png)
@@ -430,6 +467,11 @@ tm_shape(study_area) +
 ### MAP 7: Headway of routes serving OD pairs
 
 ``` r
+#| eval: false
+#| warning: false
+#| message: false
+
+
 # Convert columns to factors for facet plotting
 od_no_of_routes <- od_sd %>%
   mutate(route_options_fct = cut(route_options, breaks = seq(0, 10, by = 2)),
@@ -461,6 +503,8 @@ tm_shape(study_area) +
             legend.outside.position = "bottom",
             frame = FALSE) 
 ```
+
+    Legend labels were too wide. Therefore, legend.text.size has been set to 0.37. Increase legend.width (argument of tm_layout) to make the legend wider and therefore the labels larger.
 
 ![](eda_travel_demand_files/figure-commonmark/unnamed-chunk-14-1.png)
 

@@ -200,6 +200,8 @@ od_sd_sf <- od_sd_sf %>%
 ### MAP 1: OD pairs with the highest level of commuting
 
 ```{r}
+
+#| eval: false
 #| warning: false
 #| message: false
 
@@ -234,6 +236,8 @@ tm_shape(od_sd_sf) +
 ### MAP 2a: OD pairs by number of buses (transfers) required to connect them
 
 ```{r}
+
+#| eval: false
 #| warning: false
 #| message: false
 
@@ -270,6 +274,8 @@ tm_shape(od_sd_sf) +
 ### MAP 2b: Focus on OD pairs with no direct routes
 
 ```{r}
+
+#| eval: false
 #| warning: false
 #| message: false
 
@@ -306,6 +312,8 @@ tm_shape(study_area) +
 ### MAP 3: OD pairs NOT served by a direct bus
 
 ```{r}
+
+#| eval: false
 #| warning: false
 #| message: false
 
@@ -336,6 +344,8 @@ tm_shape(od_sd_sf %>%
 ### MAP 4: No. of direct bus routes serving OD pair (faceted) by no. of commuters
 
 ```{r}
+
+#| eval: false
 #| warning: false
 #| message: false
 
@@ -373,6 +383,8 @@ tm_layout(fontfamily = 'Georgia',
 ### MAP 5: Fastest vs direct routes
 
 ```{r}
+
+#| eval: false
 #| warning: false
 #| message: false
 
@@ -415,6 +427,8 @@ Take an OD pair with demand = 20 that is served by 3 routes. Route A (freq = 6 b
 2.  Frequency-based: `Demand (Route A) = Total Demand * freq A / sum(freq A, freq B, freq C) = (20 * 6) / 12 = 10`
 
 ```{r}
+
+#| eval: false
 #| warning: false
 #| message: false
 
@@ -453,6 +467,8 @@ tm_shape(study_area) +
 ### MAP 7: Headway of routes serving OD pairs
 
 ```{r}
+
+#| eval: false
 #| warning: false
 #| message: false
 
