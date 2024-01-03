@@ -1,0 +1,620 @@
+---
+title: "Transfer Report"
+subtitle: "Exploring the Potential for Integrating Demand Responsive Transport with Public Transport"
+author: "Hussein Mahfouz"
+date: "`r format(Sys.time(), '%d %m %y')`"
+format:
+  gfm: default
+  html:
+    toc: true
+  # docx:
+  #   toc: true
+  #   toc-depth: 2
+  #   number-sections: true
+  # pdf:
+  #   toc: true
+  #   number-sections: true
+  #   extra_dependencies: ["float"]
+keep-tex: true
+bibliography: lit-review.bib
+# so that figures don't float around
+# include-in-header:
+#  \usepackage{float}
+#  \floatplacement{figure}{H}
+ # to add acronyms (only works for pdf output)
+---
+
+```{r, include = FALSE}
+#library(tidyverse)
+knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
+```
+
+# List of Acronyms {.unnumbered}
+
+-   ABM: Agent-Based Model
+
+-   AcBM: Activity-Based Model
+
+-   DfT: Department for Transport
+
+-   DRT: Demand-Responsive Transport
+
+-   GO-Science: Government Office for Science
+
+-   HL: House of Lords
+
+-   IPCC: Intergovernmental Panel on Climate Change
+
+-   RAEng: Royal Academy of Engineering
+
+-   WYCA: West Yorkshire Combined Authority
+
+# Introduction
+
+Transport is a major contributor to global emissions, accounting for almost a quarter of global CO~2~ emissions from energy [@ritchie_2020]. In the UK, transport is the end-use sector with the highest energy demand, with said demand having doubled over the past 50 years [@barrett2021role].
+
+## Transport decarbonisation in the UK
+
+In order to stay within its legally binding carbon budget, the UK's Department for Transport (DfT) has set out a plan to decarbonise its transport sector using both supply and demand-side measures [@dft2021decarbonising]. While supply-side technological advancements may be part of the solution, lifestyle changes, such as shifting to sustainable modes of transport, are necessary so as to disentangle net-zero policy targets from ambitious (and potentially disruptive) technological breakthroughs [@brand2019lifestyle]. These lifestyle changes (or demand side mitigation options) related to land transport have the potential to bring down the sector's emissions by an estimated 67% [@ipcc2023synthesis].
+
+### The state of bus service provision
+
+Buses are key part of decarbonisation policy in England [@dft2021busbackbetter; @dft2021decarbonising]. Research on pathways to net-zero that involve lifestyle changes estimates that local bus usage needs to increase by around 85% (to reach \~10% of total trips) [@brand2019lifestyle].
+
+The National Bus Strategy [@dft2021busbackbetter] launched in 2021 set out a vision for an improved bus service across the country, one where buses would be the mode of choice for everyone, even those who currently own cars. The reality is that frequent, reliable, high quality public transport is uncommon in urban areas outside of London. Bus service provision has been impaired by issues related to changing travel demand post-covid, a lack of integrated mobility hubs and coordinated timetables, poor ticket integration, inefficient coordination between local and transport plans, and funding constraints [@lords2022townsandcities]. A closer look at historical trends[^1] shows a steady decline in ridership and service provision.
+
+[^1]: The DfT makes a distinction between local bus journeys (timetabled services that carry passengers over relatively short distances) and other types of bus services (long distance coaches, private hire services). the statistics below are for local bus journeys
+
+#### Ridership
+
+The recovery from Covid is underway, with local bus journey up 79.6% in financial year ending 2022 compared to 2021. However, at 2.8 billion journeys, the number of journeys is 30% below that in 2020 [@dft2022bus01].
+
+Over 50% of bus journeys take place in London [@dft2022bus01], and during the period from 1985-2017, bus use in the capital almost doubled ([@dft2022bus02] as cited in [@govsci2019change]). The story is different for the rest of the country, where ridership fell by 40% over the same period [@dft2022bus02]. @fig-bus01b-one_plot-no_london shows a gradual decrease in ridership per head of population from 2004 - 2022. With the exception of the South East and South West, all regions were showing a decrease in ridership before the Covid pandemic. The decrease is sharper in metropolitan areas, as shown in @fig-bus01b-one_plot-rural_urban . Since 2010, almost every local authority in the country has seen a decrease in ridership [@fig-map_bus01f_cumul_change_total].
+
+![Change in passenger journeys over time (England, Regions)](images/plots/outputs/bus01b-one_plot-no_london.png){#fig-bus01b-one_plot-no_london width="400"}
+
+![Change in passenger journey over time (metropolitan and non-metropolitan areas)](images/plots/outputs/bus01b-one_plot-rural_urban.png){#fig-bus01b-one_plot-rural_urban width="400"}
+
+![Change in passenger journeys per head of population relative to 2009 (England, Local Authorities) [@dft2022bus01]](images/plots/outputs/map_bus01f_cumul_change_total.png){#fig-map_bus01f_cumul_change_total}
+
+#### Service Provision
+
+The decrease in ridership has gone hand in hand with a decrease in bus service provision. Over the period between 1995-2017, reductions in bus services saw mileage decrease by 7% [@govsci2019change]. All regions in England have seen such a decrease [@fig-bus02b-facet-change], with reductions being most severe in the North West. Barring a few exceptions, these reductions have impacted all local authorities, as shown in [@fig-map_bus02d_cumul_change_total].
+
+![Change in Vehicle Km over time (England, Regions)](images/plots/outputs/bus02b-facet-change.png){#fig-bus02b-facet-change}
+
+![Change in total bus vehicle-km since 2009 (England, Local Authorities)](images/plots/outputs/map_bus02d_cumul_change_total.png){#fig-map_bus02d_cumul_change_total}
+
+This decline is concerning, as most bus routes (outside of London) are operated by private companies for a profit. Decreases in ridership lead to service cuts or prices increases, creating a downward spiral of lower ridership and service cuts [@govsci2019change].
+
+This has indeed been the case, particularly in metropolitan areas where yearly bus mileage by private companies has decreased by almost 100 million km ([@fig-bus02a-facet-classification]). To try and limit socially necessary but commercially inviable services from being cut, the government provides a grant of around £250 million a year and, since 2014 £43 million of that has been going directly to local authorities [@dft2020deal].
+
+@fig-bus02a-facet-classification shows that despite this funding, both commercial and local-authority mileage is on a downward trend
+
+![Change in vehicle km (Commercial, Local Authority supported, and Total)](images/plots/outputs/bus02a-facet-classification.png){#fig-bus02a-facet-classification}
+
+### The future of bus service provision
+
+Looking ahead, recent developments are likely to give rise to changes to public transport systems across the country. One notable trend involves a shift away from the deregulation that has characterized the bus industry since the 1980s [@preston2023all]. Initiatives like franchising and enhanced partnership are gaining traction [@lords2022townsandcities], and the new powers being handed over to combined authorities will allow them to transition from route-centric, profit-driven service provision to more London-style network-level planning that improves efficiency and allows for cross-subsidization of routes. As deregulation is reversed, local government transport planning bodies will be faced with the challenge of redesigning networks to attract higher levels of ridership. This will involve choosing different services for different areas based on potential ridership. While long term planning may involve changes to land use, travel patterns, and residential density, short term planning is focused on what sort of service to run in different areas. One option that is being trialed as a complementary service to public transport is Demand-Responsive Transport (DRT)[^2] [@dft2020deal]. In some areas, a demand-responsive fleet may be more cost-effective than a subsidised fixed-route bus. DfT is interested in DRT services for low-density areas, weekend travel, and large workplaces with working hours that don't align with traditional peak periods [@dft2021busbackbetter]. There are many benefits associated with well-planned DRT services. These include reducing congestion through mode shift, increasing accessibility in places that are not well served by public transport, and the associated economic and social inclusion benefits that come with that [@dft2021busbackbetter].
+
+[^2]: DRT is often referred to using different names, including "shared (autonomous) vehicles" and "(autonomous) mobility-on-demand"
+
+However, it is important to note that while DRT offers many potential benefits if properly integrated with public transport, the government is aware that its economic viability is not yet generally well established [@govsci2019change].
+
+The DfT has solicited evidence (from research institutes, industry groups, consultancies, government stakeholders, and NGOs) on DRT through the Future of Transport regulatory review [@dft2020regulatory], and the responses show that there are mixed views when it comes to regulatory approaches. The general consensus was that DRT service provision should be informed by demand, but there was disagreement on issues such as:
+
+1.  Whether (and how) the operational areas should be constrained
+
+2.  Waiting times: current guidelines indicate that a time-window for pick-up should not exceed 20 minutes. Some respondents saw it as appropriate, some saw that there was no need to impose a time window , and some saw that it should be reduced down to 5 minutes.
+
+3.  Fare structures: Should they be fixed or flexible? Should there be peak and off-peak fares? Should there be distance-based pricing? Should passengers be able to know their fare ahead of time? Should the fare system be integrated with other modes?
+
+While the review provided an overview of the issues to be considered, the absence of well-developed guidelines on DRT planning is evident in the range of viewpoints presented. Pilot projects are underway to gather evidence, but there is also a need for measures and modeling frameworks that can help inform the debate on DRT operating zones and service levels. Such analyses would shed light on the extent to which DRT can solve the "ridership/coverage" dilemma of public transport and bring about a reduction in car use. It would also help better understand the carbon efficiency of proposed DRT services, how they compare to existing modes of travel [@decarbon2020emmisions], and the knock-on effects of improved public transport accessibility on passenger load factor, vehicle-km traveled, and overall carbon efficiency.
+
+```{=html}
+<!-- 
+----- GENRAL INTRO
+.......... CREDS blogpost: ..........
+
+- 2018: buses carried 5% of all trips -> balanced pathways to zero-carbon system: figure needs to increase to 10% 
+- buses: better management of limited space + wide socioeconomic benefit 
+  - 2018: 24% of households have no access to a car or van / 41% have access to only 1 car or van (get 2021/2022 figures!)
+- National bus strategy / Bus Back Better
+- FUTURE OF TRANSPORT REGULATORY REVIEW: includes DRT
+
+- Buses are among the most carbon efficient modes of transport (emissions / passnger km) -> Passenger load is key to maintaining and increasing this advantage
+
+Demand for bus journeys: 
+- statistics on 
+    - bus mode share / no of trips by bus 
+    - mode share for different trip lengths
+    - https://www.gov.uk/government/statistics/annual-bus-statistics-year-ending-march-2022/annual-bus-statistics-year-ending-march-2022
+- historical trends
+  - www.theitc.org.uk/wp-content/uploads/2015/03/ITC-Bus-market-in-England-Jan-2020.pdf
+  
+- Spatial variation in bus use
+
+- Policies 
+  - variables that define mode choice: journey time and reliability | realtive cost | quality of door to door experience
+  
+----- Route network / Public transport gaps
+
+--> 
+```
+```{=html}
+<!--# Segmentation studies find that a significant subset of car owners retain a
+very strong psychological attachment to their vehicle (Anable, 2005; Thornton
+et al., 2011). Psychological motives and social factors (see Section 4.3) are
+relatively less important in future travel choices, meaning that practical motives
+remain dominant. As an example, young people are driving less, predominantly
+for practical reasons. They still tend to regard cars as necessary to access jobs,
+training and services, but they do not particularly value the perceived autonomy,
+status or prestige that car ownership is thought to offer (Green et al., 2018).
+
+Anable, J. (2005). ‘Complacent car addicts’ or ‘aspiring
+environmentalists’? Identifying travel behaviour segments using
+attitude theory. Transport Policy, 12(1), 65-78. DOI: 10.1016/j.
+tranpol.2004.11.004  
+
+Green, J., Steinbach, R., Garnett, E., Christie, N. and Prior, L.
+(2018). Automobility reconfigured? Ironic seductions and mundane
+freedoms in 16-21 year olds’ accounts of car driving and ownership.
+Mobilities, 13(1), 14-28. DOI: 10.1080/17450101.2017.1331017 -->
+```
+```{=html}
+<!-- gtfs2gps paper:
+
+Nonetheless, a general recommendation by UN-Habitat (2018) is that a definition of ‘convenient’ access to public transport should, whenever possible, be based on at least two aspects. The first one is spatial proximity. The UN-Habitat (2018) recommends that people’s distance to public transport stops should be shorter than 500m (considering either Euclidean or network distance). The second aspect is the temporal availability of public transport, which speaks directly to the level of service frequency and how it impacts people’s waiting times. Here, there is no specific frequency level recommended by UN-Habitat or agreed upon in the literature. Whatever threshold values of proximity and service frequency are chosen to define convenient access, understanding how service levels differ for different socioeconomic groups and at different times of the day becomes critical from an equity point of view.-->
+
+<!-- 
+----- GENRAL INTRO
+.......... CREDS blogpost: ..........
+
+- Spatial variation in bus use
+
+- Policies 
+  - variables that define mode choice: journey time and reliability | realtive cost | quality of door to door experience
+  
+----- Route network / Public transport gaps
+
+
+
+--> 
+```
+# Overview of the Research
+
+For DRT to be successful, it should be part of an integrated public transport offering that provides a competitive alternative to private car use. *The aims of this research are to (a) develop methods to identify demand gaps in public transport provision that can be filled by DRT, and to (b) understand the potential benefits and issues of integrating DRT with existing public transport systems through simulation-based approaches.*
+
+I present a brief overview of the research questions here, and expand on them after the literature review section.
+
+***How can we define potential DRT operating areas based on travel demand?***
+
+While experts agree that DRT service provision should be based on demand [@dft2020regulatory], there are no agreed upon methods for how demand gaps that suit DRT can be identified in a way that allows DRT to be integrated with public transport. Accessibility measures offer a simple and understandable way towards preliminary planning of said integration. Such measures have been used to identify gaps in the public transport network, to analyse horizontal and vertical equity, and more recently, through the adoption of individual-based accessibility measures, to look at spatiotemporal variations in accessibility. These individual-based accessibility measures are not yet widely adopted due to data requirements and computational demand. However, with increasing data availability and standardization (e.g. open source GTFS feeds), and significant improvements in multimodal routing capabilities, these barriers are more easily bridged. The research will explore the use of individual-based accessibility measures to identify gaps in transport network provision, and understanding when, where, and what type of DRT could be used to fill these gaps. The main contribution will be to embed existing travel demand into our accessibility calculation, and use that to inform potential service areas for DRT.
+
+## Case Study
+
+<!--# Mode share breakdown Leeds | population distribution / density? | Number of operators | It is bus only -->
+
+The research will focus on the city of Leeds as a case study. Leeds is the biggest city in West Yorkshire, a ceremonial county with an economy that generates over £55 billion per year (more than 9 EU countries) [@wyca2021connectivity]. The West Yorkshire Combined Authority (WYCA) has declared a climate emergency, and has put a target to reach net-zero by 2030. It has estimated that a significant mode shift will be needed to achieve this target, and has set a target of 52% increase in bus mode share [@wyca2021connectivity]. This is an ambitious target seeing as the decade between 2009-2019 saw a decrease of 15% (from 170 million to 144 million) in annual bus trips in the region. [@wyca2021improvement].
+
+![Population Density in Leeds](images/plots/outputs/study_area/pop_distribution.png){#fig-pop-density width="400"}
+
+A recent report on bus services in Leeds highlighted that they were concentrated between two main operators, FirstBus (65.6%) and Arriva (26.1%), and that over 50% of routes in the city are likely to experience adverse effects of (a lack of) competition [@wyca2017bus]. The report highlights that bus operators are not a homogeneous group, and that there was no formal process for them to coordinate on plans and policies. In the Leeds Bradford area, 40% of population have access to only 1 bus per hour outside peak hours, and many areas have poor or non-existent access to rail [@wyca2021connectivity].
+
+Following the new powers given to local transport authorities under the bus services act, the West Yorkshire Bus Service Improvement Plan [@wyca2021improvement] has set ambitious targets for bus mode share, patronage, service provision (bus miles), journey times, as well as accessibility. The plan acknowledges that changes will need to be made to the network, which currently fails to meet user needs (due to a reduction in services and to routes being based on historic travel patterns) and is heavily subsidized [@wyca2021improvement]. A big part of the ambition is better integrate buses as part of a multimodal public transport offer. Demand-Responsive Transport is also seen as a means of providing more efficient access than traditional public transport to low-density areas; WYCA is already piloting such a service (Flexibus) in East Leeds [@wyca2021improvement]. There is an ambition to roll out the service more widely, but that is contingent on understanding passenger response to the pilot, identifying which candidate areas it could be suitable for, and modeling the performance and uptake of such a service under different scenarios.
+
+Leeds is a good area to test our approach given the size of the city and the heterogeneous nature of demographics and population density.
+
+![Comparing commuting by Bus and Car in Leeds](images/plots/outputs/study_area/main_mode_commute_perc.png){#fig-commuting-census width="800"}
+
+\pagebreak
+
+# Literature Review
+
+In @sec-drt-overview of this literature review we introduce DRT, highlight issues that have hindered its success, and explain how DRT is currently planned. In @sec-drt-accessibility we give an overview of accessibility measures in transport planning and how they could be used to identify gaps in the network that could be filled by DRT. In @sec-drt-pt-simulation we introduce agent-based modeling as a tool to test the viability of proposed DRT services by allowing us to test changes in user behaviour under different operating scenarios. In @sec-drt-pt-optimisation present optimisation as a tool for reimagining public transport networks. We give a summary of the vast literature on transport network optimisation at the strategic and tactical levels, introduce recent attempts to include DRT in these optimisation problems, and highlight the need for more accessibility-focused problem formulations.
+
+## Demand Responsive Transport (DRT) {#sec-drt-overview}
+
+In this review, the definition for Demand Responsive Transport (DRT) used by @davison2014survey is adopted: a service that is (a) available to the general public (without restrictions), (b) provided by low capacity vehicles, (c) responsive to changes in demand, and (d) has a fare that is charged per passenger, not per vehicle.
+
+<!--# It can be distinguished from traditional fixed route services through: (a) network typology and operation, (b) boarding and alighting locations, (c) schedule, and (d) advances notice requirement [@papanikolaou2017methodological] -->
+
+The concept of DRT goes back to the 1970s, and it has taken other names such as Dial-a-Bus, or more recently, Micro-transit [@currie2020most]. It is seen as a compromise between the convenience (instant frequency and full coverage) of the automobile, and the cost-effectiveness of public transport [@currie2020most].
+
+![DRT in context - Source [@d1994demand]](images/deste-drt-1994.jpg){#fig-drt-in-context}
+
+While the term DRT has become an umbrella term for flexible public transport, services can be grouped under different DRT typologies [@enoch2004intermode]:
+
+-   *Interchange DRT*: feeder links to conventional public transport.
+
+-   *Network DRT*: enhances public transport by providing additional services or by replacing economic services in a particular place or at a particular time.
+
+-   *Destination-Specific DRT*: specialist form of network DRT that serves particular destinations such as airports or employment locations
+
+-   *Substitute DRT*: totally or substantially replacing conventional bus services (reinvention of public transport)
+
+DRT services can also be grouped based on scheduling and operational characteristics [@d1994demand]:
+
+-   Many-to-One Services: patronage is concentrated at one of the two trip ends. Complexity of operation is reduced
+
+-   Many-to-Few: more than a single location at the destination, but still manageable
+
+-   Many-to-many (Transfer): users can travel from any origin to any destination, but may need to transfer vehicles to do so
+
+-   Many-to-many: direct service covering all trip origins and destinations
+
+-   Shared Taxis (ride-pooling): conventional taxis but several people can use the same vehicle which may deviate on its route to accommodate the different passengers
+
+For diagrammatic descriptions of the different operational characteristics, the reader is referred to [@mageean2003evaluation; @pavanini2023role].
+
+These different service offerings highlight the complexity of DRT planning. On the hand, this flexibility allows DRT services to be tailored to the specific demand patterns of an area. Conversely, the overly complex services, or services that don't match the needs of the local community, are prone to failure (as explained below). Choosing the wrong service could lead to bad user experience and unnecessarily expensive operating costs.
+
+### Success, failure, and the future of DRT
+
+<!--# "As a final consideration on this segment of the literature, one notices that in almost all the actual implementations of semi-flexible systems, there is no or very limited use of optimization in the planning activities. This fact is underlined in both Potts et al., 2010 and Scott, 2010, the former even claiming that those techniques are not useful in most cases. The field of transportation planning has amply demonstrated otherwise, however, in particular for transit. Consequently, we take this observations as a clear indication that the potential benefit of optimization-based methods is still not rightfully appreciated by a good number of practitioners, and efforts should be undertaken to address this issue."  Errico 2013 paper CITE-->
+
+DRT systems tend to have a higher cost per passenger than fixed-route public transport, and this has been attributed to the economies of scale associate with higher capacity and operational efficiency of the latter [@currie2020most]. The high cost has been the primary reason for the failure of many DRT trials. Even in the the modern era where technology has driven a re-emergence of DRT, failure rates remain high. A study by @currie2020most on 120 DRT systems in 19 countries showed that, among the systems launched during the period from 2010-2019, 45% failed. As may be expected, the study showed DRT service life exponentially decreased as the operating cost increased.
+
+@enoch2006demand analyze 72 different DRT projects, and use marketing theory to categorize the factors that determine success or failure:
+
+-   Internal Environment: unnecessarily flexible services jeopordise operating economics. They warn that 'many-to-many' services have high failure rates, and that DRT should not be expected to make up for hostile land-use design. *Simple, low cost schemes that are able to concentrate demand in time and geography have a higher likelihood of success*. Reliability is also crucial, and recurrent problems with routing software or vehicles has been an issue.
+
+-   Micro Environment: Effective partnerships between operators and local authorities are essential. Relationships with local trip generators ans rival transport operators are also important.
+
+-   Macro Environment: Extreme land use patterns are an obstacle to operating efficiency. A cultural aversion to ride-sharing could also limit ridership.
+
+While the fixed costs per passenger of DRT may be higher than public transport, the latter is not always operating at full capacity. Indeed, there are many cases of low density regions that are either served by subsidized public transport routes, or cutoff from public transport due to the high cost of serving them. In these cases, the lower cost-per-hour of DRT in comparison to public transport would justify its usage [@volinski2019tcrp].
+
+The relatively poor performance of DRT may not bode well for its future as a mode of transport. However @davison2014survey argue that this may change in the near future as different elements come together:
+
+-   Technological improvements in routing and scheduling software, and the widespread use of smart phones with mobile applications.
+
+-   Societal trends including an ageing population (potentially higher unemployment), lower density development (and the associated rise in car use). The need for alternatives to the private car is becoming increasingly important, but land use characteristics make conventional public transport unable to meet this need.
+
+-   Public transport funding difficulties, which are leading to a desire to explore more cost-effective measures of public transport provision.
+
+As the focus of transport planning shifts from "predict and provide" to "decide and provide" [@marsden2018commission], there is increased emphasis on improving equity of access. DRT could be one of the many tools used by local transport authorities to maintain geographic coverage and social inclusion. This research focuses on the Internal Environment component, as defined by @enoch2006demand.
+
+### Planning DRT systems {#sec-planning_drt}
+
+The planning of public transport systems with conventional bus services is well established and follows a sequential approach [@ceder1986bus; @ibarra2015planning] that includes:
+
+-   **Strategic planning**: determination of lines, vehicle types, and stop locations
+
+    **Tactical planning**: service frequency, fleet size, departure and arrival times (based on pre-defined transit routes network and OD demand patterns)
+
+-   **Operational planning**: vehicle scheduling, driver scheduling, and driver rostering
+
+The high failure rate of DRT systems is related to the lack of a similar robust methodological planning framework for its appraisal [@papanikolaou2017methodological].
+
+In trying to map DRT research onto these planning pillars, @papanikolaou2017methodological find that DRT research can be split into:
+
+1.  Strategic level (economic and econometric studies) studies on DRT area selection and investment evaluations.
+
+    -   Research outlining the potential market and operating model of DRT systems [@mulley2009flexible]
+
+    -   Research that compares cost functions of DRT and public transport using analytical methods [@nourbakhsh2012structured]
+
+2.  Tactical and and operational level (operations research) studies on system typology definition and operational characteristics (@vansteenwegen2022survey provide a review of this sub-field of the literature)
+
+Whereas the latter is studied extensively, there remains a need to develop general approaches on identifying potential areas for DRT services [@papanikolaou2017methodological]. This has become more necessary as DRT systems evolve from being targeted at special groups (in parallel to conventional public transport), to being integrated with public transport with the aim of improving accessibility for entire communities [@nelson2010recent]. <!--# this should be grounded in accessibility, not something else … cite Tools of the Trade -->
+
+These approaches can then be integrated into the wider public transport planning process (that combines strategic, tactical, and operational planning). Such an approach could include the following "steps" outlined by @papanikolaou2017methodological :
+
+1.  Which is/are the area(s) DRT investments should be examined for?
+
+2.  Which is the type and network of DRT investment required for the network?
+
+3.  Which is the appropriate evaluation method to be used for the assessment?
+
+4.  How should 'success' be defined for deciding upon the implementation of the DRT service?
+
+Given the shift from mobility to accessibility-centered transport planning [@siddiq2021tools], it makes sense for the first two points to be addressed from the perspective of improving accessibility.
+
+<!--# ABM and DRT papers (check notion) -->
+
+#### Placeholder Section on DRT operating zones
+
+-   Simulation results show that DRT increases total Vehicle km and congestion (even if it decreases car use) -\> "In summary, we find that AMoD under any strategy will increase VKT and congestion in either city type." - cite Oke et. al 2020
+
+    -   study looks at wide-scale rollout. Scenarios (AmoD intro, AMoD no transit, and AMoD transit integration) analyse DRT roll-out across a city.
+
+    -   Last scenario restricts to short trips. 7.5 mile short trips and 7.5 mile radius/ around rail stops -\> quite a large catchment. ADD AHISTOGRAM WITH TRIP DISTANCE TRAVELLED BY MODE in study area; lets see what % of car/pt trips by mode we are capturing with this constraint
+
+    -   **Argument is that more precision in defining operating areas is needed**
+
+-   Other studies to support above argument?
+
+## Accessibility and the potential for DRT integration {#sec-drt-accessibility}
+
+Now that we have identified accessibility as a promising starting point for DRT planning, we summarize the accessibility research and try to narrow down the exact approach that would be suitable for our purposes. This is in line with our first research question:
+
+***How can we define potential DRT operating areas based on travel demand?***
+
+In the context of transport planning, accessibility is broadly meant to describe the ease with which people can access destinations and the opportunities available in these destinations. In their review of accessibility, @geurs2004accessibility define it as:
+
+> "the extent to which land-use and transport systems enable (groups of) individuals to reach activities or destinations by means of a (combination of) transport mode(s)".
+
+The literature on accessibility can be traced back to the work of @hansen1959accessibility, and since then various methods of measuring accessibility have been developed.
+
+### Accessibility Measures in DRT planning
+
+While accessibility research is quite mature, its adoption in DRT planning is still nascent. @alonso2018potential use accessibility metrics and actual DRT journey data to look at how DRT improves existing accessibility by (a) active travel, and (b) public transport. The work highlights the benefit of DRT in its current operating area, but does not provide a spatial analysis to identify potential operating areas. There is limited use of accessibility measures as a preliminary planning tool for DRT. @giuffrida2022simplified use a simplified infrastructure-based measure, inspired by the Public Transport Access Level (PTAL) [@transport2015assessing], to propose how DRT can help solve the "ridership/coverage" dilemma of public transport. While the measure itself is simple, the research is one of the few examples of using accessibility as a benchmark for understanding how to integrate DRT and reconfigure the public transport network. Given the high failure rates of DRT services, it is imperative to further develop methods for their appraisal. These methods should have an emphasis on their integration with public transport.
+
+Below we give an overview of the literature on accessibility measures, and then try to identify how they can be used as a preliminary planning tool for DRT and public transport integration
+
+### An overview of accessibility measures
+
+In measuring accessibility, it is important to consider the land-use, transport, temporal, and individual components [@geurs2004accessibility]. Different methods have been proposed to measure accessibility, with each embedding these theoretical components differently. For an in-depth review of these measures, their theoretical foundations, and limitations, the reader is referred to @geurs2004accessibility and @vandenbulcke2009mapping . Below we outline a summary of these measures as described in the mentioned reviews:
+
+1.  **Infrastructure based measures**: analyse service levels or observed performance of transport systems (e.g. congestion; average travel speed). They are easy to operationalise and communicate, but are not based on a strong theoretical foundation
+
+2.  **Location (or activity) based measures**: macro-level analysis of accessibility to spatially distributed activites (e.g. no. of jobs available within 30 time from origin location). More complex versions of these measure include competition effects (e.g. for jobs) [@van2001accessibility]. There are two general forms of location-based measures:
+
+    -   contour (isochrone)-based: these are easy to operationalise and communicate, but they normally do not account for competition effects or individual preferences [@geurs2004accessibility]
+
+    -   gravity-based: easier to operationalise, have a stronger theoretical foundation, but are difficult to communicate 
+
+3.  **Person (or individual) based measures**: grounded in the field of space-time geography [@hagerstrand1970people] . They aim to account for individual spatio-temporal constraints (e.g. location and duration of mandatory activities, time budgets) when calculating their accessibility. The focus on individual accessibility means accessibility can be disaggregated by income, gender, trip purpose, occupational groups, transport modes [@vandenbulcke2009mapping]. These measures have a strong theoretical foundation. However, they do not account for competition and are difficult to operationalise (due to detailed activity data needs) and to communicate. This measure is commonly based on individual data, or "*activity schedules*", but should not be confused with the *location/activity-based measure*.
+
+4.  **Utility based measures**: focus on the economic benefit (consumer surplus) derived from accessing different opportunities. Accessibility is measured based on individual characteristics (e.g. income) and modal characteristics (e.g. travel costs). The individual component is similar to that in person-based measures, but the focus of the former is on space-time constraints, while the latter is focused on socioeconomic characteristics. They have a strong theoretical foundation (with the exception of not using temporal constraints), but this foundation is based on relatively complex theories that make them difficult to communicate and operationalise.
+
+<!--# Evaluation of Accessibility Impacts of Land-Use  Scenarios: The Implications of Job Competition, Land-Use, and Infrastructure Developments for the Netherlands - "In this paper we focus on potential activity-based accessibility measures in order toevaluate the job-accessibility impacts of land-use and transport scenarios. Infrastruc-ture-based measures provide useful information on the functioning of infrastructure inan area, but fail to recognise that destinations of interest may be far outside this area.Hence their usefulness for our purpose of this paper is limited. Utility-based measures provide valuable information for the economic evaluation of accessibility changes,but our purpose here is toevaluate accessibility effects themselves. Time ^ spacemeasures are potentially very useful for the evaluation of different planning scenar-ios, but require so many detailed data that their application on a national scale is not(yet) feasible" -->
+
+<!--# From Curl 2011: "A review of the literature reveals numerous methods of measuring accessibility. The various approaches differ in their level of complexity and practical applicability. Table 1 summarises these classifications. Baradaran and Ramjerdi (2001), Geurs and van Eck (2001), Geurs and van Wee (2004), Vandenbulcke et al. (2009), Halden et al. (2000) and Handy and Niemeier (1997) amongst others have attempted to classify such measures." -->
+
+```{=html}
+<!--Litman 2023: 
+Several factors affect this accessibility: 
+ Mobility. Physical movement and therefore the quality (availability, speed, frequency, comfort, etc.) of travel modes (walking, bicycling, taxies, public transport, air travel, etc.). 
+ Geographic proximity. The distances between destinations, and therefore land use development factors such as development density and mix, which affect these distances. 
+ Transport system connectivity. The density of sidewalks, roads and public transit networks, and intermodal connection quality, such as bike access to transit, and transit access to airports. 
+ Affordability. The financial costs of travel relative to users’ income. 
+ Convenience. The ease of obtaining travel information, paying fares and carrying luggage. 
+ Social acceptability. The ability to use a mode sometimes depends on its social status. -->
+```
+### Overlap between accessibility measures
+
+While these four categories are well established in the literature, not all studies fit exactly under one of them. Here we look at some specific measures that could be useful for DRT planning.
+
+@mohri2021clustering propose the addition of an additional category "Mixed Infrastructure- and Location-Based Measures". These are measures that combine indicators of transport connectivity/coverage (infrastructure) with a location-based measure to develop needs indexes. An example of this is the work by @chen2018spatial. The approach is based on previous work on developing a Transport Needs Index (TNI) [@currie2004gap; @currie2010quantifying], which is a relative score based on the difference between an indicator for social transport supply and one for transport need. Transport supply is based on level of service available at stops, and later extended to consider the number of passengers a stop can absorb [@jaramillo2012spatial]. By adding a location-based measure (cumulative opportunities) to the indicator for transport supply, @chen2018spatial developed what is referred to here as a "Mixed Infrastructure- and Location-Based Measure". @giuffrida2017investigating adopt a slightly different approach, calculating accessibility (using a gravity measure) and the TNI separately, and then combine both to calculate the relative accessibility loss between car and PT . @pucci2019inequalities also calculate a location-based (gravity) measure separately, and combine it with other mobility indexes (accessibility is one of five indexes) to come up with a Index of Inequalities that is applied to zones.
+
+<!--# The supply measures used for these studies are somewhat simplistic, as they focus on access, not accessibility. The indicators for transport need is also affected by car ownership, where ownership of cars is inversely proportional to transport needs. This is not suitable for our purposes, as our emphasis is on providing alternatives to private car usage. -->
+
+```{=html}
+<!--
+Needs-base approach [@di2018inaccessibility]: 
+three phases: 
+• defining the trip typology and time thresholds  (done by asking users - answers on a likert scale 1-10)
+• estimating the inaccessibility index for identifying unmet needs: [IA(mode, purpose, length, origin, destination), TT(m, p, l, o, d) * number of satisfied users realizing the trip (m, p, l, o, d) ] / All users realizing this trip (m, p, l, o, d) 
+
+• identifying population groups with unmet needs.
+-->
+```
+### Equity
+
+One thread of accessibility analysis literature focuses on the equity of accessibility (see the special issue edited by @di2017transport). There is a common differentiation between horizontal and vertical equity. Horizontal equity looks at how fairly transport services are distributed across a study area, without considering the variations in needs and abilities of those served. Vertical equity is more concerned with social justice; indicators are developed to understand how those with different demographic or socioeconomic needs are served, and whether those with the greatest transport needs are receiving equitable access to the general population.
+
+<!--# The literature commonly differentiates between horizontal and vertical equity (Le Grand, 1984; Litman, 2002). These reflect two contrasting and complementary perspectives of transportation planning. The horizontal equity framework aims at fairly or equally distributing mobility services to the maximum number of travelers regardless of need or ability and encapsulates the ‘‘mass transit’’ perspective (Delbosc and Curry, 2011; Dadashpoor and Rostami, 2017). Conversely the vertical equity perspective follows the idea of social justice (Betts, 2007). It aims to provide accessibility according to specific abilities to those with the greatest ‘‘mobility need” (Currie, 2004) e.g. disabled travelers, or those without access to cars, or to specific demographic groups such as low-income, youth, elderly, or minorities (Ward, 2005; Garrett and Taylor, 1999; Deakin, 2007; Taylor et al., 2009; Fransen et al., 2015; Manaugh et al., 2015; Martínez et al., 2017; Murray and Davis, 2001). everal recent studies have aimed to measure transit accessibility equity applying various indices (Ricciardi et al., 2015; Griffin and Sener, 2016; Mortazavi, and Akbarzadeh, 2017; Jang et al., 2017; Pereira, 2018). Several studies have also attempted to bridge the important gap between accessibility and equity not only of ex-post analysis of the existing transit system for possibly operational improvements, but of ex-ante transit network design that ensures accessibility equity in the planning stage (Caggiani et al., 2017; Camporeale et al., 2017; Ruiz et al., 2017; Behbahani et al., 2018).-->
+
+### Temporal and individual dimensions of accessibility
+
+While issues of vertical equity have gained prominence in transport geography, most studies focus solely on the spatial component of accessibility. It is only recently that temporal fluctuations in public transport availability are being considered [@fransen2015identifying; @fayyaz2017dynamic; @jarv2018dynamic; @saraiva2022accessibility]. Research by @fransen2015identifying and @fayyaz2017dynamic extends the work on transport gaps by analysing how these gaps change at different times during the day. They use a cumulative and gravity location-based measures respectively. @jarv2018dynamic and @saraiva2022accessibility explore temporal fluctuations using variations of person-based measures, with the former adding closing times to explore access to grocery stores, and the latter adding fixed time budgets to explore accessibility to a 'single activity after work' . While this shift towards spatiotemporal accessibility brings us closer to understanding how the transport network serves different demographic, socioeconomic, and even individual needs [@jarv2018dynamic], the measures still do not give a complete picture of how the transport network facilitates travel demand [@mohri2021clustering] .
+
+### Accessibility, resource constraints, and travel demand
+
+<!--# [@cheng2013measuring] "Consequently, location-based competition takes two interdependent forms, namely competition (for employment or jobs) on the demand side, and competition (for employees or workers) on the supply side (Geurs and van Wee, 2004; Horner, 2004). These competitions affecting job access are dominated by the competition on the demand side, as employers compete for workers in only a handful of job types. In this paper we will only consider competition on the demand side." -->
+
+Given the emphasis on using travel demand to inform DRT zones, it is important that accessibility measures are able to capture this aspect. Below we look at how some accessibility measures have evolved in this direction.
+
+Traditional location-based measures provide descriptive results on accessibility given certain constraints (e.g time, money) but do not account for competition for resources. Research has shown that not accounting for competition leads to inflated accessibility results [@geurs2003evaluation; @soukhov2023introducing].
+
+Work has been done to embed resource capacity in accessibility measures. In healthcare and education, Floating Catchment Area (FCA) methods such as the 2-Step Floating Catchment Area (2SFCA) [@luo2003measures] and the Balancing Floating Catchment Area (BFCA) [@paez2019demand] measures, are popular. These measures are based on provider to catchment-area population.
+
+When it comes to access to opportunities, accessibility measures have been modified differently to account for competition. Methods include modifications to the cumulative opportunities measure to get a ratio of opportunities per person [@kelobonye2020measuring]. The balancing factors of the doubly constrained spatial interaction model can also be interpreted as accessibility measures [@horner2004exploring]. The main disadvantage of this method is the difficulty in interpreting the results, which are derived through an iterative process [@geurs2004accessibility] . A detailed description of the different methods of adding competition can be found in @geurs2003evaluation.
+
+Another popular approach to adding competition is to divide the relevant supply at destination zone $j$ by the population that can reach zone $j$ within a predefined time threshold [@shen1998location].
+
+@van2001accessibility propose such a gravity-based accessibility measure, while also distinguishing between job types. In its simplest form, the measure can be presented as:
+
+$$
+Accessibility_{jobs}^{i} = Volume \; component \; \times Competition \; factor
+$$
+
+where the volume component is a traditional gravity measure, and the competition factor represents the ratio between jobs and employees. It is structured so that zones with more employees have more influence than smaller zones. A main limitation of measure is that it treats employees as homogeneous, whereas in reality not everyone is competing for the same jobs; there is a huge diversity in jobs and employees competing for them. @cheng2013measuring attempt to overcome this limitation through a measure that includes diversity of jobs. The opportunities of type $k$ accessible to residential location $i$, $O_{ik}$, is calculated as:
+
+$$
+O_{ik} = \sum_{j=1}^{n}\sum_{k=1}^{s}E_{jk}\times p_{jk}(i)
+$$
+
+-   $E_{jk}$: total number of type $k$ jobs at employer location $j$; $j\in n$
+
+-   $k$: job/worker type; $k \in s$. Jobs with type $k$ are only suitable for workers type $k$
+
+-   $W_{ik}$: number of worker type $k$ at residence location $i$ (compete with $W_{lk}$: workers type $k$ at residence location $l$)
+
+-   $f(t_{ij})$: user defined distance decay function
+
+Jobs are allocated to competing locations based on probabilistic analysis, where $p_{jk}(i)$ is the probability of job $k$ at employer location $j$ being allocated to residential location $i$:
+
+$$
+p_{jk}(i) = W_{ik} \times f(t_{ij}) / \sum_{l=1}^{m}W_{lk} \times f(t_{lj})
+$$
+
+The total jobs accessible at location $i$ is $\sum_{k=1}^{s}O_{ik}$. Diversity of jobs, $D_{i}$ (a value between 0 and 1), is calculated based on entropy and used to to measure accessibility as $O_{i}^{D_{i}}$. Higher diversity of jobs leads to higher accessibility.
+
+The novelty of this measure in considering social (not just spatial) matches in accessibility, and in adding diversity, is somewhat curtailed by the difficulty in interpreting and operationalising the results. This is part of a bigger tension between researchers and academics on accuracy and interpretability (see below). However it does bring us closer to disaggregated location-based measures that focus on the individual aspect of accessibility.
+
+<!--# Location-based accessibility measures, while easy to understand and communicate, provide descriptive results on spatial and social variations in accessibility. This gives planners a target to aim for, but no operational recommendations on where to prioritize improvements [@mohri...] -->
+
+### Limitations of existing measures in informing public transport and DRT planning
+
+These various accessibility measures offer insights on the spatial distribution of public transport service provision, and can quantify how this provision varies across the day, how it is affected by monetary constraints, and how it ties to vertical and horizontal equity. However, the focus on potential opportunities reached isn't necessarily representative of where people actually (want to) go, especially when it comes to access to jobs [@mohri2021clustering]. <!--# say something about how this is important for successful DRTplanning --> Measures that include competition have helped mitigate the problem of inflated accessibility figures, but the descriptive nature of these measures makes them difficult to operationalise.
+
+<!--# commuting is a big % of trips (https://www.gov.uk/government/statistical-data-sets/nts04-purpose-of-trips), especially when in terms of distance travelled ------------------------------ placeholder figure: I will replace it with a plot using nts0409 from here. I can also wait for the 2020 NTS data that is coming out 30 August (see link):  ————— distance travelled by mode for each trip purpose —————For all trip purposes, the % of trips / kms made by car  -->
+
+This limitation is tied to the slow adoption of accessibility in planning practice. While accessibility is seen as a desirable planning goal, its adoption into transport planning has lagged behind academic research [@siddiq2021tools]. One of the main challenges is the difference in spatial scales between accessibility research and transport planning practice, where the former is regionally focused and the latter is focused on routes and stops [@cui2022all; @oliveira2023novel]. There is a need to shift from descriptive, zone-level measures to ones that provide operational recommendations that can be integrated into the planning process [@mohri2021clustering]. Research needs to move towards identifying whether desired destinations are reachable by public transport, and the extent of the spatial mismatch between service provision and travel patterns [@lee2021identifying].
+
+<!--# Given that each accessibility measure requires different data and differs in its operationalisation, interpretability and communi- cability, a major methodological challenge is to find the right balance between a measurement which is theoretically and empirically sound and one which is sufficiently plain to be useful in land-use and transport planning. Although infrastructure mea- sures (e.g. travel speed) are easy to interpret and communicate to planners and decision makers, such measures are not very useful for evaluating the accessibility impacts because the spatial, tempo- ral and individual components are not incorporated in the mea- sure. On the other hand, more complex measures such as utility-based or person-based measures use a better theoretical basis and have the advantage to incorporate individuals' characteristics. Nevertheless, this theoretical superiority of both utility-based and person-based measures makes them more difficult to operationalise and more demanding on data. After evaluating the availability of data, models and techniques, as well as time and budget, activity-based measures seemed to us to be the best way of analysing accessibility at a national level. -->
+
+\pagebreak
+
+# Research Question 1: *How can we define potential DRT operating areas based on travel demand?*
+
+The first paper will focus on answering the question of how to classify areas with respect to their DRT potential. This paper will use data science methods to 'set the scene' of travel patterns and form a foundation on which subsequent papers (and associated research questions) will build. 
+
+DRT offers exciting potential to solve the "ridership/covership" dilemma of public transport and enable more sustainable travel. However, DRT planning is complex, historically linked to high failure rates of services, and could lead to unintended consequences such as replacing public transport trips instead of car trips [@alonso2018potential] . There is a need for measures that help show where the gaps in public transport provision are, and how DRT and public transport can be planned together to create a competitive service to private cars.
+
+This requires an understanding of individual travel needs, which points us to features of person-based accessibility measures. As mentioned, person-based accessibility measures are not yet widely adopted due to data requirements, computational demand, and difficulties in presenting results in a meaningful way [@saraiva2022accessibility]. With increasing data availability (open source GTFS feeds), and significant improvements in multimodal routing capabilities, the first two concerns are being bridged. The third is an inherent feature of these measures [@geurs2004accessibility], but person-based attributes can be used to enhance location-based accessibility measures.
+
+A "Mixed Infrastructure- and Location-Based Measures" [@mohri2021clustering] with person-based attributes offers one way of understanding how, when, and where DRT could be integrated into existing public transport networks in order to improve both accessibility and service efficiency.
+
+DRT services can take many forms: first/last mile service; low density door-to-door service; off-peak service; paratransit service. Our contribution will be in (a) using an enhanced "Mixed Infrastructure- and Location-Based Measures" with person-based attributes (from an activity-based model) to identify and prioritize origin-destination pairs that are in need of public transport improvement, and (b) using spatial clustering to propose a typology approach towards placement of DRT services, one that depends on the exiting transport network, land-use patterns, and actual travel demand. Our results will inform when, where, and for whom there are gaps in the service, and which types of DRT could potentially fill these gaps.
+
+## Methods and Data
+
+<!--# ![Flowchart for 1st paper (greyed out areas are for later on in the research)](images/flowchart_paper_1.png){#fig-flowchart-paper-1 alt="Flowchart for 1st paper (greyed out areas are for later on in the research)"} -->
+
+### Transport Accessibility - The Modified Cumulative Accessibility (MCA) measure
+
+<!--# Curl 2011: "While activity and utility based measures are arguably based on a stronger theoretical underpinning and are better able to reflect behaviour, they are rarely used in practical applications due to the complexity and data intensity of such measures, and the difficulties encountered with communicating the outputs to a non-expert audience." - our measure is an activity based measure! It combines the ease of interpretation of a cumulative measure with the theoretical underpinning / operational recommendations of an activity based measure - we can communicate its results more easily than more traditional activity based measures-->
+
+To measure transport accessibility, we use the Modified Cumulative Accessibility (MCA) measure introduced in @mohri2021clustering. The measure incorporates actual travel demand information, which allows us to quantify which origin-destination pairs are most in need of better public transport connections. Figure @fig-mca_context shows the MCA measure in the context of similar accessibility measures. We expand on the measure by using an activity-based dataset for travel demand, and so our measure has person-based attributes as well.
+
+![MCA measure in context](images/mca_measure_in_context.png){#fig-mca_context}
+
+The MCA measure is an evolved version of the Cumulative Accessibility (CA) measure that accounts for actual travel patterns [@mohri2021clustering]. The accessibility between any OD pair is weighted by the actual number of people who travel between that OD pair. In effect, accessibility from $i$ to $j$ is valued more when there is evidence that people living in $i$ actually make use of the opportunities available at $j$. The MCA is calculated as follows (with notation taken from @mohri2021clustering):
+
+$$
+MCA_{i}^{l, p} = \sum_{j \epsilon{N}}S_{j}^{P} f(t_{ij} )^{l}w_{ij}^{p} \;\;\;\;\forall i \in N,\:l \in L,\:p \in P
+$$
+
+-   $N$: set of network TAZs ; $i, j$: index of network TAZs, $i, j\in N$
+
+-   $L$: set of levels considered for time threshold ($L$ = {30, 60 and 90 minutes}); $l$: index of levels considered for time threshold, $l\in L$
+
+-   $P$: set of trip purposes ; $p$: index of trip purposes, $p\in P$
+
+-   $S_{j}^{p}$: the number of opportunities at TAZ $j$ for purpose $p$ (jobs, education, healthcare etc)
+
+-   $t_{ij}$: travel time from TAZ $i$ to TAZ $j$ ; $t_{threshold}^{l}$: time threshold value for level $l$
+
+-   $f(t_{ij})^{l} =\begin{cases}1 & for \;\;\;t_{ij} \leq t_{threshold}^{l}\\0 & for \;\;\;t_{ij} > t_{threshold}^{l}\end{cases}$
+
+The main difference between the MCA measure and the traditional CA measure is the use of $w_{ij}^{p}$ which weights the accessibility gain between each $i, j$ pair by a factor that is proportionate to the travel demand between that pair. The factor assigned to each pair is determined based on:
+
+-   $\delta_{ij}$: Binary parameters which are one if $i$ and $j$ are in the same Public Transport (PT) cluster. Clusters are calculated using the modularity optimization method proposed in @blondel2008fast. The clusters are based on the number of recorded PT trips between each OD pair
+
+-   $\delta_{ij}^{'}$: Binary parameters which are one if $i$ and $j$ are in the same Private Vehicle Transport (PVT) cluster.
+
+-   $h_{ij}$: Total PT trips done between TAZ $i$ and TAZ $j$
+
+-   $P_{i}^{25}, P_{i}^{50}, P_{i}^{75}$: 25th, 50th and 75th percentile of the number of PT trips that start from TAZ $i$. The connections between TAZ $i$ and all destinations are ranked based on the number of trips, and for each destination $j$, we can determine which percentile it is in relative to origin $i$.
+
+All of these come together to assign the weight as follows:
+
+-   $w_{ij}^{p} =\begin{cases}1 & for \;\;\;\delta_{ij} = 1, \delta_{ij}^{'} \in \{0,1\}, h_{ij} \geq 0\\1 & for \;\;\;\delta_{ij} = 0, \delta_{ij}^{'} = 1, P_{i}^{75} \leq h_{ij}\\0.75 & for \;\;\; \delta_{ij} = 0, \delta_{ij}^{'} = 1, P_{i}^{50} \leq h_{ij} < P_{i}^{75}\\0.5 & for \;\;\;\delta_{ij} = 0, \delta_{ij}^{'} = 1, P_{i}^{25} \leq h_{ij} < P_{i}^{50}\\0.25 & for \;\;\; \delta_{ij} = 0, \delta_{ij}^{'} = 1, h_{ij} < P_{i}^{25}\\0.75 & for \;\;\;\delta_{ij} = 0, \delta_{ij}^{'} = 0, P_{i}^{75} \leq h_{ij}\\0.50 & for \;\;\;\delta_{ij} = 0, \delta_{ij}^{'} = 0, P_{i}^{50} \leq h_{ij} < P_{i}^{75}\\0.25 & for \;\;\;\delta_{ij} = 0, \delta_{ij}^{'} = 0, P_{i}^{25} \leq h_{ij} < P_{i}^{50}\\0 & for \;\;\;\delta_{ij} = 0, \delta_{ij}^{'} = 0, h_{ij} < P_{i}^{25}\end{cases}$
+
+If $i$ and $j$ are in the same PT cluster, then the weight is set to 1. In the case where they are not in the same PT cluster, the weight is based on the number of PT trips between them $(h_{i,j})$. The other main distinction is based on whether $i$ and $j$ are in the same PVT cluster; all else equal, a higher weight is assigned to pairs in the same cluster. More importance is given to accessibility between pairs in the same PVT cluster because there is a match between people's preferences in TAZ $i$ and the opportunities available in TAZ $j$. The accessibility gain from an improved PT service between these pairs should benefit more people than an accessibility gain between pairs in different PVT clusters.
+
+We use this method along with the proposed parameters. Below we introduce the specific datasets for our case study, and some proposed modifications to the method
+
+#### Transport Supply
+
+The main components of transport supply are the road network, and the public transport timetables for buses and rail. We get the updated road network from OSM. Bus timetable data is obtained in GTFS format from the Bus Open Data Service (BODS)[^3] and rail data is obtained from the Rail Delivery Group[^4].
+
+[^3]: https://data.bus-data.dft.gov.uk/
+
+[^4]: https://data.atoc.org/
+
+#### Travel time calculations
+
+The OSM road network and timetable data are fed into a multimodal routing engine [@pereira2021r5r] to calculate travel time ($t_{ij}$) between zones. Travel times are calculated at different times of day in order to look at temporal variations in accessibility, as done by @lee2021identifying. This will include weekday morning and evening peaks peaks, weekday off-peak, and a weekend. <!--# (What times?) -->
+
+<!--# Public transport travel time cubes [@farber2017dynamic]: accessibility by public transport at different times in the day -->
+
+<!--# [@lee2021identifying] "Three stages of spatiotemporal analysis for transit gaps were conducted in this study. First, the transit gaps between peak and off-peak hours were evaluated and the spatial changes of transit desert areas over time were identified. Second, spatial analysis to identify transit desert and transit oasis areas which emerge during peak hours only was conducted. Third, this study ran an independent T-test to identify whether the socio-economic characteristics of transit deserts and transit oases were statistically different in Seoul and how these socio-economic differences result in spatial differences -->
+
+#### Chosen travel time thresholds
+
+The measure proposed by @mohri2021clustering uses an ad-hoc choice of single travel time threshold. While this is common practice in accessibility research, the accessibility results are sensitive to the travel time threshold chosen. We use the time interval cumulative accessibility measure proposed by @tomasiello2023time, which mitigates against the sensitivity imposed by a singular cutoff time by replacing it with a time window. The median number of opportunities reachable within that time window is then calculated by considering multiple minute-by-minute cutoff times within the window. We use thresholds of 30, 60 and 90 minutes, as done by @mohri2021clustering, and add a 10 minute time window around each threshold (e.g 30 minute threshold = 20-40min time window).
+
+#### Transport Demand
+
+We use the synthetic population catalyst (SPC) dataset [@dustin_carlino_2022_6588482] to enhance the measure with person-based attributes (mobility patterns across the day). The SPC is an activity-based dataset for all counties in England, and includes daily trips made for shopping/retail, education, and working. It is based on the SPENSER microsimulation model [@lomax2022open]. Trips made for school and retail are based on the methods in @spooner2021dynamic, while commuting trips are based on @schlapfer2021universal.
+
+The flows are aggregated over the study area zones, allowing us to calculate the number of people moving between each OD pair for each trip purpose and time of day. We look at access to jobs, schools, and retail.
+
+<!--# Ignore trips that can be walked or cycled [@fransen2015identifying]. Ignore neighboring OD pairs? -->
+
+#### Trip Clustering
+
+Trip clustering is done for each time window in the study. We will explore the results from community detection @blondel2008fast and spatially constrained clustering (regionalization) [@assunccao2006efficient]. <!--# While we expect the results to have a regionalization element, our method requires that the output be spatially contiguous groups. For this region the regionalization approach might be better [@assunccao2006efficient]. -->
+
+#### Prioritising OD pairs
+
+To prioritise OD pairs from the perspective of improving equity, we follow the method in @mohri2021clustering
+
+-   categorise each OD pair depending on location of origin and destination (both zones in inner region \| both zones in outer region \| origin in inner region and destination in outer region \| origin in outer region and destination in inner region)
+
+-   calculate PT speed for each OD pair based on distance\* and travel time. For each category, rank the OD pairs by speed and identify the OD pairs in the slowest 25th percentile
+
+-   For the identified OD pairs, evaluate the following:
+
+    -   $f(t_{ij})^{1(30 \;minutes)}$; $f(t_{ij})^{2(60 \;minutes)}$; $f(t_{ij})^{3(90\; minutes)}$;
+
+    -   are $i$ and $j$ in the same PT cluster; are $i$ and $j$ in the same PVT cluster
+
+This gives different combination outcomes, which are categorized into priority classes. The highest priority is for pairs that have poor accessibility even though they are in the same PT and PVT cluster. These are the zones with the highest potential for mode shift. Zone pairs that share one cluster (PT or PVT) but have poor accessibility are in the second priority class; the existence of a cluster is evidence of a desire to travel between these zones
+
+<!--# more on classes in the paper "Step 5 (improving equity)" -->
+
+![Example prioritization of OD pairs - Source: [@mohri2021clustering]](images/mohri_mca_measure_priority.png){#fig-mohri-priority}
+
+### Matching accessibility results to DRT typologies
+
+At this point we will have OD pairs prioritized using our chosen accessibility measure. The step is to use the results to identify potential DRT service areas.
+
+To do so, we rely on a combination of methods. We first use exploratory data analysis (EDA) to observe the spatial distribution of priority classes from the previous step. We look at the different high priority desire lines existing between OD pairs, and how these are clustered spatially.
+
+The next step is to use a combination of spatial clustering [@assunccao2006efficient] and manual operational recommendations. We will explore the possibility of clustering high priority OD pairs by spatial proximity and time of day. The final objective would be to map high priority areas to the DRT typologies listed in @sec-drt-overview.
+
+### Validation of Results
+
+The results will be validated using the method proposed by @jain2017predicting on predicting susceptibility to use DRT using demographic and trip characteristics of the population. The authors identify the following parameters can affect DRT usability:
+
+-   *Individual characteristics*: age, female trips, employment status, availability of driving license
+
+-   *Household characteristics*: vehicle ownership, income, household composition, train station proximity
+
+-   *Trip characteristics*: trip purpose distribution, trip waiting times, and trip access and egress times
+
+<!--# Individual characteristics: 1. (15–24) and (55 or more) age groups | 2. Trips of female | 3. Not in workforce | 4. No driving licence  ----- Household characteristics: 5. Low household vehicle ownership (0 or 1) | 6. Low household income | 7. Single person household | 8. Lack of train station proximity ----- Trip characteristics: 9. Shopping and social trips | 10. Higher trip waiting time | 11. Higher trip walking time -->
+
+We will conduct a similar analysis to our study area to identify areas with high susceptibility to use DRT. The areas will then be compared to those identified by our MCA-based measure.
+
+A second layer of validation could be to compare the results to the spatial signatures dataset that characterizes areas based on form and function [@fleischmann2022geographical].
+
+<!--# https://rosap.ntl.bts.gov/view/dot/17422 "Most notable is the field of forecasting, rural transit demand based on population characteristics, either through linear regression models, factoring methods, or other means (McIntyre et al., 1986; Schofer et al., 2003; Spielberg and Pratt, 2004; Koffman et al., 2007; Painter et al., 2007)." -->
+
+```{r, eval = FALSE, echo= FALSE}
+
+# data_1 <- readxl::read_excel("planning/datasets.xlsx") %>%
+#   filter(Paper_1 == "Yes") %>%
+#   select(Dataset, Link, Source, Notes, Necessary_Paper_1) %>%
+#   rename(Necessary = Necessary_Paper_1)
+# 
+# # get urls 
+# urls <- data_1$Link
+# 
+# data_1$Source <- paste0("[", data_1$Source, "](", urls, ")")
+# 
+# data_1 <- data_1 %>% select(-Link)
+# 
+# knitr::kable(data_1)
+
+```
+
+\pagebreak
+
+# References
