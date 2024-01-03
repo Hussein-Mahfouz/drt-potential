@@ -5,6 +5,9 @@ library(tidyverse)
 library(sf)
 library(tmap)
 
+library(tidygraph)
+library(sfnetworks)
+
 
 source("R/study_area_geographies.R")
 source("R/filter_od_matrix.R")
@@ -179,3 +182,36 @@ tm_shape(study_area) +
             legend.outside.position = "bottom",
             legend.stack = "horizontal",
             frame = FALSE)
+
+
+
+
+
+
+
+
+sfnetworks::as_sfnetwork(od_demand_sf_rank, directed = FALSE) -> x
+
+x %>% activate(nodes) %>%
+  mutate(group = tidygraph::group_louvain(weights = `commute_all`)) -> x2
+
+# OR
+# x2 = x %>%
+#   morph(to_linegraph) %>%
+#   mutate(group = tidygraph::group_louvain(weights = "commute_all")) %>%
+#   unmorph()
+
+
+plot(st_geometry(x, "edges"), col = "grey", lwd = 0.5)
+plot(st_geometry(study_area))
+
+x2 %>%
+  activate("nodes") %>%
+  st_as_sf() %>%
+  transmute(group = as.factor(group)) %>%
+  plot(lwd = 4, add = TRUE)
+
+
+
+
+
