@@ -315,7 +315,7 @@ Given the shift from mobility to accessibility-centered transport planning [@sid
 
 #### Placeholder Section on DRT operating zones
 
--   Simulation results show that DRT increases total Vehicle km and congestion (even if it decreases car use) -\> "In summary, we find that AMoD under any strategy will increase VKT and congestion in either city type." - cite Oke et. al 2020
+-   Simulation results show that DRT increases total Vehicle km and congestion (even if it decreases car use) -\> "In summary, we find that AMoD under any strategy will increase VKT and congestion in either city type." - [@oke2020evaluating]
 
     -   study looks at wide-scale rollout. Scenarios (AmoD intro, AMoD no transit, and AMoD transit integration) analyse DRT roll-out across a city.
 
