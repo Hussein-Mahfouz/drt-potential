@@ -4,7 +4,7 @@ subtitle: "Exploring the Potential for Integrating Demand Responsive Transport w
 author: "Hussein Mahfouz"
 date: "`r format(Sys.time(), '%d %m %y')`"
 format:
-  gfm: default
+  #gfm: default
   html:
     toc: true
   # docx:
@@ -211,9 +211,7 @@ Leeds is a good area to test our approach given the size of the city and the het
 
 # Literature Review
 
-In @sec-drt-overview of this literature review we introduce DRT, highlight issues that have hindered its success, and explain how DRT is currently planned. In @sec-drt-accessibility we give an overview of accessibility measures in transport planning and how they could be used to identify gaps in the network that could be filled by DRT. In @sec-drt-pt-simulation we introduce agent-based modeling as a tool to test the viability of proposed DRT services by allowing us to test changes in user behaviour under different operating scenarios. In @sec-drt-pt-optimisation present optimisation as a tool for reimagining public transport networks. We give a summary of the vast literature on transport network optimisation at the strategic and tactical levels, introduce recent attempts to include DRT in these optimisation problems, and highlight the need for more accessibility-focused problem formulations.
-
-## Demand Responsive Transport (DRT) {#sec-drt-overview}
+## Overview of Demand Responsive Transport (DRT) {#sec-drt-overview}
 
 In this review, the definition for Demand Responsive Transport (DRT) used by @davison2014survey is adopted: a service that is (a) available to the general public (without restrictions), (b) provided by low capacity vehicles, (c) responsive to changes in demand, and (d) has a fare that is charged per passenger, not per vehicle.
 
@@ -247,11 +245,9 @@ DRT services can also be grouped based on scheduling and operational characteris
 
 For diagrammatic descriptions of the different operational characteristics, the reader is referred to [@mageean2003evaluation; @pavanini2023role].
 
-These different service offerings highlight the complexity of DRT planning. On the hand, this flexibility allows DRT services to be tailored to the specific demand patterns of an area. Conversely, the overly complex services, or services that don't match the needs of the local community, are prone to failure (as explained below). Choosing the wrong service could lead to bad user experience and unnecessarily expensive operating costs.
+These different service offerings highlight the complexity of DRT planning. On the one hand, this flexibility allows DRT services to be tailored to the specific demand patterns of an area. Conversely, the overly complex services, or services that don't match the needs of the local community, are prone to failure (as explained below). Choosing the wrong service could lead to bad user experience and unnecessarily expensive operating costs.
 
-### Success, failure, and the future of DRT
-
-<!--# "As a final consideration on this segment of the literature, one notices that in almost all the actual implementations of semi-flexible systems, there is no or very limited use of optimization in the planning activities. This fact is underlined in both Potts et al., 2010 and Scott, 2010, the former even claiming that those techniques are not useful in most cases. The field of transportation planning has amply demonstrated otherwise, however, in particular for transit. Consequently, we take this observations as a clear indication that the potential benefit of optimization-based methods is still not rightfully appreciated by a good number of practitioners, and efforts should be undertaken to address this issue."  Errico 2013 paper CITE-->
+## High failure rates of DRT 
 
 DRT systems tend to have a higher cost per passenger than fixed-route public transport, and this has been attributed to the economies of scale associate with higher capacity and operational efficiency of the latter [@currie2020most]. The high cost has been the primary reason for the failure of many DRT trials. Even in the the modern era where technology has driven a re-emergence of DRT, failure rates remain high. A study by @currie2020most on 120 DRT systems in 19 countries showed that, among the systems launched during the period from 2010-2019, 45% failed. As may be expected, the study showed DRT service life exponentially decreased as the operating cost increased.
 
@@ -275,7 +271,7 @@ The relatively poor performance of DRT may not bode well for its future as a mod
 
 As the focus of transport planning shifts from "predict and provide" to "decide and provide" [@marsden2018commission], there is increased emphasis on improving equity of access. DRT could be one of the many tools used by local transport authorities to maintain geographic coverage and social inclusion. This research focuses on the Internal Environment component, as defined by @enoch2006demand.
 
-### Planning DRT systems {#sec-planning_drt}
+## Planning DRT systems {#sec-planning_drt}
 
 The planning of public transport systems with conventional bus services is well established and follows a sequential approach [@ceder1986bus; @ibarra2015planning] that includes:
 
@@ -313,17 +309,49 @@ Given the shift from mobility to accessibility-centered transport planning [@sid
 
 <!--# ABM and DRT papers (check notion) -->
 
-#### Placeholder Section on DRT operating zones
+### Importance of delineating operating zones
 
--   Simulation results show that DRT increases total Vehicle km and congestion (even if it decreases car use) -\> "In summary, we find that AMoD under any strategy will increase VKT and congestion in either city type." - [@oke2020evaluating]
+*Question: should I split this section into (a) empirical findings and (b) simulation results?*
 
-    -   study looks at wide-scale rollout. Scenarios (AmoD intro, AMoD no transit, and AMoD transit integration) analyse DRT roll-out across a city.
+There are various elements of DRT operating characteristics that effect its uptake and the wider system, including fares, fleet size and rebalancing, operating zones (as well as wider changes to the system such as car tolls and public transport service levels). While studies have looked at scenarios with different fleet sizes and fare structures, the choice of operating zones is generally simplified. Research has looked at (a) splitting the study area into inner and outer city [@kaddoura2020impact], restricting service to zones that (b) have a low public transport accessibility [@rath2023assessing], or (c) are within a certain buffer distance from rail (with the intention for DRT to act as a feeder) [@oke2020evaluating].
 
-    -   Last scenario restricts to short trips. 7.5 mile short trips and 7.5 mile radius/ around rail stops -\> quite a large catchment. ADD AHISTOGRAM WITH TRIP DISTANCE TRAVELLED BY MODE in study area; lets see what % of car/pt trips by mode we are capturing with this constraint
+**Mitigating undesirable mode shift**
 
-    -   **Argument is that more precision in defining operating areas is needed**
+When allowed to operate across an entire city or region, the % of DRT users that are shifting from public transport can be anywhere between 2% [@kagho2021demand] to 65% \[@kaddoura2020impact\]. A shift away from active travel is also seen when DRT is allowed to operate in dense urban cores \[@kaddoura2020impact; @kagho2021demand; @rath2023assessing\]. These shifts can be mitigated by excluding areas with high PT accessibility (which normally inccludes the urban core) from the service area of DRT [@rath2023assessing]. The high variance in mode share results shows that generic rules cannot be applied to all cities, but that specific characteristics need to be accounted for. <!--# mention the paper " a novel global urban typology framework for sustainable mobility futures, or just [@oke2020evaluating] -->
 
--   Other studies to support above argument?
+**Effect of DRT on total vehicle-km and congestion**
+
+Mode shift on it's own is not an indicator of more sustainable travel. A high DRT mode share could be the result of a large fleet size with high dead mileage or low-occupancy trips. Simulation results show that increases in congestion and system-wide total vehicle km are likely [@oke2020evaluating; @kagho2021demand; @rath2023assessing], even under scenarios which constrain operating areas [@rath2023assessing] or offer DRT as a feeder to mass transit [@oke2020evaluating].
+
+Given these results, it has been suggested that DRT may only be useful[^3] in areas with poor PT level of service [@rath2023assessing]. Even so, in order to move towards the desired mode shift and reduce VKT, the service area needs to be informed by spatial and temporal demand in the region [@kagho2021demand].
+
+[^3]: useful as in leads to more sustainable travel. Should I / how do I add equity here?
+
+<!--# Existing mode share, land use, population density, and demographics are among the factors that effect mode shift, emphasizing the need for operating zones that cater to the specific area being studied -->
+
+<!--##### MODE SHIFT -->
+
+<!--# DRT takes passengers from all modes [@kagho2021demand]. Mostly from cars (80%) but around 2% from PT, 3% from cycling and 10% from walking. My comment: We need proactive design to limit mode shift that's not from cars. -->
+
+<!--# [@rath2023assessing] "By excluding the high accessibility PT area from the service area of the AToD, the mode share can be shifted, so that the number of PT trips in the urban core and cycling trips are hardly affected, but car trips become less frequent." -->
+
+<!--# [@kaddoura2020impact] limiting service area to the city center leads to unwanted mode shift away from active travel. Even when DRT is deployed city-wide, the share of DRT users shifting from PT is much higher than that shifting from car unless a car toll is implemented -->
+
+<!--##### CONGESTION AND VKT  -->
+
+<!--# Simulation results show that DRT increases total Vehicle km and congestion (even if it decreases car use) -> "In summary, we find that AMoD under any strategy will increase VKT and congestion in either city type." - [@oke2020evaluating]  —— study looks at wide-scale rollout. Scenarios (AmoD intro, AMoD no transit, and AMoD transit integration) analyse DRT roll-out across a city.  —— Last scenario restricts to short trips. 7.5 mile short trips and 7.5 mile radius/ around rail stops -> quite a large catchment. ADD A HISTOGRAM WITH TRIP DISTANCE TRAVELLED BY MODE in study area; lets see what % of car/pt trips by mode we are capturing with this constraint  -->
+
+<!--# Increased VKT in specific areas. Change is not homogeneous across the network [@kagho2021demand] -->
+
+<!--# VKT goes up in all scenarios (scenarios are combinations of fleet size and fare) -->
+
+<!--# "The DRT service in this paper covers the whole study region. Therefore, it is hard to meet pick-up constraints, as the service is spread thin within the region. Idle vehicles are unable to service requests that are too far away from where the vehicle is currently waiting. Using the spatial and temporal information on the demand in the whole region, it would be possible to optimize the service area to increase the share of pooled rides, and potentially to create a service that is able to reduce VKT in the region." [@kagho2021demand] -->
+
+<!--# [@rath2023assessing] "For a city, it is questionable if AToD is a suitable addition to the existing modes. Especially for cities where car travel is increasingly discouraged by the government, as is the case for Zurich (NZZ, Neue Zürcher Zeitung, 2017), AToD does not seem a suitable alternative. Rather it is a service that can be attractive for rural municipalities where PT is offered at a low level of service and operates inefficiently, as regulated in Scenarios 3 and 6." ———> but if we serve rural areas, we need to be targeted so that the service is not spread too thin [@kagho2021demand] -->
+
+### Accessibility measures and defining DRT zones
+
+*Continue here ... need to extract relevant parts from below section and rethink how I will talk about accessibility -\> how to get to demand-based [@mohri2021clustering] quickly? (I am only using one small part of mohri really)*
 
 ## Accessibility and the potential for DRT integration {#sec-drt-accessibility}
 
@@ -391,12 +419,6 @@ three phases:
 • identifying population groups with unmet needs.
 -->
 ```
-### Equity
-
-One thread of accessibility analysis literature focuses on the equity of accessibility (see the special issue edited by @di2017transport). There is a common differentiation between horizontal and vertical equity. Horizontal equity looks at how fairly transport services are distributed across a study area, without considering the variations in needs and abilities of those served. Vertical equity is more concerned with social justice; indicators are developed to understand how those with different demographic or socioeconomic needs are served, and whether those with the greatest transport needs are receiving equitable access to the general population.
-
-<!--# The literature commonly differentiates between horizontal and vertical equity (Le Grand, 1984; Litman, 2002). These reflect two contrasting and complementary perspectives of transportation planning. The horizontal equity framework aims at fairly or equally distributing mobility services to the maximum number of travelers regardless of need or ability and encapsulates the ‘‘mass transit’’ perspective (Delbosc and Curry, 2011; Dadashpoor and Rostami, 2017). Conversely the vertical equity perspective follows the idea of social justice (Betts, 2007). It aims to provide accessibility according to specific abilities to those with the greatest ‘‘mobility need” (Currie, 2004) e.g. disabled travelers, or those without access to cars, or to specific demographic groups such as low-income, youth, elderly, or minorities (Ward, 2005; Garrett and Taylor, 1999; Deakin, 2007; Taylor et al., 2009; Fransen et al., 2015; Manaugh et al., 2015; Martínez et al., 2017; Murray and Davis, 2001). everal recent studies have aimed to measure transit accessibility equity applying various indices (Ricciardi et al., 2015; Griffin and Sener, 2016; Mortazavi, and Akbarzadeh, 2017; Jang et al., 2017; Pereira, 2018). Several studies have also attempted to bridge the important gap between accessibility and equity not only of ex-post analysis of the existing transit system for possibly operational improvements, but of ex-ante transit network design that ensures accessibility equity in the planning stage (Caggiani et al., 2017; Camporeale et al., 2017; Ruiz et al., 2017; Behbahani et al., 2018).-->
-
 ### Temporal and individual dimensions of accessibility
 
 While issues of vertical equity have gained prominence in transport geography, most studies focus solely on the spatial component of accessibility. It is only recently that temporal fluctuations in public transport availability are being considered [@fransen2015identifying; @fayyaz2017dynamic; @jarv2018dynamic; @saraiva2022accessibility]. Research by @fransen2015identifying and @fayyaz2017dynamic extends the work on transport gaps by analysing how these gaps change at different times during the day. They use a cumulative and gravity location-based measures respectively. @jarv2018dynamic and @saraiva2022accessibility explore temporal fluctuations using variations of person-based measures, with the former adding closing times to explore access to grocery stores, and the latter adding fixed time budgets to explore accessibility to a 'single activity after work' . While this shift towards spatiotemporal accessibility brings us closer to understanding how the transport network serves different demographic, socioeconomic, and even individual needs [@jarv2018dynamic], the measures still do not give a complete picture of how the transport network facilitates travel demand [@mohri2021clustering] .
@@ -521,11 +543,11 @@ We use this method along with the proposed parameters. Below we introduce the sp
 
 #### Transport Supply
 
-The main components of transport supply are the road network, and the public transport timetables for buses and rail. We get the updated road network from OSM. Bus timetable data is obtained in GTFS format from the Bus Open Data Service (BODS)[^3] and rail data is obtained from the Rail Delivery Group[^4].
+The main components of transport supply are the road network, and the public transport timetables for buses and rail. We get the updated road network from OSM. Bus timetable data is obtained in GTFS format from the Bus Open Data Service (BODS)[^4] and rail data is obtained from the Rail Delivery Group[^5].
 
-[^3]: https://data.bus-data.dft.gov.uk/
+[^4]: https://data.bus-data.dft.gov.uk/
 
-[^4]: https://data.atoc.org/
+[^5]: https://data.atoc.org/
 
 #### Travel time calculations
 
@@ -597,23 +619,7 @@ A second layer of validation could be to compare the results to the spatial sign
 
 <!--# https://rosap.ntl.bts.gov/view/dot/17422 "Most notable is the field of forecasting, rural transit demand based on population characteristics, either through linear regression models, factoring methods, or other means (McIntyre et al., 1986; Schofer et al., 2003; Spielberg and Pratt, 2004; Koffman et al., 2007; Painter et al., 2007)." -->
 
-```{r, eval = FALSE, echo= FALSE}
-
-# data_1 <- readxl::read_excel("planning/datasets.xlsx") %>%
-#   filter(Paper_1 == "Yes") %>%
-#   select(Dataset, Link, Source, Notes, Necessary_Paper_1) %>%
-#   rename(Necessary = Necessary_Paper_1)
-# 
-# # get urls 
-# urls <- data_1$Link
-# 
-# data_1$Source <- paste0("[", data_1$Source, "](", urls, ")")
-# 
-# data_1 <- data_1 %>% select(-Link)
-# 
-# knitr::kable(data_1)
-
-```
+<!--# "As a final consideration on this segment of the literature, one notices that in almost all the actual implementations of semi-flexible systems, there is no or very limited use of optimization in the planning activities. This fact is underlined in both Potts et al., 2010 and Scott, 2010, the former even claiming that those techniques are not useful in most cases. The field of transportation planning has amply demonstrated otherwise, however, in particular for transit. Consequently, we take this observations as a clear indication that the potential benefit of optimization-based methods is still not rightfully appreciated by a good number of practitioners, and efforts should be undertaken to address this issue."  Errico 2013 paper CITE-->
 
 \pagebreak
 
