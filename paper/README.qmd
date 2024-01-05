@@ -57,101 +57,18 @@ This phenomenom is visible in bus use figures[^2] where ridership fell by 40% ov
 
 ## DRT and the future of bus service provision
 
-Recent developments, such as a shift away from the deregulation that has characterized the bus industry since the 1980s towards franachising and enhanced partnerships [@preston2023all; @lords2022townsandcities], are likely to give rise to changes to public transport systems across the country. The new powers being handed over to combined authorities will allow them to transition from route-centric, profit-driven service provision to more London-style network-level planning that improves efficiency and allows for cross-subsidization of routes. As deregulation is reversed, local government transport planning bodies will be faced with the challenge of redesigning networks to attract higher levels of ridership. This will involve choosing different services for different areas based on potential ridership. While long term planning may involve changes to land use, travel patterns, and residential density, short term planning is focused on what sort of service to run in different areas. One option that is being trialed as a complementary service to public transport is Demand-Responsive Transport (DRT)[^3] [@dft2020deal]. In some areas, a demand-responsive fleet may be more cost-effective than a subsidised fixed-route bus. DfT is interested in DRT services for low-density areas, weekend travel, and large workplaces with working hours that don't align with traditional peak periods [@dft2021busbackbetter]. There are many benefits potential associated with well-planned DRT services. These include reducing congestion through mode shift, increasing accessibility in places that are not well served by public transport, and the associated economic and social inclusion benefits that come with that [@dft2021busbackbetter].
+Recent developments, such as a shift away from the deregulation that has characterized the bus industry since the 1980s towards franchising and enhanced partnerships [@preston2023all; @lords2022townsandcities], are likely to give rise to changes to public transport systems across the country. As deregulation is reversed, local government transport planning bodies will be faced with the challenge of redesigning networks to attract higher levels of ridership. This will involve choosing different services for different areas based on potential ridership. One option that is being trialed as a complementary service to public transport is Demand-Responsive Transport (DRT)[^3] [@dft2020deal]. In cases such as low-density areas, weekend travel, and large workplaces with working hours that don't align with traditional peak periods, a demand-responsive fleet may be more cost-effective than a subsidised fixed-route bus [@dft2021busbackbetter]. As the focus of transport planning shifts from "predict and provide" to "decide and provide" [@marsden2018commission], there is increased emphasis on improving equity of access. DRT could be one of the many tools used by local transport authorities to maintain geographic coverage and social inclusion.
 
 [^3]: DRT is often referred to using different names, including "shared (autonomous) vehicles" and "(autonomous) mobility-on-demand"
 
-However, it is important to note that while DRT offers many potential benefits if properly integrated with public transport, the government is aware that its economic viability is not yet generally well established [@govsci2019change].
+However, it is important to note that while DRT offers many potential benefits if properly integrated with public transport, its economic viability is not yet generally well established [@govsci2019change]
 
-The DfT has solicited evidence (from research institutes, industry groups, consultancies, government stakeholders, and NGOs) on DRT through the Future of Transport regulatory review [@dft2020regulatory], and the responses show that there are mixed views when it comes to regulatory approaches. The general consensus was that DRT service provision should be informed by demand, but there was disagreement on issues such as:
-
-1.  Whether (and how) the operational areas should be constrained
-
-2.  Waiting times: current guidelines indicate that a time-window for pick-up should not exceed 20 minutes. Some respondents saw it as appropriate, some saw that there was no need to impose a time window , and some saw that it should be reduced down to 5 minutes.
-
-3.  Fare structures: Should they be fixed or flexible? Should there be peak and off-peak fares? Should there be distance-based pricing? Should passengers be able to know their fare ahead of time? Should the fare system be integrated with other modes?
-
-While the review provided an overview of the issues to be considered, the absence of well-developed guidelines on DRT planning is evident in the range of viewpoints presented. Pilot projects are underway to gather evidence, but there is also a need for measures and modeling frameworks that can help inform the debate on DRT operating zones and service levels. Such analyses would shed light on the extent to which DRT can solve the "ridership/coverage" dilemma of public transport and bring about a reduction in car use. It would also help better understand the carbon efficiency of proposed DRT services, how they compare to existing modes of travel [@decarbon2020emmisions], and the knock-on effects of improved public transport accessibility on passenger load factor, vehicle-km traveled, and overall carbon efficiency.
-
-```{=html}
-<!-- 
------ GENRAL INTRO
-.......... CREDS blogpost: ..........
-
-- 2018: buses carried 5% of all trips -> balanced pathways to zero-carbon system: figure needs to increase to 10% 
-- buses: better management of limited space + wide socioeconomic benefit 
-  - 2018: 24% of households have no access to a car or van / 41% have access to only 1 car or van (get 2021/2022 figures!)
-- National bus strategy / Bus Back Better
-- FUTURE OF TRANSPORT REGULATORY REVIEW: includes DRT
-
-- Buses are among the most carbon efficient modes of transport (emissions / passnger km) -> Passenger load is key to maintaining and increasing this advantage
-
-Demand for bus journeys: 
-- statistics on 
-    - bus mode share / no of trips by bus 
-    - mode share for different trip lengths
-    - https://www.gov.uk/government/statistics/annual-bus-statistics-year-ending-march-2022/annual-bus-statistics-year-ending-march-2022
-- historical trends
-  - www.theitc.org.uk/wp-content/uploads/2015/03/ITC-Bus-market-in-England-Jan-2020.pdf
-  
-- Spatial variation in bus use
-
-- Policies 
-  - variables that define mode choice: journey time and reliability | realtive cost | quality of door to door experience
-  
------ Route network / Public transport gaps
-
---> 
-```
-```{=html}
-<!--# Segmentation studies find that a significant subset of car owners retain a
-very strong psychological attachment to their vehicle (Anable, 2005; Thornton
-et al., 2011). Psychological motives and social factors (see Section 4.3) are
-relatively less important in future travel choices, meaning that practical motives
-remain dominant. As an example, young people are driving less, predominantly
-for practical reasons. They still tend to regard cars as necessary to access jobs,
-training and services, but they do not particularly value the perceived autonomy,
-status or prestige that car ownership is thought to offer (Green et al., 2018).
-
-Anable, J. (2005). ‘Complacent car addicts’ or ‘aspiring
-environmentalists’? Identifying travel behaviour segments using
-attitude theory. Transport Policy, 12(1), 65-78. DOI: 10.1016/j.
-tranpol.2004.11.004  
-
-Green, J., Steinbach, R., Garnett, E., Christie, N. and Prior, L.
-(2018). Automobility reconfigured? Ironic seductions and mundane
-freedoms in 16-21 year olds’ accounts of car driving and ownership.
-Mobilities, 13(1), 14-28. DOI: 10.1080/17450101.2017.1331017 -->
-```
 ```{=html}
 <!-- gtfs2gps paper:
 
 Nonetheless, a general recommendation by UN-Habitat (2018) is that a definition of ‘convenient’ access to public transport should, whenever possible, be based on at least two aspects. The first one is spatial proximity. The UN-Habitat (2018) recommends that people’s distance to public transport stops should be shorter than 500m (considering either Euclidean or network distance). The second aspect is the temporal availability of public transport, which speaks directly to the level of service frequency and how it impacts people’s waiting times. Here, there is no specific frequency level recommended by UN-Habitat or agreed upon in the literature. Whatever threshold values of proximity and service frequency are chosen to define convenient access, understanding how service levels differ for different socioeconomic groups and at different times of the day becomes critical from an equity point of view.-->
-
-<!-- 
------ GENRAL INTRO
-.......... CREDS blogpost: ..........
-
-- Spatial variation in bus use
-
-- Policies 
-  - variables that define mode choice: journey time and reliability | realtive cost | quality of door to door experience
-  
------ Route network / Public transport gaps
-
-
-
---> 
 ```
-# Overview of the Research
-
-For DRT to be successful, it should be part of an integrated public transport offering that provides a competitive alternative to private car use. *The aims of this research are to (a) develop methods to identify demand gaps in public transport provision that can be filled by DRT, and to (b) understand the potential benefits and issues of integrating DRT with existing public transport systems through simulation-based approaches.*
-
-I present a brief overview of the research questions here, and expand on them after the literature review section.
-
-***How can we define potential DRT operating areas based on travel demand?***
-
-While experts agree that DRT service provision should be based on demand [@dft2020regulatory], there are no agreed upon methods for how demand gaps that suit DRT can be identified in a way that allows DRT to be integrated with public transport. Accessibility measures offer a simple and understandable way towards preliminary planning of said integration. Such measures have been used to identify gaps in the public transport network, to analyse horizontal and vertical equity, and more recently, through the adoption of individual-based accessibility measures, to look at spatiotemporal variations in accessibility. These individual-based accessibility measures are not yet widely adopted due to data requirements and computational demand. However, with increasing data availability and standardization (e.g. open source GTFS feeds), and significant improvements in multimodal routing capabilities, these barriers are more easily bridged. The research will explore the use of individual-based accessibility measures to identify gaps in transport network provision, and understanding when, where, and what type of DRT could be used to fill these gaps. The main contribution will be to embed existing travel demand into our accessibility calculation, and use that to inform potential service areas for DRT.
+<!--# For DRT to be successful, it should be part of an integrated public transport offering that provides a competitive alternative to private car use. The aims of this research are to (a) develop methods to identify demand gaps in public transport provision that can be filled by DRT, and to (b) understand the potential benefits and issues of integrating DRT with existing public transport systems through simulation-based approaches. -->
 
 ## Case Study
 
@@ -183,29 +100,7 @@ The concept of DRT goes back to the 1970s, and it has taken other names such as 
 
 ![DRT in context - Source [@d1994demand]](images/deste-drt-1994.jpg){#fig-drt-in-context}
 
-While the term DRT has become an umbrella term for flexible public transport, services can be grouped under different DRT typologies [@enoch2004intermode]:
-
--   *Interchange DRT*: feeder links to conventional public transport.
-
--   *Network DRT*: enhances public transport by providing additional services or by replacing economic services in a particular place or at a particular time.
-
--   *Destination-Specific DRT*: specialist form of network DRT that serves particular destinations such as airports or employment locations
-
--   *Substitute DRT*: totally or substantially replacing conventional bus services (reinvention of public transport)
-
-DRT services can also be grouped based on scheduling and operational characteristics [@d1994demand]:
-
--   Many-to-One Services: patronage is concentrated at one of the two trip ends. Complexity of operation is reduced
-
--   Many-to-Few: more than a single location at the destination, but still manageable
-
--   Many-to-many (Transfer): users can travel from any origin to any destination, but may need to transfer vehicles to do so
-
--   Many-to-many: direct service covering all trip origins and destinations
-
--   Shared Taxis (ride-pooling): conventional taxis but several people can use the same vehicle which may deviate on its route to accommodate the different passengers
-
-For diagrammatic descriptions of the different operational characteristics, the reader is referred to [@mageean2003evaluation; @pavanini2023role].
+While the term DRT has become an umbrella term for flexible public transport, services can be grouped under different DRT typologies [@enoch2004intermode] or scheduling and operational characteristics [@d1994demand]. For diagrammatic descriptions of the different operational characteristics, the reader is referred to [@mageean2003evaluation; @pavanini2023role].
 
 These different service offerings highlight the complexity of DRT planning. On the one hand, this flexibility allows DRT services to be tailored to the specific demand patterns of an area. Conversely, the overly complex services, or services that don't match the needs of the local community, are prone to failure (as explained below). Choosing the wrong service could lead to bad user experience and unnecessarily expensive operating costs.
 
@@ -223,27 +118,11 @@ DRT systems tend to have a higher cost per passenger than fixed-route public tra
 
 While the fixed costs per passenger of DRT may be higher than public transport, the latter is not always operating at full capacity. Indeed, there are many cases of low density regions that are either served by subsidized public transport routes, or cutoff from public transport due to the high cost of serving them. In these cases, the lower cost-per-hour of DRT in comparison to public transport would justify its usage [@volinski2019tcrp].
 
-The relatively poor performance of DRT may not bode well for its future as a mode of transport. However @davison2014survey argue that this may change in the near future as different elements come together:
-
--   Technological improvements in routing and scheduling software, and the widespread use of smart phones with mobile applications.
-
--   Societal trends including an ageing population (potentially higher unemployment), lower density development (and the associated rise in car use). The need for alternatives to the private car is becoming increasingly important, but land use characteristics make conventional public transport unable to meet this need.
-
--   Public transport funding difficulties, which are leading to a desire to explore more cost-effective measures of public transport provision.
-
-As the focus of transport planning shifts from "predict and provide" to "decide and provide" [@marsden2018commission], there is increased emphasis on improving equity of access. DRT could be one of the many tools used by local transport authorities to maintain geographic coverage and social inclusion. This research focuses on the Internal Environment component, as defined by @enoch2006demand.
+This research focuses on the Internal Environment component, as defined by @enoch2006demand.
 
 ## Planning DRT systems {#sec-planning_drt}
 
-The planning of public transport systems with conventional bus services is well established and follows a sequential approach [@ceder1986bus; @ibarra2015planning] that includes:
-
--   **Strategic planning**: determination of lines, vehicle types, and stop locations
-
-    **Tactical planning**: service frequency, fleet size, departure and arrival times (based on pre-defined transit routes network and OD demand patterns)
-
--   **Operational planning**: vehicle scheduling, driver scheduling, and driver rostering
-
-The high failure rate of DRT systems is related to the lack of a similar robust methodological planning framework for its appraisal [@papanikolaou2017methodological].
+The planning of public transport systems with conventional bus services is well established and follows a sequential approach [@ceder1986bus; @ibarra2015planning] that includes *strategic*, *tactical*, and *operational* planning. The high failure rate of DRT systems is related to the lack of a similar robust methodological planning framework for its appraisal [@papanikolaou2017methodological].
 
 In trying to map DRT research onto these planning pillars, @papanikolaou2017methodological find that DRT research can be split into:
 
@@ -257,21 +136,7 @@ In trying to map DRT research onto these planning pillars, @papanikolaou2017meth
 
 Whereas the latter is studied extensively, there remains a need to develop general approaches on identifying potential areas for DRT services [@papanikolaou2017methodological]. This has become more necessary as DRT systems evolve from being targeted at special groups (in parallel to conventional public transport), to being integrated with public transport with the aim of improving accessibility for entire communities [@nelson2010recent]. <!--# this should be grounded in accessibility, not something else … cite Tools of the Trade -->
 
-These approaches can then be integrated into the wider public transport planning process (that combines strategic, tactical, and operational planning). Such an approach could include the following "steps" outlined by @papanikolaou2017methodological :
-
-1.  Which is/are the area(s) DRT investments should be examined for?
-
-2.  Which is the type and network of DRT investment required for the network?
-
-3.  Which is the appropriate evaluation method to be used for the assessment?
-
-4.  How should 'success' be defined for deciding upon the implementation of the DRT service?
-
-Given the shift from mobility to accessibility-centered transport planning [@siddiq2021tools], it makes sense for the first two points to be addressed from the perspective of improving accessibility.
-
-<!--# ABM and DRT papers (check notion) -->
-
-### Importance of delineating operating zones
+### Importance of delineating DRT operating areas
 
 *Question: should I split this section into (a) empirical findings and (b) simulation results?*
 
@@ -314,6 +179,12 @@ Given these results, it has been suggested that DRT may only be useful[^4] in ar
 ### Accessibility measures and defining DRT zones
 
 *Continue here ... need to extract relevant parts from below section and rethink how I will talk about accessibility -\> how to get to demand-based [@mohri2021clustering] quickly? (I am only using one small part of mohri really)*
+
+-   Given the shift from mobility to accessibility-centered transport planning [@siddiq2021tools], it makes sense for the first two points to be addressed from the perspective of improving accessibility.
+
+-   While experts agree that DRT service provision should be based on demand [@dft2020regulatory], there are no agreed upon methods for how demand gaps that suit DRT can be identified in a way that allows DRT to be integrated with public transport.
+
+<!--# While experts agree that DRT service provision should be based on demand [@dft2020regulatory], there are no agreed upon methods for how demand gaps that suit DRT can be identified in a way that allows DRT to be integrated with public transport. Accessibility measures offer a simple and understandable way towards preliminary planning of said integration. Such measures have been used to identify gaps in the public transport network, to analyse horizontal and vertical equity, and more recently, through the adoption of individual-based accessibility measures, to look at spatiotemporal variations in accessibility. These individual-based accessibility measures are not yet widely adopted due to data requirements and computational demand. However, with increasing data availability and standardization (e.g. open source GTFS feeds), and significant improvements in multimodal routing capabilities, these barriers are more easily bridged. The research will explore the use of individual-based accessibility measures to identify gaps in transport network provision, and understanding when, where, and what type of DRT could be used to fill these gaps. The main contribution will be to embed existing travel demand into our accessibility calculation, and use that to inform potential service areas for DRT. -->
 
 ## Accessibility and the potential for DRT integration {#sec-drt-accessibility}
 
