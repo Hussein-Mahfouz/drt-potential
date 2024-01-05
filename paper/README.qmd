@@ -1,7 +1,7 @@
 ---
-title: "Transfer Report"
-subtitle: "Exploring the Potential for Integrating Demand Responsive Transport with Public Transport"
+title: "Exploring the Potential for Integrating Demand Responsive Transport with Public Transport"
 author: "Hussein Mahfouz"
+# abstract: "placeholder text"
 date: "`r format(Sys.time(), '%d %m %y')`"
 format:
   #gfm: default
@@ -17,6 +17,8 @@ format:
   #   extra_dependencies: ["float"]
 keep-tex: true
 bibliography: lit-review.bib
+# elsevier style for referencing (from https://github.com/citation-style-language/styles)
+csl: elsevier-harvard.csl
 # so that figures don't float around
 # include-in-header:
 #  \usepackage{float}
@@ -29,75 +31,35 @@ bibliography: lit-review.bib
 knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
 ```
 
-# List of Acronyms {.unnumbered}
-
--   ABM: Agent-Based Model
-
--   AcBM: Activity-Based Model
-
--   DfT: Department for Transport
-
--   DRT: Demand-Responsive Transport
-
--   GO-Science: Government Office for Science
-
--   HL: House of Lords
-
--   IPCC: Intergovernmental Panel on Climate Change
-
--   RAEng: Royal Academy of Engineering
-
--   WYCA: West Yorkshire Combined Authority
-
 # Introduction
 
 Transport is a major contributor to global emissions, accounting for almost a quarter of global CO~2~ emissions from energy [@ritchie_2020]. In the UK, transport is the end-use sector with the highest energy demand, with said demand having doubled over the past 50 years [@barrett2021role].
 
-## Transport decarbonisation in the UK
-
 In order to stay within its legally binding carbon budget, the UK's Department for Transport (DfT) has set out a plan to decarbonise its transport sector using both supply and demand-side measures [@dft2021decarbonising]. While supply-side technological advancements may be part of the solution, lifestyle changes, such as shifting to sustainable modes of transport, are necessary so as to disentangle net-zero policy targets from ambitious (and potentially disruptive) technological breakthroughs [@brand2019lifestyle]. These lifestyle changes (or demand side mitigation options) related to land transport have the potential to bring down the sector's emissions by an estimated 67% [@ipcc2023synthesis].
 
-### The state of bus service provision
+## The state of bus service provision
 
-Buses are key part of decarbonisation policy in England [@dft2021busbackbetter; @dft2021decarbonising]. Research on pathways to net-zero that involve lifestyle changes estimates that local bus usage needs to increase by around 85% (to reach \~10% of total trips) [@brand2019lifestyle].
-
-The National Bus Strategy [@dft2021busbackbetter] launched in 2021 set out a vision for an improved bus service across the country, one where buses would be the mode of choice for everyone, even those who currently own cars. The reality is that frequent, reliable, high quality public transport is uncommon in urban areas outside of London. Bus service provision has been impaired by issues related to changing travel demand post-covid, a lack of integrated mobility hubs and coordinated timetables, poor ticket integration, inefficient coordination between local and transport plans, and funding constraints [@lords2022townsandcities]. A closer look at historical trends[^1] shows a steady decline in ridership and service provision.
+Buses are key part of decarbonisation policy in England [@dft2021busbackbetter; @dft2021decarbonising]. Research on pathways to net-zero that involve lifestyle changes estimates that local bus usage needs to increase by around 85% (to reach \~10% of total trips) [@brand2019lifestyle]. The reality is that bus service provision has been impaired by issues related to changing travel demand post-covid, a lack of integrated mobility hubs and coordinated timetables, poor ticket integration, inefficient coordination between local and transport plans, and funding constraints [@lords2022townsandcities]. A closer look at historical trends[^1] shows a steady decline in ridership and service provision.
 
 [^1]: The DfT makes a distinction between local bus journeys (timetabled services that carry passengers over relatively short distances) and other types of bus services (long distance coaches, private hire services). the statistics below are for local bus journeys
 
-#### Ridership
+Over the period between 1995-2017, reductions in bus services saw mileage decrease by 7% [@govsci2019change]. All regions in England have seen such a decrease [@fig-bus02b-facet-change], with reductions being most severe in the North West.
 
-The recovery from Covid is underway, with local bus journey up 79.6% in financial year ending 2022 compared to 2021. However, at 2.8 billion journeys, the number of journeys is 30% below that in 2020 [@dft2022bus01].
+![Change in Vehicle Km over time (England, Regions)](images/bus02b-facet-change.png){#fig-bus02b-facet-change alt="Change in Vehicle Km over time (England, Regions)"}
 
-Over 50% of bus journeys take place in London [@dft2022bus01], and during the period from 1985-2017, bus use in the capital almost doubled ([@dft2022bus02] as cited in [@govsci2019change]). The story is different for the rest of the country, where ridership fell by 40% over the same period [@dft2022bus02]. @fig-bus01b-one_plot-no_london shows a gradual decrease in ridership per head of population from 2004 - 2022. With the exception of the South East and South West, all regions were showing a decrease in ridership before the Covid pandemic. The decrease is sharper in metropolitan areas, as shown in @fig-bus01b-one_plot-rural_urban . Since 2010, almost every local authority in the country has seen a decrease in ridership [@fig-map_bus01f_cumul_change_total].
+This decline is concerning, as most bus routes (outside of London) are operated by private companies for a profit. Decreases in ridership leads to service cuts or prices increases, creating a downward spiral of lower ridership and service cuts [@govsci2019change].
 
-![Change in passenger journeys over time (England, Regions)](images/plots/outputs/bus01b-one_plot-no_london.png){#fig-bus01b-one_plot-no_london width="400"}
+This phenomenom is visible in bus use figures[^2] where ridership fell by 40% over the same period across the country [@dft2022bus02]. @fig-bus01b-one_plot-no_london shows a gradual decrease in ridership per head of population from 2004 - 2022.
 
-![Change in passenger journey over time (metropolitan and non-metropolitan areas)](images/plots/outputs/bus01b-one_plot-rural_urban.png){#fig-bus01b-one_plot-rural_urban width="400"}
+[^2]: London is an exception to the trend; Over 50% of bus journeys take place in London [@dft2022bus01], and during the period from 1985-2017, bus use in the capital almost doubled ([@dft2022bus02] as cited in [@govsci2019change]).
 
-![Change in passenger journeys per head of population relative to 2009 (England, Local Authorities) [@dft2022bus01]](images/plots/outputs/map_bus01f_cumul_change_total.png){#fig-map_bus01f_cumul_change_total}
+![Change in passenger journeys over time (England, Regions)](images/bus01b-one_plot-no_london.png){#fig-bus01b-one_plot-no_london}
 
-#### Service Provision
+## DRT and the future of bus service provision
 
-The decrease in ridership has gone hand in hand with a decrease in bus service provision. Over the period between 1995-2017, reductions in bus services saw mileage decrease by 7% [@govsci2019change]. All regions in England have seen such a decrease [@fig-bus02b-facet-change], with reductions being most severe in the North West. Barring a few exceptions, these reductions have impacted all local authorities, as shown in [@fig-map_bus02d_cumul_change_total].
+Recent developments, such as a shift away from the deregulation that has characterized the bus industry since the 1980s towards franachising and enhanced partnerships [@preston2023all; @lords2022townsandcities], are likely to give rise to changes to public transport systems across the country. The new powers being handed over to combined authorities will allow them to transition from route-centric, profit-driven service provision to more London-style network-level planning that improves efficiency and allows for cross-subsidization of routes. As deregulation is reversed, local government transport planning bodies will be faced with the challenge of redesigning networks to attract higher levels of ridership. This will involve choosing different services for different areas based on potential ridership. While long term planning may involve changes to land use, travel patterns, and residential density, short term planning is focused on what sort of service to run in different areas. One option that is being trialed as a complementary service to public transport is Demand-Responsive Transport (DRT)[^3] [@dft2020deal]. In some areas, a demand-responsive fleet may be more cost-effective than a subsidised fixed-route bus. DfT is interested in DRT services for low-density areas, weekend travel, and large workplaces with working hours that don't align with traditional peak periods [@dft2021busbackbetter]. There are many benefits potential associated with well-planned DRT services. These include reducing congestion through mode shift, increasing accessibility in places that are not well served by public transport, and the associated economic and social inclusion benefits that come with that [@dft2021busbackbetter].
 
-![Change in Vehicle Km over time (England, Regions)](images/plots/outputs/bus02b-facet-change.png){#fig-bus02b-facet-change}
-
-![Change in total bus vehicle-km since 2009 (England, Local Authorities)](images/plots/outputs/map_bus02d_cumul_change_total.png){#fig-map_bus02d_cumul_change_total}
-
-This decline is concerning, as most bus routes (outside of London) are operated by private companies for a profit. Decreases in ridership lead to service cuts or prices increases, creating a downward spiral of lower ridership and service cuts [@govsci2019change].
-
-This has indeed been the case, particularly in metropolitan areas where yearly bus mileage by private companies has decreased by almost 100 million km ([@fig-bus02a-facet-classification]). To try and limit socially necessary but commercially inviable services from being cut, the government provides a grant of around £250 million a year and, since 2014 £43 million of that has been going directly to local authorities [@dft2020deal].
-
-@fig-bus02a-facet-classification shows that despite this funding, both commercial and local-authority mileage is on a downward trend
-
-![Change in vehicle km (Commercial, Local Authority supported, and Total)](images/plots/outputs/bus02a-facet-classification.png){#fig-bus02a-facet-classification}
-
-### The future of bus service provision
-
-Looking ahead, recent developments are likely to give rise to changes to public transport systems across the country. One notable trend involves a shift away from the deregulation that has characterized the bus industry since the 1980s [@preston2023all]. Initiatives like franchising and enhanced partnership are gaining traction [@lords2022townsandcities], and the new powers being handed over to combined authorities will allow them to transition from route-centric, profit-driven service provision to more London-style network-level planning that improves efficiency and allows for cross-subsidization of routes. As deregulation is reversed, local government transport planning bodies will be faced with the challenge of redesigning networks to attract higher levels of ridership. This will involve choosing different services for different areas based on potential ridership. While long term planning may involve changes to land use, travel patterns, and residential density, short term planning is focused on what sort of service to run in different areas. One option that is being trialed as a complementary service to public transport is Demand-Responsive Transport (DRT)[^2] [@dft2020deal]. In some areas, a demand-responsive fleet may be more cost-effective than a subsidised fixed-route bus. DfT is interested in DRT services for low-density areas, weekend travel, and large workplaces with working hours that don't align with traditional peak periods [@dft2021busbackbetter]. There are many benefits associated with well-planned DRT services. These include reducing congestion through mode shift, increasing accessibility in places that are not well served by public transport, and the associated economic and social inclusion benefits that come with that [@dft2021busbackbetter].
-
-[^2]: DRT is often referred to using different names, including "shared (autonomous) vehicles" and "(autonomous) mobility-on-demand"
+[^3]: DRT is often referred to using different names, including "shared (autonomous) vehicles" and "(autonomous) mobility-on-demand"
 
 However, it is important to note that while DRT offers many potential benefits if properly integrated with public transport, the government is aware that its economic viability is not yet generally well established [@govsci2019change].
 
@@ -323,9 +285,9 @@ When allowed to operate across an entire city or region, the % of DRT users that
 
 Mode shift on it's own is not an indicator of more sustainable travel. A high DRT mode share could be the result of a large fleet size with high dead mileage or low-occupancy trips. Simulation results show that increases in congestion and system-wide total vehicle km are likely [@oke2020evaluating; @kagho2021demand; @rath2023assessing], even under scenarios which constrain operating areas [@rath2023assessing] or offer DRT as a feeder to mass transit [@oke2020evaluating].
 
-Given these results, it has been suggested that DRT may only be useful[^3] in areas with poor PT level of service [@rath2023assessing]. Even so, in order to move towards the desired mode shift and reduce VKT, the service area needs to be informed by spatial and temporal demand in the region [@kagho2021demand].
+Given these results, it has been suggested that DRT may only be useful[^4] in areas with poor PT level of service [@rath2023assessing]. Even so, in order to move towards the desired mode shift and reduce VKT, the service area needs to be informed by spatial and temporal demand in the region [@kagho2021demand].
 
-[^3]: useful as in leads to more sustainable travel. Should I / how do I add equity here?
+[^4]: useful as in leads to more sustainable travel. Should I / how do I add equity here?
 
 <!--# Existing mode share, land use, population density, and demographics are among the factors that effect mode shift, emphasizing the need for operating zones that cater to the specific area being studied -->
 
@@ -543,11 +505,11 @@ We use this method along with the proposed parameters. Below we introduce the sp
 
 #### Transport Supply
 
-The main components of transport supply are the road network, and the public transport timetables for buses and rail. We get the updated road network from OSM. Bus timetable data is obtained in GTFS format from the Bus Open Data Service (BODS)[^4] and rail data is obtained from the Rail Delivery Group[^5].
+The main components of transport supply are the road network, and the public transport timetables for buses and rail. We get the updated road network from OSM. Bus timetable data is obtained in GTFS format from the Bus Open Data Service (BODS)[^5] and rail data is obtained from the Rail Delivery Group[^6].
 
-[^4]: https://data.bus-data.dft.gov.uk/
+[^5]: https://data.bus-data.dft.gov.uk/
 
-[^5]: https://data.atoc.org/
+[^6]: https://data.atoc.org/
 
 #### Travel time calculations
 
