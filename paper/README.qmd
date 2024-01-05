@@ -70,24 +70,6 @@ Nonetheless, a general recommendation by UN-Habitat (2018) is that a definition 
 ```
 <!--# For DRT to be successful, it should be part of an integrated public transport offering that provides a competitive alternative to private car use. The aims of this research are to (a) develop methods to identify demand gaps in public transport provision that can be filled by DRT, and to (b) understand the potential benefits and issues of integrating DRT with existing public transport systems through simulation-based approaches. -->
 
-## Case Study
-
-<!--# Mode share breakdown Leeds | population distribution / density? | Number of operators | It is bus only -->
-
-The research will focus on the city of Leeds as a case study. Leeds is the biggest city in West Yorkshire, a ceremonial county with an economy that generates over £55 billion per year (more than 9 EU countries) [@wyca2021connectivity]. The West Yorkshire Combined Authority (WYCA) has declared a climate emergency, and has put a target to reach net-zero by 2030. It has estimated that a significant mode shift will be needed to achieve this target, and has set a target of 52% increase in bus mode share [@wyca2021connectivity]. This is an ambitious target seeing as the decade between 2009-2019 saw a decrease of 15% (from 170 million to 144 million) in annual bus trips in the region. [@wyca2021improvement].
-
-![Population Density in Leeds](images/plots/outputs/study_area/pop_distribution.png){#fig-pop-density width="400"}
-
-A recent report on bus services in Leeds highlighted that they were concentrated between two main operators, FirstBus (65.6%) and Arriva (26.1%), and that over 50% of routes in the city are likely to experience adverse effects of (a lack of) competition [@wyca2017bus]. The report highlights that bus operators are not a homogeneous group, and that there was no formal process for them to coordinate on plans and policies. In the Leeds Bradford area, 40% of population have access to only 1 bus per hour outside peak hours, and many areas have poor or non-existent access to rail [@wyca2021connectivity].
-
-Following the new powers given to local transport authorities under the bus services act, the West Yorkshire Bus Service Improvement Plan [@wyca2021improvement] has set ambitious targets for bus mode share, patronage, service provision (bus miles), journey times, as well as accessibility. The plan acknowledges that changes will need to be made to the network, which currently fails to meet user needs (due to a reduction in services and to routes being based on historic travel patterns) and is heavily subsidized [@wyca2021improvement]. A big part of the ambition is better integrate buses as part of a multimodal public transport offer. Demand-Responsive Transport is also seen as a means of providing more efficient access than traditional public transport to low-density areas; WYCA is already piloting such a service (Flexibus) in East Leeds [@wyca2021improvement]. There is an ambition to roll out the service more widely, but that is contingent on understanding passenger response to the pilot, identifying which candidate areas it could be suitable for, and modeling the performance and uptake of such a service under different scenarios.
-
-Leeds is a good area to test our approach given the size of the city and the heterogeneous nature of demographics and population density.
-
-![Comparing commuting by Bus and Car in Leeds](images/plots/outputs/study_area/main_mode_commute_perc.png){#fig-commuting-census width="800"}
-
-\pagebreak
-
 # Literature Review
 
 ## Overview of Demand Responsive Transport (DRT) {#sec-drt-overview}
@@ -184,7 +166,23 @@ Given these results, it has been suggested that DRT may only be useful[^4] in ar
 
 -   While experts agree that DRT service provision should be based on demand [@dft2020regulatory], there are no agreed upon methods for how demand gaps that suit DRT can be identified in a way that allows DRT to be integrated with public transport.
 
-<!--# While experts agree that DRT service provision should be based on demand [@dft2020regulatory], there are no agreed upon methods for how demand gaps that suit DRT can be identified in a way that allows DRT to be integrated with public transport. Accessibility measures offer a simple and understandable way towards preliminary planning of said integration. Such measures have been used to identify gaps in the public transport network, to analyse horizontal and vertical equity, and more recently, through the adoption of individual-based accessibility measures, to look at spatiotemporal variations in accessibility. These individual-based accessibility measures are not yet widely adopted due to data requirements and computational demand. However, with increasing data availability and standardization (e.g. open source GTFS feeds), and significant improvements in multimodal routing capabilities, these barriers are more easily bridged. The research will explore the use of individual-based accessibility measures to identify gaps in transport network provision, and understanding when, where, and what type of DRT could be used to fill these gaps. The main contribution will be to embed existing travel demand into our accessibility calculation, and use that to inform potential service areas for DRT. -->
+-   Accessibility measures offer a simple and understandable way towards preliminary planning of said integration. Such measures have been used to identify gaps in the public transport network, to analyse horizontal and vertical equity, and more recently, through the adoption of individual-based accessibility measures, to look at spatiotemporal variations in accessibility. These individual-based accessibility measures are not yet widely adopted due to data requirements and computational demand. However, with increasing data availability and standardization (e.g. open source GTFS feeds), and significant improvements in multimodal routing capabilities, these barriers are more easily bridged. The research will explore the use of individual-based accessibility measures to identify gaps in transport network provision, and understanding when, where, and what type of DRT could be used to fill these gaps. The main contribution will be to embed existing travel demand into our accessibility calculation, and use that to inform potential service areas for DRT.
+
+# Case Study
+
+<!--# Mode share breakdown Leeds | population distribution / density? | Number of operators | It is bus only -->
+
+The research will focus on the city of Leeds as a case study. Leeds is the biggest city in West Yorkshire, a ceremonial county with an economy that generates over £55 billion per year (more than 9 EU countries) [@wyca2021connectivity]. The West Yorkshire Combined Authority (WYCA) has declared a climate emergency, and has put a target to reach net-zero by 2030. It has estimated that a significant mode shift will be needed to achieve this target, and has set a target of 52% increase in bus mode share [@wyca2021connectivity]. This is an ambitious target seeing as the decade between 2009-2019 saw a decrease of 15% (from 170 million to 144 million) in annual bus trips in the region. [@wyca2021improvement].
+
+![Population Density in Leeds](images/plots/outputs/study_area/pop_distribution.png){#fig-pop-density alt="Population Density in Leeds" width="400"}
+
+<!--# A recent report on bus services in Leeds highlighted that they were concentrated between two main operators, FirstBus (65.6%) and Arriva (26.1%), and that over 50% of routes in the city are likely to experience adverse effects of (a lack of) competition [@wyca2017bus]. The report highlights that bus operators are not a homogeneous group, and that there was no formal process for them to coordinate on plans and policies. In the Leeds Bradford area, 40% of population have access to only 1 bus per hour outside peak hours, and many areas have poor or non-existent access to rail [@wyca2021connectivity]. -->
+
+Following the new powers given to local transport authorities under the bus services act, the West Yorkshire Bus Service Improvement Plan [@wyca2021improvement] has set ambitious targets for bus mode share, patronage, service provision (bus miles), journey times, as well as accessibility. The plan acknowledges that changes will need to be made to the network, which currently fails to meet user needs (due to a reduction in services and to routes being based on historic travel patterns) and is heavily subsidized [@wyca2021improvement]. A big part of the ambition is better integrate buses as part of a multimodal public transport offer. Demand-Responsive Transport is also seen as a means of providing more efficient access than traditional public transport to low-density areas; WYCA is already piloting such a service (Flexibus) in East Leeds [@wyca2021improvement]. There is an ambition to roll out the service more widely, but that is contingent on understanding passenger response to the pilot, identifying which candidate areas it could be suitable for, and modeling the performance and uptake of such a service under different scenarios.
+
+# Methods
+
+# TO INTEGRATE:
 
 ## Accessibility and the potential for DRT integration {#sec-drt-accessibility}
 
