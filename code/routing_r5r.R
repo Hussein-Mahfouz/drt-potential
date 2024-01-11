@@ -3,7 +3,9 @@
 ###    combination. r5r is used for the calculations                                            ###
 ###################################################################################################
 
+source("R/study_area_geographies.R")
 source("R/r5r_routing_wrappers.R")
+source("code/routing_prep.R")
 
 library(tidyverse)
 library(sf)
@@ -28,33 +30,6 @@ dir.create(paste0(travel_time_path, geography))
 # ------------------------------------- PREPARE (BASE) OD MATRIX LAYER ------------------------------------- #
 
 study_area <- st_read("data/interim/study_area_boundary.geojson")
-
-
-# --- edit the sf to match the requested geographic resolution. The original layer is at the OA level, but we may want LSOA or MSOA
-
-study_area_geographies <- function(study_area,
-                                   geography){
-  # get a resolved geometry and retain the first value in each group (the values are the same for all elements in the same group - only the OA is different)
-  if(geography == "MSOA"){
-    message("converting from OA to MSOA")
-    study_area <- study_area %>%
-      group_by(MSOA21CD) %>%
-      summarise(across(c(OBJECTID, where(is.character)), ~first(.x))) %>%
-      select(-c(LSOA21CD, OA21CD))
-
-  } else if(geography == "LSOA"){
-    message("converting from OA to LSOA")
-    study_area <- study_area %>%
-      group_by(LSOA21CD) %>%
-      summarise(across(c(OBJECTID, where(is.character)), ~first(.x))) %>%
-      select(-OA21CD)
-
-  } else if(geography == "OA"){
-    message("keeping original OA boundaries")
-  }
-  return(study_area)
-}
-
 
 # edit the study area to match the chosen resolution
 study_area <- study_area_geographies(study_area = study_area,
@@ -208,6 +183,8 @@ shortest_path_car <- r5r::detailed_itineraries(r5r_core = r5r_core,
 # keep necessary columns only
 shortest_path_car <- shortest_path_car %>%
   select(from_id, to_id, total_duration, total_distance)
+
+# TODO: save as geoparquet file when geoarrow r package matures https://geoarrow.github.io/geoarrow-r/index.html
 
 #st_write(shortest_path_car, paste0(travel_time_path, geography, "/shortest_path_car.geojson"), delete_dsn = TRUE)
 saveRDS(shortest_path_car, paste0(travel_time_path, geography, "/shortest_path_car.Rds"))

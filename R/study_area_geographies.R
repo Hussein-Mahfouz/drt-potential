@@ -9,14 +9,16 @@ study_area_geographies <- function(study_area,
     study_area <- study_area %>%
       group_by(MSOA21CD) %>%
       summarise(across(c(OBJECTID, where(is.character)), ~first(.x))) %>%
-      select(-c(LSOA21CD, OA21CD))
+      select(-c(LSOA21CD, OA21CD)) %>%
+      ungroup()
 
   } else if(geography == "LSOA"){
     message("converting from OA to LSOA")
     study_area <- study_area %>%
       group_by(LSOA21CD) %>%
       summarise(across(c(OBJECTID, where(is.character)), ~first(.x))) %>%
-      select(-OA21CD)
+      select(-OA21CD) %>%
+      ungroup()
 
   } else if(geography == "OA"){
     message("keeping original OA boundaries")
