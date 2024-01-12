@@ -82,14 +82,11 @@ od_demand_no_direct <- od_demand_no_direct %>%
 
 # --- c. OPTION 1: use overline to get total flow on road network
 
-# nest sf data by combination and apply overline per nested df
-od_demand_filtered <- od_demand_no_direct %>%
+od_demand_overline <- od_demand_no_direct %>%
+  # nest sf data by combination and apply overline per nested df
   group_by(combination) %>%
-  nest()
-
-# use map to apply overline function to all groups
-od_demand_overline <- od_demand_filtered %>%
-  # create a new df for each group
+  nest() %>%
+  # use map to apply overline function to all groups
   mutate(demand = map(data, ~ stplanr::overline(sl = .x,
                                                 attrib = "commute_all",
                                                 ncores = 3,
@@ -101,15 +98,12 @@ od_demand_overline <- od_demand_filtered %>%
 
 
 
-
-
-
 # --- d. OPTION 2: use overline + network simplification methods to remove parallel lines
 
-
-# use map to apply overline() + simplify_graph() function to all groups
-od_demand_overline_merge <- od_demand_filtered %>%
-  # create a new df for each group
+od_demand_overline_merge <-od_demand_no_direct %>%
+  group_by(combination) %>%
+  nest() %>%
+  # use map to apply overline() + simplify_graph() function to all groups
   # apply overline with simplify = FALSE. Keep split vertices so that you apply sfnetwork morphers
   mutate(demand = map(data, ~ stplanr::overline(sl = .x,
                                                 attrib = "commute_all",
@@ -129,24 +123,20 @@ od_demand_overline_merge <- od_demand_filtered %>%
 
 
 
-od_compare <- od_demand_filtered %>%
+od_compare_baseline <- od_demand_no_direct %>%
   select(commute_all) %>%
   mutate(approach = "no_processing") %>%
   bind_rows(od_demand_overline %>%
+              filter(combination == "pt_wkday_morning") %>%
               mutate(approach = "overline")) %>%
   bind_rows(od_demand_overline_merge %>%
-              mutate(approach = "overline_merge"))
+              filter(combination == "pt_wkday_morning") %>%
+              mutate(approach = "overline_merge")) %>%
+  select(-combination)
 
 
-ggplot(od_compare %>%
-         filter(approach != "no_processing", combination = "pt_wkday_morning"),
-       aes(x = commute_all, fill = approach)) +
-  geom_histogram(binwidth = 50) +
-  facet_wrap(~approach, nrow = 4)
-
-
-tmap_mode("view")
-tmap_mode("plot")
+#tmap_mode("view")
+#tmap_mode("plot")
 
 
 # Compare overline to base
@@ -162,7 +152,7 @@ tm_shape(od_compare %>%
            lwd = "commute_all",
            scale = 15,
            palette = "Greens",
-           style = "jenks", # pretty
+           style = "fisher", # jenks
            legend.lwd.show = FALSE,
            alpha = 1,
            title.col = "Aggregated demand",
@@ -199,7 +189,7 @@ tm_shape(study_area) +
            lwd = "commute_all",
            scale = 10,
            palette = "Greens",
-           style = "jenks", # pretty
+           style = "fisher", # jenks
            legend.lwd.show = FALSE,
            alpha = 1,
            title.col = "Aggregated demand",
@@ -230,7 +220,7 @@ tm_shape(study_area) +
 tm_shape(study_area) +
   tm_fill(col = "indianred2",
           alpha = 0.5) +
-tm_shape(od_demand_overline2_merge %>%
+tm_shape(od_demand_overline_merge %>%
              filter(commute_all > 1000)) +
   tm_lines(col = "commute_all",
            lwd = "commute_all",
@@ -258,37 +248,38 @@ htmlwidgets::saveWidget(map_aggregate_flows_merge, file = paste0(plots_path, "ma
 
 
 
-
-# compare
-
-od_compare2 <- od_demand_fi %>%
-  select(commute_all) %>%
-  mutate(approach = "no_processing") %>%
-  bind_rows(od_demand_merge %>%
-              mutate(approach = "sfnet_merge"))
+#TODO !!! od_demand_no_direct only has od pairs that have been routed between -
+# we need od pairs that haven't been routed between also!! Which part of the code to add this?
 
 
+# compare different times of day
 
+od_compare <- od_demand_overline %>%
+  mutate(approach = "overline") %>%
+  bind_rows(od_demand_overline_merge %>%
+              mutate(approach = "overline_merge")) %>%
+  st_as_sf()
 
 tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
-  tm_shape(study_area) +
-  tm_fill(col = "grey80",
+tm_shape(study_area) +
+  tm_fill(col = "indianred2",
           alpha = 0.5) +
-  tm_shape(od_compare2) +
+  tm_shape(od_compare %>%
+             filter(approach == "overline")) +
   tm_lines(col = "commute_all",
            lwd = "commute_all",
            scale = 10,
-           #palette = "Blues",
+           palette = "Greens",
            style = "quantile",
            legend.lwd.show = FALSE,
            alpha = 1,
            title.col = "Aggregated demand",
            legend.col.is.portrait = FALSE) +
-  tm_facets(by = "approach",
+  tm_facets(by = "combination",
             free.coords = FALSE,
-            nrow = 1) +
+            ncol = 3) +
   tm_layout(fontfamily = 'Georgia',
             main.title = "OD demand aggregated along shortest paths",
             main.title.size = 1.3,
@@ -300,6 +291,15 @@ tm_shape(study_area) +
             frame = FALSE)
 
 
+ggplot(od_compare %>%
+         filter(approach == "overline_merge"),
+       aes(x = commute_all)) +
+  geom_histogram(binwidth = 50) +
+  facet_wrap(~combination, nrow = 4)
+
+od_demand %>%
+  group_by(combination) %>%
+  summarise(od_pairs = n())
 
 
 
@@ -315,26 +315,4 @@ tm_shape(study_area) +
 
 
 
-
-
-
-
-
-
-
-# not just indirect, but low frequency also
-od_demand_no_direct_2 <- od_demand %>%
-  filter(n_rides > 1 | wait_time > 30)
-
-
-
-
-
-graph1 <- weight_streetnet (hampi, wt_profile = "foot")
-set.seed (1)
-from1 <- sample (graph$from_id, size = 10)
-to1 <- sample (graph$to_id, size = 10)
-flows1 <- matrix (10 * runif (length (from1) * length (to1)),
-                 nrow = length (from1)
-)
 
