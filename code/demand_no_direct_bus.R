@@ -92,7 +92,11 @@ od_demand_overline <- od_demand_no_direct %>%
                                                 fun = sum))) %>%
   select(-data) %>%
   # turn back into one big sf
-  unnest(demand)
+  unnest(demand) %>%
+  ungroup() %>%
+  st_as_sf()
+
+st_write(od_demand_overline, paste0("data/interim/travel_demand/", geography, "/demand_no_direct_overline.geojson"), delete_dsn =TRUE)
 
 
 
@@ -114,9 +118,11 @@ od_demand_overline_merge <-od_demand_no_direct %>%
   select(-c(data, demand)) %>%
   # turn back into one big sf
   unnest(demand_merged) %>%
+  ungroup() %>%
   st_as_sf()
 
 
+st_write(od_demand_overline_merge, paste0("data/interim/travel_demand/", geography, "/demand_no_direct_overline_merge.geojson"), delete_dsn =TRUE)
 
 
 # compare the results
@@ -256,6 +262,34 @@ od_compare <- od_demand_overline %>%
               mutate(approach = "overline_merge")) %>%
   st_as_sf()
 
+
+# check that the unsatisfied demand is different at different times of day (i.e that the code is working as expected)
+od_demand_no_direct %>%
+  st_drop_geometry() %>%
+  group_by(combination) %>%
+  summarise(od_pairs = n())
+
+
+
+ggplot(od_compare %>%
+         filter(approach == "overline"),
+       aes(x = commute_all)) +
+  geom_histogram(binwidth = 50) +
+  facet_wrap(~combination, nrow = 4)
+
+ggplot(od_compare %>%
+         filter(approach == "overline", commute_all > 2000),
+       aes(x = commute_all)) +
+  geom_histogram(binwidth = 100) +
+  facet_wrap(~combination, nrow = 4)
+
+ggplot(od_compare %>%
+         filter(approach == "overline"),
+       aes(x = commute_all, color = combination)) +
+  geom_density()
+
+
+# plot maps
 tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
@@ -268,7 +302,7 @@ tm_shape(study_area) +
            lwd = "commute_all",
            scale = 10,
            palette = "YlOrRd",
-           style = "quantile",
+           style = "fisher",
            legend.lwd.show = FALSE,
            alpha = 1,
            title.col = "Aggregated demand",
@@ -291,9 +325,7 @@ map_aggregate_flows_combination
 tmap_save(tm =  map_aggregate_flows_combination, filename = paste0(plots_path, "map_aggregate_flows_map_aggregate_flows_combinations_all.png"), dpi = 1080)
 
 
-# compre 2 specific times of day
-
-
+# compare 2 specific times of day
 tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
@@ -302,19 +334,19 @@ tm_shape(study_area) +
           alpha = 0.5) +
   tm_shape(od_compare %>%
              filter(approach == "overline",
-                    combination %in% c("pt_wkday_morning", "pt_wkend_evening"))) +
+                    combination %in% c("pt_wkday_morning", "pt_wkday_night"))) +
   tm_lines(col = "commute_all",
            lwd = "commute_all",
            scale = 10,
            palette = "YlOrRd",
-           style = "quantile",
+           style = "fisher",
            legend.lwd.show = FALSE,
            alpha = 1,
            title.col = "Aggregated demand",
            legend.col.is.portrait = FALSE) +
   tm_facets(by = "combination",
             free.coords = FALSE,
-            ncol = 3) +
+            nrow = 1) +
   tm_layout(fontfamily = 'Georgia',
             main.title = "OD demand aggregated along shortest paths",
             main.title.size = 1.3,
@@ -323,11 +355,12 @@ tm_shape(study_area) +
             legend.outside = TRUE,
             legend.outside.position = "bottom",
             legend.stack = "horizontal",
-            frame = FALSE) -> map_aggregate_flows_combination_wkdayend
+            frame = FALSE)  -> map_aggregate_flows_combination_wkdaymorningnight
 
-map_aggregate_flows_combination_wkdayend
+map_aggregate_flows_combination_wkdaymorningnight
 
-tmap_save(tm =  map_aggregate_flows_combination_wkdayend, filename = paste0(plots_path, "map_aggregate_flows_combination_wkdayend.png"), width = 15, dpi = 1080)
+
+tmap_save(tm =  map_aggregate_flows_combination_wkdaymorningnight, filename = paste0(plots_path, "map_aggregate_flows_combination_wkdaymorningnight.png"), width = 15, dpi = 1080)
 
 
 
@@ -347,7 +380,7 @@ od_demand %>%
 ggplot(od_compare %>%
          filter(approach == "overline"),
        aes(x = commute_all)) +
-  geom_histogram(binwidth = 50) +
+  geom_histogram(binwidth = 200) +
   facet_wrap(~combination, nrow = 4)
 
 
