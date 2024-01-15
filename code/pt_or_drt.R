@@ -68,9 +68,9 @@ study_area_centroid <- study_area %>%
 
 # --- a. Filter OD pairs to those needing an improved service
 
-# OD pairs without direct route
+# OD pairs without direct route   ---   is.na(n_rides) to include od pairs that can't be routed between
 od_demand_no_direct = od_demand %>%
-  filter(n_rides > 1)
+  filter(n_rides > 1 | is.na(n_rides))
 
 # --- b. add shortest path geometry
 
@@ -78,7 +78,6 @@ od_demand_no_direct <- od_demand_no_direct %>%
   left_join(od_shortest_paths, by = c("from_id", "to_id")) %>%
   st_as_sf()
 
-# --- placeholder: nest sf by combination in order to apply overline and merge per group
 
 # --- c. OPTION 1: use overline to get total flow on road network
 
@@ -114,7 +113,8 @@ od_demand_overline_merge <-od_demand_no_direct %>%
                                                       radius = 35))) %>%
   select(-c(data, demand)) %>%
   # turn back into one big sf
-  unnest(demand_merged)
+  unnest(demand_merged) %>%
+  st_as_sf()
 
 
 
@@ -146,7 +146,7 @@ tm_shape(study_area) +
 tm_shape(study_area) +
   tm_fill(col = "indianred2", #grey80
           alpha = 0.5) +
-tm_shape(od_compare %>%
+tm_shape(od_compare_baseline %>%
            filter(approach %in% c("no_processing", "overline"))) +
   tm_lines(col = "commute_all",
            lwd = "commute_all",
@@ -183,7 +183,7 @@ tm_shape(study_area) +
 tm_shape(study_area) +
   tm_fill(col = "indianred2",
           alpha = 0.5) +
-  tm_shape(od_compare %>%
+  tm_shape(od_compare_baseline %>%
              filter(approach %in% c("overline", "overline_merge"))) +
   tm_lines(col = "commute_all",
            lwd = "commute_all",
@@ -226,7 +226,7 @@ tm_shape(od_demand_overline_merge %>%
            lwd = "commute_all",
            scale = 10,
            palette = "Greens",
-           style = "jenks",
+           style = "fisher",
            legend.lwd.show = FALSE,
            alpha = 1,
            title.col = "Aggregated demand",
@@ -248,10 +248,6 @@ htmlwidgets::saveWidget(map_aggregate_flows_merge, file = paste0(plots_path, "ma
 
 
 
-#TODO !!! od_demand_no_direct only has od pairs that have been routed between -
-# we need od pairs that haven't been routed between also!! Which part of the code to add this?
-
-
 # compare different times of day
 
 od_compare <- od_demand_overline %>%
@@ -264,14 +260,14 @@ tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
 tm_shape(study_area) +
-  tm_fill(col = "indianred2",
+  tm_fill(col = "grey85",
           alpha = 0.5) +
   tm_shape(od_compare %>%
              filter(approach == "overline")) +
   tm_lines(col = "commute_all",
            lwd = "commute_all",
            scale = 10,
-           palette = "Greens",
+           palette = "YlOrRd",
            style = "quantile",
            legend.lwd.show = FALSE,
            alpha = 1,
@@ -288,7 +284,52 @@ tm_shape(study_area) +
             legend.outside = TRUE,
             legend.outside.position = "bottom",
             legend.stack = "horizontal",
-            frame = FALSE)
+            frame = FALSE) -> map_aggregate_flows_combination
+
+map_aggregate_flows_combination
+
+tmap_save(tm =  map_aggregate_flows_combination, filename = paste0(plots_path, "map_aggregate_flows_map_aggregate_flows_combinations_all.png"), dpi = 1080)
+
+
+# compre 2 specific times of day
+
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey85",
+          alpha = 0.5) +
+  tm_shape(od_compare %>%
+             filter(approach == "overline",
+                    combination %in% c("pt_wkday_morning", "pt_wkend_evening"))) +
+  tm_lines(col = "commute_all",
+           lwd = "commute_all",
+           scale = 10,
+           palette = "YlOrRd",
+           style = "quantile",
+           legend.lwd.show = FALSE,
+           alpha = 1,
+           title.col = "Aggregated demand",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by = "combination",
+            free.coords = FALSE,
+            ncol = 3) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "OD demand aggregated along shortest paths",
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            legend.stack = "horizontal",
+            frame = FALSE) -> map_aggregate_flows_combination_wkdayend
+
+map_aggregate_flows_combination_wkdayend
+
+tmap_save(tm =  map_aggregate_flows_combination_wkdayend, filename = paste0(plots_path, "map_aggregate_flows_combination_wkdayend.png"), width = 15, dpi = 1080)
+
+
 
 
 ggplot(od_compare %>%
@@ -303,7 +344,11 @@ od_demand %>%
 
 
 
-
+ggplot(od_compare %>%
+         filter(approach == "overline"),
+       aes(x = commute_all)) +
+  geom_histogram(binwidth = 50) +
+  facet_wrap(~combination, nrow = 4)
 
 
 
