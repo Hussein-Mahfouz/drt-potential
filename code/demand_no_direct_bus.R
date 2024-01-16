@@ -1,4 +1,5 @@
 # This script proposes exploratory methods for answering the "PT vs DRT" question on a route-level #
+# It focuses on aggregating all OD demand without a direct bus onto the road network #
 
 library(tidyverse)
 library(sf)
@@ -322,7 +323,7 @@ tm_shape(study_area) +
 
 map_aggregate_flows_combination
 
-tmap_save(tm =  map_aggregate_flows_combination, filename = paste0(plots_path, "map_aggregate_flows_map_aggregate_flows_combinations_all.png"), dpi = 1080)
+tmap_save(tm =  map_aggregate_flows_combination, filename = paste0(plots_path, "map_aggregate_flows_combinations_all.png"), dpi = 1080)
 
 
 # compare 2 specific times of day
@@ -360,7 +361,7 @@ tm_shape(study_area) +
 map_aggregate_flows_combination_wkdaymorningnight
 
 
-tmap_save(tm =  map_aggregate_flows_combination_wkdaymorningnight, filename = paste0(plots_path, "map_aggregate_flows_combination_wkdaymorningnight.png"), width = 15, dpi = 1080)
+tmap_save(tm =  map_aggregate_flows_combination_wkdaymorningnight, filename = paste0(plots_path, "map_aggregate_flows_combination_wkday_ampm.png"), width = 15, dpi = 1080)
 
 
 
