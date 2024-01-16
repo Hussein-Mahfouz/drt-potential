@@ -23,5 +23,9 @@ study_area_geographies <- function(study_area,
   } else if(geography == "OA"){
     message("keeping original OA boundaries")
   }
+
+  study_area <- study_area %>%
+    st_cast("MULTIPOLYGON")
+
   return(study_area)
 }
