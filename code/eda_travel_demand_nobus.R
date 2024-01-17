@@ -350,13 +350,273 @@ tmap_save(tm =  map_headways_demand_combinations_all_bus, filename = paste0(plot
 
 
 
-# ------------------ Identify areas with no bus routes
+########## ------------------ Identify areas with no bus routes ------------------ ##########
 
-gtfs_bus_filtered_df <- gtfs_bus_filtered_df %>%
-  st_transform(3857) %>% st_buffer(500)
+# Buffer gtfs feed
+
+##### ---------- OPTION 1: Aggregated demand (od_demand_overline)
+
+gtfs_bus_filtered_df_buff <- gtfs_bus_filtered_df %>%
+  st_transform(3857) %>%
+  st_buffer(500) %>%
+  group_by(scenario) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  st_transform(4326)
+
+x <- od_demand_overline %>%
+  # st_transform(3857) %>%
+  # st_buffer(500) %>%
+  # st_transform(4326) %>%
+  st_filter(gtfs_bus_filtered_df_buff[1,], .predicate = st_intersects)
+
+
+
+# Perform spatial join for each group in 'a' with the corresponding geometry in 'b'
+result_list <- map(1:nrow(gtfs_bus_filtered_df_buff), function(i) {
+  # get the names of the combinations that exist in both sf features (for filtering)
+  combinations <- unique(od_demand_overline$combination)
+  # filter the demand data so that it only includes values from a specific combination / scenario
+  od_demand_oveline_filt <- od_demand_overline %>% filter(combination == combinations[i])
+  # spatial filter the demand data by the gtfs bus geometry
+  result <- st_filter(od_demand_oveline_filt,
+                      gtfs_bus_filtered_df_buff[gtfs_bus_filtered_df_buff$scenario == combinations[i],],
+                      .predicate = st_disjoint)
+})
+
+# Combine the results into a single sf object
+final_result <- do.call(rbind, result_list)
+
+
+
+#' Title
+#'
+#' @param a an sf with columns "commute_all", "combination"
+#' @param b an sf with column "scenario" that matches onto "combination in "a"
+#' @param buffer how big should the buffer around b be?
+#' @return an sf with all geometries in a that do not intersect with a. geometry operation is done per group
+#' @export
+#'
+#' @examples
+filter_by_element = function(a, b, buffer){
+
+  # create buffer around geometry for intersection operation
+  b_buffer <- b %>%
+    st_transform(3857) %>% st_buffer(buffer) %>%
+    group_by(scenario) %>%
+    summarise(geometry = st_union(geometry)) %>%
+    st_transform(4326) %>%
+    st_make_valid()
+  # Perform spatial join for each group in 'a' with the corresponding geometry in 'b'
+  result_list <- map(1:nrow(b_buffer), function(i) {
+    # get the names of the combinations that exist in both sf features (for filtering)
+    combinations <- unique(a$combination)
+    # filter the demand data so that it only includes values from a specific combination / scenario
+    a_filt <- a %>% filter(combination == combinations[i])
+    # spatial filter the demand data by the gtfs bus geometry
+    result <- st_filter(a_filt,
+                        b_buffer[b_buffer$scenario == combinations[i],],
+                        .predicate = st_disjoint)
+  })
+
+  # Combine the results into a single sf object
+  final_result <- do.call(rbind, result_list)
+  return(final_result)
+}
 
 
 
 
+
+# ----- All demand that does not overlap with any bus route - with buses
+
+demand_disjoint_buses_all <- filter_by_element(od_demand_overline, gtfs_bus_filtered_df, buffer = 500)
+
+# plot
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey90",
+          alpha = 0.5) +
+  tm_shape(demand_disjoint_buses_all %>%
+             mutate(commute_all = round(commute_all / 1000))) +
+  tm_lines(col = "commute_all",
+           #lwd = "commute_all",
+           scale = 10,
+           palette = "Greens", #YlGn
+           style = "fisher",
+           #legend.lwd.show = FALSE,
+           alpha = 1,
+           title.col = "Aggregated demand ('000)",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by = "combination",
+            free.coords = FALSE,
+            ncol = 3) +
+tm_shape(gtfs_bus_filtered_df %>%
+             mutate(vehicles_per_hour = round(1/(headway_secs/3600))) %>%
+             filter(headway_secs < 3600)) +
+  tm_lines(col = "darkred",
+           lwd = "vehicles_per_hour",
+           scale = 10,
+           #palette = "-YlOrRd",
+           style = "fisher",
+           alpha = 0.3,
+           title.lwd = "Vehicles/hr",
+           legend.lwd.is.portrait = FALSE) +
+  tm_facets(by = "scenario",
+            free.coords = FALSE,
+            ncol = 3) +
+tm_layout(fontfamily = 'Georgia',
+          main.title = "Travel demand not overlapping\n with any bus routes",
+          main.title.size = 1.3,
+          main.title.color = "azure4",
+          main.title.position = "left",
+          legend.outside = TRUE,
+          legend.outside.position = "bottom",
+          legend.stack = "horizontal",
+          frame = FALSE)
+
+
+# ----- All demand that does not overlap with any bus route - without buses
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  tm_shape(demand_disjoint_buses_all %>%
+             mutate(commute_all = round(commute_all / 1000))) +
+  tm_lines(col = "commute_all",
+           #lwd = "commute_all",
+           scale = 10,
+           palette = "Greens", #YlGn
+           style = "fisher",
+           #legend.lwd.show = FALSE,
+           alpha = 1,
+           title.col = "Aggregated demand ('000)",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by = "combination",
+            free.coords = FALSE,
+            ncol = 3) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Travel demand not overlapping\n with any bus routes",
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            legend.stack = "horizontal",
+            frame = FALSE) -> map_demand_disjoint_all_buses_combinations_nobus
+
+map_demand_disjoint_all_buses_combinations_nobus
+
+tmap_save(tm =  map_demand_disjoint_all_buses_combinations_nobus, filename = paste0(plots_path, "map_demand_disjoint_all_buses_combinations_nobus.png"), width = 15, dpi = 1080)
+
+
+
+
+# ----- All demand that does not overlap with any HIGH-FREQUENCY bus route (2 bus per hour) - With buses
+
+demand_disjoint_buses_highfreq <- filter_by_element(od_demand_overline,
+                                                    gtfs_bus_filtered_df %>%
+                                                      filter(headway_secs < 1800),
+                                                    buffer = 500)
+
+
+# ----- All demand that does not overlap with any HIGH-FREQUENCY bus route (2 bus per hour) - With buses
+
+
+# plot
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey90",
+          alpha = 0.5) +
+  tm_shape(demand_disjoint_buses_highfreq %>%
+             mutate(commute_all = round(commute_all / 1000))) +
+  tm_lines(col = "commute_all",
+           #lwd = "commute_all",
+           scale = 5,
+           palette = "Greens", #YlGn
+           style = "fisher",
+           #legend.lwd.show = FALSE,
+           alpha = 1,
+           title.col = "Aggregated demand ('000)",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by = "combination",
+            free.coords = FALSE,
+            ncol = 3) +
+  tm_shape(gtfs_bus_filtered_df %>%
+             mutate(vehicles_per_hour = round(1/(headway_secs/3600))) %>%
+             filter(headway_secs < 1800)) +
+  tm_lines(col = "darkred",
+           lwd = "vehicles_per_hour",
+           scale = 10,
+           #palette = "-YlOrRd",
+           style = "fisher",
+           alpha = 0.3,
+           title.lwd = "Vehicles/hr",
+           legend.lwd.is.portrait = FALSE) +
+  tm_facets(by = "scenario",
+            free.coords = FALSE,
+            ncol = 3) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Travel demand not overlapping with\n any HIGH FREQUENCY bus routes",
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            legend.stack = "horizontal",
+            frame = FALSE) -> map_demand_disjoint_high_freq_buses_combinations_bus
+
+map_demand_disjoint_high_freq_buses_combinations_bus
+
+tmap_save(tm =  map_demand_disjoint_high_freq_buses_combinations_bus, filename = paste0(plots_path, "map_demand_disjoint_high_freq_buses_combinations_bus.png"), width = 15, dpi = 1080)
+
+
+# ----- All demand that does not overlap with any HIGH-FREQUENCY bus route (2 bus per hour) - Without buses
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  tm_shape(demand_disjoint_buses_highfreq %>%
+             mutate(commute_all = round(commute_all / 1000))) +
+  tm_lines(col = "commute_all",
+           #lwd = "commute_all",
+           scale = 10,
+           palette = "Greens", #YlGn
+           style = "fisher",
+           #legend.lwd.show = FALSE,
+           alpha = 1,
+           title.col = "Aggregated demand ('000)",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by = "combination",
+            free.coords = FALSE,
+            ncol = 3) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Travel demand not overlapping with\n any HIGH FREQUENCY bus routes",
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            legend.stack = "horizontal",
+            frame = FALSE)  -> map_demand_disjoint_high_freq_buses_combinations_nobus
+
+map_demand_disjoint_high_freq_buses_combinations_nobus
+
+tmap_save(tm =  map_demand_disjoint_high_freq_buses_combinations_nobus, filename = paste0(plots_path, "map_demand_disjoint_high_freq_buses_combinations_nobus.png"), width = 15, dpi = 1080)
+
+
+
+##### ---------- OPTION 2: Demand on each route (od_demand_no_direct)
+# --- for each demand route: get high frequency bus that intersects with it the most + get %of demand that is covered by that bus
 
 

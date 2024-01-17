@@ -79,6 +79,12 @@ od_demand_no_direct <- od_demand_no_direct %>%
   left_join(od_shortest_paths, by = c("from_id", "to_id")) %>%
   st_as_sf()
 
+saveRDS(od_demand_no_direct, paste0("data/interim/travel_demand/", geography, "/demand_no_direct.Rds"))
+
+# save
+# too big (wait until you can save as .geoparquet file)
+# st_write(od_demand_no_direct, paste0("data/interim/travel_demand/", geography, "/demand_no_direct.geojson"), delete_dsn =TRUE)
+
 
 # --- c. OPTION 1: use overline to get total flow on road network
 
