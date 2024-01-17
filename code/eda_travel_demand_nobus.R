@@ -356,35 +356,23 @@ tmap_save(tm =  map_headways_demand_combinations_all_bus, filename = paste0(plot
 
 ##### ---------- OPTION 1: Aggregated demand (od_demand_overline)
 
-gtfs_bus_filtered_df_buff <- gtfs_bus_filtered_df %>%
-  st_transform(3857) %>%
-  st_buffer(500) %>%
-  group_by(scenario) %>%
-  summarise(geometry = st_union(geometry)) %>%
-  st_transform(4326)
 
-x <- od_demand_overline %>%
-  # st_transform(3857) %>%
-  # st_buffer(500) %>%
-  # st_transform(4326) %>%
-  st_filter(gtfs_bus_filtered_df_buff[1,], .predicate = st_intersects)
+# Logic:
 
-
-
-# Perform spatial join for each group in 'a' with the corresponding geometry in 'b'
-result_list <- map(1:nrow(gtfs_bus_filtered_df_buff), function(i) {
-  # get the names of the combinations that exist in both sf features (for filtering)
-  combinations <- unique(od_demand_overline$combination)
-  # filter the demand data so that it only includes values from a specific combination / scenario
-  od_demand_oveline_filt <- od_demand_overline %>% filter(combination == combinations[i])
-  # spatial filter the demand data by the gtfs bus geometry
-  result <- st_filter(od_demand_oveline_filt,
-                      gtfs_bus_filtered_df_buff[gtfs_bus_filtered_df_buff$scenario == combinations[i],],
-                      .predicate = st_disjoint)
-})
-
-# Combine the results into a single sf object
-final_result <- do.call(rbind, result_list)
+# # Perform spatial join for each group in 'a' with the corresponding geometry in 'b'
+# result_list <- map(1:nrow(gtfs_bus_filtered_df_buff), function(i) {
+#   # get the names of the combinations that exist in both sf features (for filtering)
+#   combinations <- unique(od_demand_overline$combination)
+#   # filter the demand data so that it only includes values from a specific combination / scenario
+#   od_demand_oveline_filt <- od_demand_overline %>% filter(combination == combinations[i])
+#   # spatial filter the demand data by the gtfs bus geometry
+#   result <- st_filter(od_demand_oveline_filt,
+#                       gtfs_bus_filtered_df_buff[gtfs_bus_filtered_df_buff$scenario == combinations[i],],
+#                       .predicate = st_disjoint)
+# })
+#
+# # Combine the results into a single sf object
+# final_result <- do.call(rbind, result_list)
 
 
 
@@ -618,5 +606,97 @@ tmap_save(tm =  map_demand_disjoint_high_freq_buses_combinations_nobus, filename
 
 ##### ---------- OPTION 2: Demand on each route (od_demand_no_direct)
 # --- for each demand route: get high frequency bus that intersects with it the most + get %of demand that is covered by that bus
+
+od_demand_no_direct = readRDS(paste0("data/interim/travel_demand/", geography, "/demand_no_direct.Rds"))
+
+# --- keep only the columns we want
+od_demand_no_direct <- od_demand_no_direct %>%
+  select(Origin, Destination, commute_all, combination) %>%
+  mutate(length_total = st_length(.))
+
+# --- apply logic to specific time of day
+od_demand_test = od_demand_no_direct %>% filter(combination == "pt_wkday_morning")
+
+gtfs_test = gtfs_bus_filtered_df %>%
+  filter(scenario == "pt_wkday_morning") %>%
+  st_transform(3857) %>% st_buffer(500) %>%
+  st_transform(4326) %>%
+  st_make_valid()
+
+# --- get the geometry from od_demand that intersects with the gtfs buffer (this returns a multilinestring for each od_demand_row)
+od_demand_int <- st_intersection(od_demand_test, gtfs_test)
+
+# --- get the largest continuous intersection between od_emand and gtfs
+
+# cast the multilinestring to a linestring, and explode it into multiple rows
+
+# https://gis.stackexchange.com/questions/280771/r-sfst-castlinestring-keeping-first-linestring-only-warning
+od_demand_int_ls <- do.call(rbind,lapply(1:nrow(od_demand_int),function(i){st_cast(od_demand_int[i,],"LINESTRING")}))
+
+# keep the longest linestring intersection only
+od_demand_int_ls <- od_demand_int_ls %>%
+  mutate(length = st_length(.)) %>%
+  st_drop_geometry() %>%
+  group_by(Origin, Destination) %>%
+  arrange(desc(length)) %>%
+  slice(1) %>%
+  ungroup()
+
+# --- merge length of intersection back onto the original sf
+od_demand_int_ls_joined <- od_demand_test %>%
+  left_join(od_demand_int_ls, by = c("Origin", "Destination", "combination"))
+
+
+
+
+
+# ------- Apply above logic to all times of day simultaneously
+
+
+
+
+# --- apply logic to specific time of day
+od_demand_test2 = od_demand_no_direct %>% nest_by(combination)
+
+
+# create buffer around geometry for intersection operation
+gtfs_test2 = gtfs_bus_filtered_df %>%
+  st_transform(3857) %>% st_buffer(500) %>%
+  group_by(scenario) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  st_transform(4326) %>%
+  st_make_valid()
+
+
+
+# -------- ADAPT THE CODE BELOW TO A FOR LOOP:
+
+get_most_overlapping_route = function(od_demand, gtfs){
+  results = vector(mode = "list", length = nrow(gtfs))
+  }
+
+
+# --- get the geometry from od_demand that intersects with the gtfs buffer (this returns a multilinestring for each od_demand_row)
+od_demand_int <- st_intersection(od_demand_test, gtfs_test)
+
+# --- get the largest continuous intersection between od_emand and gtfs
+
+# cast the multilinestring to a linestring, and explode it into multiple rows
+
+# https://gis.stackexchange.com/questions/280771/r-sfst-castlinestring-keeping-first-linestring-only-warning
+od_demand_int_ls <- do.call(rbind,lapply(1:nrow(od_demand_int),function(i){st_cast(od_demand_int[i,],"LINESTRING")}))
+
+# keep the longest linestring intersection only
+od_demand_int_ls <- od_demand_int_ls %>%
+  mutate(length = st_length(.)) %>%
+  st_drop_geometry() %>%
+  group_by(Origin, Destination) %>%
+  arrange(desc(length)) %>%
+  slice(1) %>%
+  ungroup()
+
+# --- merge length of intersection back onto the original sf
+od_demand_int_ls_joined <- od_demand_test %>%
+  left_join(od_demand_int_ls, by = c("Origin", "Destination", "combination"))
 
 
