@@ -416,10 +416,6 @@ filter_by_element = function(a, b, buffer){
   return(final_result)
 }
 
-
-
-
-
 # ----- All demand that does not overlap with any bus route - with buses
 
 demand_disjoint_buses_all <- filter_by_element(od_demand_overline, gtfs_bus_filtered_df, buffer = 500)
@@ -644,7 +640,7 @@ get_most_overlapping_route = function(od_demand, gtfs, buffer = 500, max_headway
   # --- Perform spatial join for each group in 'od_demand' with the corresponding geometry in 'gtfs_buff'
   for(i in 1:length(combinations)){
 
-    print(paste0("Buffering GTFS in in preperation for spatial join for scenario: ", combinations[i] ))
+    print(paste0(Sys.time(), " ... Buffering GTFS in preperation for spatial join for scenario: ", combinations[i] ))
     # --- create buffer around gtfs geometry for intersection operation
     gtfs_buff = gtfs %>%
       filter(scenario == combinations[i], headway_secs <= max_headway) %>%
@@ -652,12 +648,12 @@ get_most_overlapping_route = function(od_demand, gtfs, buffer = 500, max_headway
       st_transform(4326) %>%
       st_make_valid()
 
-    print(paste0("filtering geometries for scenario: ", combinations[i]))
+    print(paste0(Sys.time(), " ... Filtering geometries for scenario: ", combinations[i]))
     # get geometries from demand and gtfs that match scenario i
     od_demand_filt_i <- od_demand[od_demand$combination == combinations[i],]
     gtfs_buff_filt_i <- gtfs_buff[gtfs_buff$scenario == combinations[i],]
 
-    print(paste0("intersecting geometries for scenario: ", combinations[i]))
+    print(paste0(Sys.time(), " ... Intersecting geometries for scenario: ", combinations[i]))
     # --- get the geometry from od_demand that intersects with the gtfs buffer (this returns a multilinestring for each od_demand_row)
     od_demand_int_i <- st_intersection(od_demand_filt_i, gtfs_buff_filt_i)
 
@@ -675,7 +671,7 @@ get_most_overlapping_route = function(od_demand, gtfs, buffer = 500, max_headway
       ungroup() %>%
       select(Origin, Destination, combination, trip_id, headway_secs, length_int)
 
-    print(paste0("joining result onto  for scenario: ", combinations[i]))
+    print(paste0(Sys.time(), " ... Joining result onto  for scenario: ", combinations[i]))
     # --- merge length of intersection back onto the original sf
     od_demand_int_ls_i_joined <- od_demand_int_ls_i %>%
       left_join(od_demand_filt_i %>%
@@ -704,6 +700,8 @@ od_demand_highest_route_overlap <- get_most_overlapping_route(od_demand = od_dem
 od_demand_highest_route_overlap <- od_demand_highest_route_overlap %>%
   mutate(overlap_frac = as.numeric(round(length_int / length_total, 1)))
 
+# save
+saveRDS(od_demand_highest_route_overlap, paste0("data/interim/travel_demand/", geography, "/od_demand_highest_route_overlap.Rds"))
 
 #' Function to get the difference between two sfs PER ROW
 #'
@@ -729,7 +727,16 @@ get_overlap_inverse = function(od_demand, od_intersection){
   # apply st_difference per row
   od_demand_diff <- od_demand_joined %>%
     rowwise() %>%
-    mutate(difference = st_difference(geometry.x, geometry.y) %>% st_collection_extract("LINESTRING")) %>%
+    # if the geometries overlap completely, then there is no "difference" geometry. This causes an error which we avoid using an ifelse
+    mutate(difference = ifelse(
+      length(st_difference(geometry.x, geometry.y)) > 0,
+      # If there is a geometry
+      st_difference(geometry.x, geometry.y) %>%
+        st_collection_extract("LINESTRING"),
+      # Otherwise
+      NA)) %>%
+    # # remove rows with no difference geom
+    # filter(!is.null(difference)) %>%
     # convert to one MULTILINESTRING (instead of one LINESTRING). In mutate, we can only have one value per row
     group_by(Origin, Destination, combination) %>%
     summarise(difference = st_cast(do.call(st_sfc, difference), "MULTILINESTRING")) %>%
@@ -746,27 +753,46 @@ get_overlap_inverse = function(od_demand, od_intersection){
   return(od_demand_diff)
   }
 
-# # Get geometry that does not intersect with bus routes (for plotting)
-# od_demand_no_direct %>%  as.data.frame() %>%
-#   inner_join(x %>%
-#                st_transform(3857) %>% st_buffer(100) %>% st_transform(4326) %>%
-#                as.data.frame(),
-#              by = c("Origin", "Destination", "combination")) %>%
-#   rowwise() %>%
-#   mutate(difference = st_difference(geometry.x, geometry.y) %>% st_collection_extract("LINESTRING")) %>%
-#   group_by(Origin, Destination, combination) %>%
-#   summarise(difference = st_cast(do.call(st_sfc, difference), "MULTILINESTRING")) %>%
-#   ungroup() %>%
-#   st_as_sf() -> x_diff
+
 
 # apply the function that gets the parts of the demand shortest path that DON'T overlap with the bus geometry
 od_demand_highest_route_overlap_diff <- get_overlap_inverse(od_demand = od_demand_no_direct,
                                                             od_intersection = od_demand_highest_route_overlap)
 
 
-test_og <- od_demand_no_direct %>% filter(Origin == "E02002330", Destination == "E02002403", combination == "pt_wkday_morning")
-test_filt <- od_demand_highest_route_overlap %>% filter(Origin == "E02002330", Destination == "E02002403", combination == "pt_wkday_morning")
-test_filt_inv <- od_demand_highest_route_overlap_diff %>% filter(Origin == "E02002330", Destination == "E02002403", combination == "pt_wkday_morning")
+# prepare layers
+a_df <- od_demand_no_direct[1:100,] %>% as.data.frame()
+b_df <- od_demand_highest_route_overlap[1:100,] %>%
+  st_transform(3857) %>% st_buffer(500) %>% st_transform(4326) %>%
+  as.data.frame()
+
+# join layers so that we have a geometry.x and a geometry.y
+c_df <- a_df %>%
+  inner_join(b_df,
+             by = c("Origin", "Destination", "combination"))
+
+# apply st_difference per row
+d_df <- c_df %>%
+  rowwise() %>%
+  # if the geometries overlap completely, then there is no "difference" geometry. This causes an error which we avoid using an ifelse
+  mutate(difference = ifelse(
+    length(st_difference(geometry.x, geometry.y)) > 0,
+    # If there is a geometry
+    st_difference(geometry.x, geometry.y) %>%
+      st_collection_extract("LINESTRING"),
+    # Otherwise
+    NA)) %>%
+  # convert to one MULTILINESTRING (instead of one LINESTRING). In mutate, we can only have one value per row
+  group_by(Origin, Destination, combination) %>%
+  summarise(difference = st_cast(do.call(st_sfc, difference), "MULTILINESTRING")) %>%
+  ungroup() %>%
+  st_as_sf() %>%
+  st_set_crs(st_crs(od_intersection))
+
+
+test_og <- od_demand_no_direct %>% filter(Origin == "E02002330", Destination == "E02002403", combination == "pt_wkday_afternoon")
+test_filt <- od_demand_highest_route_overlap %>% filter(Origin == "E02002330", Destination == "E02002403", combination == "pt_wkday_afternoon")
+test_filt_inv <- od_demand_highest_route_overlap_diff %>% filter(Origin == "E02002330", Destination == "E02002403", combination == "pt_wkday_afternoon")
 
 plot(st_geometry(study_area))
 plot(st_geometry(test_og))
