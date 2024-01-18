@@ -1,5 +1,8 @@
-# This script proposes exploratory methods for answering the "PT vs DRT" question on a route-level #
-# It builds on demand_no_direct_bus.R and visualises results overlayed with GTFS shapes
+#  This script proposes exploratory methods for answering the "PT vs DRT" question on a route-level   #
+#  It builds on demand_no_direct_bus.R and visualises results overlayed with GTFS shapes              #
+#  It also shows the overlap between bus routes and od demand:
+#       To what extent does each demand pair overlap with existing bus routes (fraction of overlap)?  #
+#       What is the headway of the buses that overlap?                                                #
 
 library(tidyverse)
 library(sf)
@@ -103,7 +106,7 @@ tm_shape(study_area) +
           alpha = 0.5) +
   tm_shape(gtfs_bus_filtered_df %>%
              mutate(headway_inv = 1/headway_secs) %>%
-             filter(headway_secs < 1800, scenario == "pt_wkday_morning")) +
+             filter(headway_secs < 3600, scenario == "pt_wkday_morning")) +
   tm_lines(col = "headway_secs",
            lwd = "headway_inv",
            scale = 5,
@@ -376,15 +379,17 @@ tmap_save(tm =  map_headways_demand_combinations_all_bus, filename = paste0(plot
 
 
 
-#' Title
+#' Function to get all geometries from a that do not intersect with b
+#'
+#' It is a basic st_disjoint but it is applied per group
 #'
 #' @param a an sf with columns "commute_all", "combination"
 #' @param b an sf with column "scenario" that matches onto "combination in "a"
 #' @param buffer how big should the buffer around b be?
-#' @return an sf with all geometries in a that do not intersect with a. geometry operation is done per group
-#' @export
-#'
+#' @return an sf with all geometries in a that do not intersect with a. geometry operation is done per group#'
 #' @examples
+#'
+#' @export
 filter_by_element = function(a, b, buffer){
 
   # create buffer around geometry for intersection operation
@@ -609,83 +614,21 @@ tmap_save(tm =  map_demand_disjoint_high_freq_buses_combinations_nobus, filename
 
 od_demand_no_direct = readRDS(paste0("data/interim/travel_demand/", geography, "/demand_no_direct.Rds"))
 
-# --- keep only the columns we want
-od_demand_no_direct <- od_demand_no_direct %>%
-  select(Origin, Destination, commute_all, combination) %>%
-  mutate(length_total = st_length(.))
-
-# --- apply logic to specific time of day
-od_demand_test = od_demand_no_direct %>% filter(combination == "pt_wkday_morning") %>%
-  head(200)
-
-gtfs_test = gtfs_bus_filtered_df %>%
-  filter(scenario == "pt_wkday_morning") %>%
-  st_transform(3857) %>% st_buffer(500) %>%
-  st_transform(4326) %>%
-  st_make_valid()
-
-gtfs_test = gtfs_bus_filtered_df %>%
-  st_transform(3857) %>% st_buffer(500) %>%
-  group_by(scenario) %>%
-  summarise(geometry = st_union(geometry)) %>%
-  st_transform(4326) %>%
-  st_make_valid()
-
-# --- get the geometry from od_demand that intersects with the gtfs buffer (this returns a multilinestring for each od_demand_row)
-od_demand_int <- st_intersection(od_demand_test, gtfs_test)
-
-# --- get the largest continuous intersection between od_emand and gtfs
-
-# cast the multilinestring to a linestring, and explode it into multiple rows
-
-# some rows are linestring and some are multilinestring. To avoid "sf::st_cast("LINESTRING") - keeping first linestring only warning "
-# we cast all to MULTILINESTRING before casting to LINESTRING
-# https://gis.stackexchange.com/questions/280771/r-sfst-castlinestring-keeping-first-linestring-only-warning
-od_demand_int_ls <- od_demand_int %>% st_cast("MULTILINESTRING") %>% st_cast("LINESTRING")
-
-# keep the longest linestring intersection only
-od_demand_int_ls <- od_demand_int_ls %>%
-  mutate(length_int = st_length(.)) %>%
-  #st_drop_geometry() %>%
-  group_by(Origin, Destination, combination) %>%
-  arrange(desc(length_int)) %>%
-  slice(1) %>%
-  ungroup() %>%
-  select(Origin, Destination, combination, trip_id, headway_secs, length_int)
-
-# --- merge length of intersection back onto the original sf
-od_demand_int_ls_joined <- od_demand_test %>%
-  left_join(od_demand_int_ls, by = c("Origin", "Destination", "combination"))
-
-od_demand_int_ls_joined <- od_demand_int_ls %>%
-  left_join(od_demand_test %>%
-              st_drop_geometry() , by = c("Origin", "Destination", "combination"))
 
 
-
-
-# ------- Apply above logic to all times of day simultaneously
-
-
-
-
-# --- apply logic to specific time of day
-od_demand_test2 = od_demand_no_direct %>% nest_by(combination)
-
-
-# create buffer around geometry for intersection operation
-gtfs_test2 = gtfs_bus_filtered_df %>%
-  st_transform(3857) %>% st_buffer(500) %>%
-  group_by(scenario) %>%
-  summarise(geometry = st_union(geometry)) %>%
-  st_transform(4326) %>%
-  st_make_valid()
-
-
-
-# -------- ADAPT THE CODE BELOW TO A FOR LOOP:
-
-get_most_overlapping_route = function(od_demand, gtfs, buffer = 500){
+#' Function to get the bus route that overlaps most with each od_demand shortest path
+#'
+#' @param od_demand an sf with the shortest path for each od pair
+#' @param gtfs an sf with all the bus routes and their respective headways. Column "scenario" in gtfs matches onto column "combination" in od_demand
+#' @param buffer radius (meters) that we want to buffer gtfs by before intersection operation
+#' @param max_headway which routes from the gtfs do we keep? all those with headway_secs < max_headway
+#'
+#' @return an sf with "Origin" "Destination" "combination" "commute_all" "length_total" from the od_demand sf.
+#' The geometry column is a LINESTRING with the (largest intersection) between the shortest path and the route
+#' that intersected with it most. Columns taken from the intersected gtfs sf are "trip_id" "headway_secs" "length_int" "geometry"
+#' @examples
+#' @export
+get_most_overlapping_route = function(od_demand, gtfs, buffer = 500, max_headway = 3600){
 
   # vector to store the results
   results = vector(mode = "list", length = nrow(gtfs))
@@ -704,7 +647,7 @@ get_most_overlapping_route = function(od_demand, gtfs, buffer = 500){
     print(paste0("Buffering GTFS in in preperation for spatial join for scenario: ", combinations[i] ))
     # --- create buffer around gtfs geometry for intersection operation
     gtfs_buff = gtfs %>%
-      filter(scenario == combinations[i]) %>%
+      filter(scenario == combinations[i], headway_secs <= max_headway) %>%
       st_transform(3857) %>% st_buffer(buffer) %>%
       st_transform(4326) %>%
       st_make_valid()
@@ -752,36 +695,212 @@ get_most_overlapping_route = function(od_demand, gtfs, buffer = 500){
 
 }
 
-x <- get_most_overlapping_route(od_demand = od_demand_no_direct %>%
-                                  head(1000),
-                                gtfs = gtfs_bus_filtered_df,
-                                buffer = 500)
+od_demand_highest_route_overlap <- get_most_overlapping_route(od_demand = od_demand_no_direct,
+                                                              gtfs = gtfs_bus_filtered_df,
+                                                              buffer = 500,
+                                                              max_headway = 7200)
+
+# add some stats on overlap length / %
+od_demand_highest_route_overlap <- od_demand_highest_route_overlap %>%
+  mutate(overlap_frac = as.numeric(round(length_int / length_total, 1)))
 
 
+#' Function to get the difference between two sfs PER ROW
+#'
+#' @param od_demand
+#' @param od_intersection an sf with "Origin", "Destination", and "combination"
+#' @return an sf with "Origin", "Destination", and "combination" and a gepmetry column
+#' that represents the difference between od_Demand and od_intersection
+#' @examples
+#'
+#' @export
+get_overlap_inverse = function(od_demand, od_intersection){
+  # prepare layers
+  od_demand_df <- od_demand %>% as.data.frame()
+  od_intersection_df <- od_intersection %>%
+    st_transform(3857) %>% st_buffer(500) %>% st_transform(4326) %>%
+    as.data.frame()
 
+  # join layers so that we have a geometry.x and a geometry.y
+  od_demand_joined <- od_demand_df %>%
+    inner_join(od_intersection_df,
+               by = c("Origin", "Destination", "combination"))
 
-od_demand_no_direct %>%  as.data.frame() %>%
-  inner_join(x %>%
-               st_transform(3857) %>% st_buffer(100) %>% st_transform(4326) %>%
-               as.data.frame(),
-             by = c("Origin", "Destination", "combination")) %>%
-  rowwise() %>%
-  mutate(difference = st_difference(geometry.x, geometry.y) %>% st_collection_extract("LINESTRING")) %>%
-  group_by(Origin, Destination, combination) %>%
-  summarise(difference = st_cast(do.call(st_sfc, difference), "MULTILINESTRING")) %>%
-  ungroup() %>%
-  st_as_sf() -> x_diff
+  # apply st_difference per row
+  od_demand_diff <- od_demand_joined %>%
+    rowwise() %>%
+    mutate(difference = st_difference(geometry.x, geometry.y) %>% st_collection_extract("LINESTRING")) %>%
+    # convert to one MULTILINESTRING (instead of one LINESTRING). In mutate, we can only have one value per row
+    group_by(Origin, Destination, combination) %>%
+    summarise(difference = st_cast(do.call(st_sfc, difference), "MULTILINESTRING")) %>%
+    ungroup() %>%
+    st_as_sf() %>%
+    st_set_crs(st_crs(od_intersection))
 
+  # add metadata back
+  od_demand_diff <- od_demand_diff %>%
+    left_join(od_intersection %>%
+                st_drop_geometry(),
+              by = c("Origin", "Destination", "combination"))
+
+  return(od_demand_diff)
+  }
+
+# # Get geometry that does not intersect with bus routes (for plotting)
+# od_demand_no_direct %>%  as.data.frame() %>%
+#   inner_join(x %>%
+#                st_transform(3857) %>% st_buffer(100) %>% st_transform(4326) %>%
+#                as.data.frame(),
+#              by = c("Origin", "Destination", "combination")) %>%
+#   rowwise() %>%
+#   mutate(difference = st_difference(geometry.x, geometry.y) %>% st_collection_extract("LINESTRING")) %>%
+#   group_by(Origin, Destination, combination) %>%
+#   summarise(difference = st_cast(do.call(st_sfc, difference), "MULTILINESTRING")) %>%
+#   ungroup() %>%
+#   st_as_sf() -> x_diff
+
+# apply the function that gets the parts of the demand shortest path that DON'T overlap with the bus geometry
+od_demand_highest_route_overlap_diff <- get_overlap_inverse(od_demand = od_demand_no_direct,
+                                                            od_intersection = od_demand_highest_route_overlap)
 
 
 test_og <- od_demand_no_direct %>% filter(Origin == "E02002330", Destination == "E02002403", combination == "pt_wkday_morning")
-test_filt <- x %>% filter(Origin == "E02002330", Destination == "E02002403", combination == "pt_wkday_morning")
-test_filt_inv <- x_diff %>% filter(Origin == "E02002330", Destination == "E02002403", combination == "pt_wkday_morning")
+test_filt <- od_demand_highest_route_overlap %>% filter(Origin == "E02002330", Destination == "E02002403", combination == "pt_wkday_morning")
+test_filt_inv <- od_demand_highest_route_overlap_diff %>% filter(Origin == "E02002330", Destination == "E02002403", combination == "pt_wkday_morning")
 
 plot(st_geometry(study_area))
 plot(st_geometry(test_og))
 plot(st_geometry(test_og), add = TRUE, col = "blue")
 plot(st_geometry(test_filt), add = TRUE, col = "red")
 plot(st_geometry(test_filt_inv), add = TRUE, col = "green")
+
+
+
+
+# Plot
+
+
+# Weekday Morning Peak
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  tm_shape(od_demand_highest_route_overlap_diff %>%
+             mutate(overlap_frac_fct = cut(overlap_frac, breaks = seq(0, 1, by = 0.25)),
+                    vehicles_per_hour = round(1/(headway_secs/3600))) %>%
+             filter(combination == "pt_wkday_morning")) +
+  tm_lines(col = "commute_all",
+           lwd = "vehicles_per_hour",
+           scale = 5,
+           palette = "Reds", #YlGn
+           style = "pretty",
+           alpha = 1,
+           title.col = "Aggregated demand",
+           title.lwd = "Vehicles per hour",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by = "overlap_frac_fct",
+            free.coords = FALSE,
+            ncol = 2) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Travel demand not overlapping with any bus routes (Weekday Morning). \nFacets show fraction of demand that overlaps with a bus route",
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            legend.stack = "horizontal",
+            frame = FALSE) -> map_demand_overlap_gtfs_st_diff_morning_wkday
+
+map_demand_overlap_gtfs_st_diff_morning_wkday
+
+tmap_save(tm =  map_demand_overlap_gtfs_st_diff_morning_wkday, filename = paste0(plots_path, "map_demand_overlap_gtfs_st_diff_morning_wkday.png"), width = 15, dpi = 1080)
+
+
+
+# Weekday Evening
+
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  tm_shape(od_demand_highest_route_overlap_diff %>%
+             mutate(overlap_frac_fct = cut(overlap_frac, breaks = seq(0, 1, by = 0.25)),
+                    vehicles_per_hour = round(1/(headway_secs/3600))) %>%
+             filter(combination == "pt_wkday_evening")) +
+  tm_lines(col = "commute_all",
+           lwd = "vehicles_per_hour",
+           scale = 5,
+           palette = "Reds", #YlGn
+           style = "pretty",
+           alpha = 1,
+           title.col = "Aggregated demand",
+           title.lwd = "Vehicles per hour",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by = "overlap_frac_fct",
+            free.coords = FALSE,
+            ncol = 2) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Travel demand not overlapping with any bus routes (Weekday Evening). \nFacets show fraction of demand that overlaps with a bus route",
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            legend.stack = "horizontal",
+            frame = FALSE) -> map_demand_overlap_gtfs_st_diff_evening_wkday
+
+map_demand_overlap_gtfs_st_diff_evening_wkday
+
+tmap_save(tm =  map_demand_overlap_gtfs_st_diff_evening_wkday, filename = paste0(plots_path, "map_demand_overlap_gtfs_st_diff_evening_wkday.png"), width = 15, dpi = 1080)
+
+
+
+
+# Weekend Evening
+
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  tm_shape(od_demand_highest_route_overlap_diff %>%
+             mutate(overlap_frac_fct = cut(overlap_frac, breaks = seq(0, 1, by = 0.25)),
+                    vehicles_per_hour = round(1/(headway_secs/3600))) %>%
+             filter(combination == "pt_wkend_evening")) +
+  tm_lines(col = "commute_all",
+           lwd = "vehicles_per_hour",
+           scale = 10,
+           palette = "Reds", #YlGn
+           style = "pretty",
+           alpha = 1,
+           title.col = "Aggregated demand",
+           title.lwd = "Vehicles per hour",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by = "overlap_frac_fct",
+            free.coords = FALSE,
+            ncol = 2) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Travel demand not overlapping with any bus routes (Weekend Evening). \nFacets show fraction of demand that overlaps with a bus route",
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            legend.stack = "horizontal",
+            frame = FALSE) -> map_demand_overlap_gtfs_st_diff_evening_wkend
+
+map_demand_overlap_gtfs_st_diff_evening_wkend
+
+tmap_save(tm =  map_demand_overlap_gtfs_st_diff_evening_wkend, filename = paste0(plots_path, "map_demand_overlap_gtfs_st_diff_evening_wkend.png"), width = 15, dpi = 1080)
+
+
 
 
