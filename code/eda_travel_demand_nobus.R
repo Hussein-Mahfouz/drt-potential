@@ -337,7 +337,7 @@ tm_shape(study_area) +
             free.coords = FALSE,
             ncol = 3) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = "Bus headway overlayed over aggregate demand",
+            main.title = "Bus frequency overlayed over aggregate demand",
             main.title.size = 1.3,
             main.title.color = "azure4",
             main.title.position = "left",
@@ -489,7 +489,7 @@ tm_shape(study_area) +
             free.coords = FALSE,
             ncol = 3) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = "Travel demand not overlapping\n with any bus routes",
+            main.title = "Travel demand not overlapping with any bus routes",
             main.title.size = 1.3,
             main.title.color = "azure4",
             main.title.position = "left",
@@ -759,6 +759,7 @@ get_overlap_inverse = function(od_demand, od_intersection){
 od_demand_highest_route_overlap_diff <- get_overlap_inverse(od_demand = od_demand_no_direct,
                                                             od_intersection = od_demand_highest_route_overlap)
 
+saveRDS(od_demand_highest_route_overlap_diff, paste0("data/interim/travel_demand/", geography, "/od_demand_highest_route_overlap_inv.Rds"))
 
 # prepare layers
 a_df <- od_demand_no_direct[1:100,] %>% as.data.frame()
@@ -818,18 +819,19 @@ tm_shape(study_area) +
              mutate(overlap_frac_fct = cut(overlap_frac, breaks = seq(0, 1, by = 0.25)),
                     vehicles_per_hour = round(1/(headway_secs/3600))) %>%
              filter(combination == "pt_wkday_morning")) +
-  tm_lines(col = "commute_all",
-           lwd = "vehicles_per_hour",
-           scale = 5,
+  tm_lines(col = "vehicles_per_hour",
+           lwd = "commute_all",
+           scale = 15,
            palette = "Reds", #YlGn
            style = "pretty",
            alpha = 1,
-           title.col = "Aggregated demand",
-           title.lwd = "Vehicles per hour",
+           title.lwd = "Demand",
+           title.col = "Vehicles per hour",
            legend.col.is.portrait = FALSE) +
   tm_facets(by = "overlap_frac_fct",
             free.coords = FALSE,
-            ncol = 2) +
+            ncol = 2,
+            showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = "Travel demand not overlapping with any bus routes (Weekday Morning). \nFacets show fraction of demand that overlaps with a bus route",
             main.title.size = 1.1,
@@ -859,18 +861,19 @@ tm_shape(study_area) +
              mutate(overlap_frac_fct = cut(overlap_frac, breaks = seq(0, 1, by = 0.25)),
                     vehicles_per_hour = round(1/(headway_secs/3600))) %>%
              filter(combination == "pt_wkday_evening")) +
-  tm_lines(col = "commute_all",
-           lwd = "vehicles_per_hour",
-           scale = 5,
+  tm_lines(col = "vehicles_per_hour",
+           lwd = "commute_all",
+           scale = 10,
            palette = "Reds", #YlGn
            style = "pretty",
            alpha = 1,
-           title.col = "Aggregated demand",
-           title.lwd = "Vehicles per hour",
+           title.lwd = "Demand",
+           title.col = "Vehicles per hour",
            legend.col.is.portrait = FALSE) +
   tm_facets(by = "overlap_frac_fct",
             free.coords = FALSE,
-            ncol = 2) +
+            ncol = 2,
+            showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = "Travel demand not overlapping with any bus routes (Weekday Evening). \nFacets show fraction of demand that overlaps with a bus route",
             main.title.size = 1.1,
@@ -901,18 +904,19 @@ tm_shape(study_area) +
              mutate(overlap_frac_fct = cut(overlap_frac, breaks = seq(0, 1, by = 0.25)),
                     vehicles_per_hour = round(1/(headway_secs/3600))) %>%
              filter(combination == "pt_wkend_evening")) +
-  tm_lines(col = "commute_all",
-           lwd = "vehicles_per_hour",
+  tm_lines(col = "vehicles_per_hour",
+           lwd = "commute_all",
            scale = 10,
            palette = "Reds", #YlGn
            style = "pretty",
            alpha = 1,
-           title.col = "Aggregated demand",
-           title.lwd = "Vehicles per hour",
+           title.lwd = "Demand",
+           title.col = "Vehicles per hour",
            legend.col.is.portrait = FALSE) +
   tm_facets(by = "overlap_frac_fct",
             free.coords = FALSE,
-            ncol = 2) +
+            ncol = 2,
+            showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = "Travel demand not overlapping with any bus routes (Weekend Evening). \nFacets show fraction of demand that overlaps with a bus route",
             main.title.size = 1.1,
@@ -925,8 +929,85 @@ tm_shape(study_area) +
 
 map_demand_overlap_gtfs_st_diff_evening_wkend
 
-tmap_save(tm =  map_demand_overlap_gtfs_st_diff_evening_wkend, filename = paste0(plots_path, "map_demand_overlap_gtfs_st_diff_evening_wkend.png"), width = 15, dpi = 1080)
+tmap_save(tm =  map_demand_overlap_gtfs_st_diff_evening_wkend, filename = paste0(plots_path, "map_demand_overlap_gtfs_st_diff_evening_wkend.png"), dpi = 1080, width = 15)
 
 
 
 
+# Let's look at geometries with an overlap of > 0.5 and facet by combination
+
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  tm_shape(od_demand_highest_route_overlap_diff %>%
+             mutate(overlap_frac_fct = cut(overlap_frac, breaks = seq(0, 1, by = 0.25)),
+                    vehicles_per_hour = round(1/(headway_secs/3600))) %>%
+             filter(overlap_frac >= 0.5, commute_all > 50)) +
+  tm_lines(lwd = "vehicles_per_hour",
+           col = "commute_all",
+           scale = 10,
+           palette = "Reds", #YlGn
+           style = "pretty",
+           alpha = 1,
+           title.col = "Demand",
+           title.lwd = "Vehicles per hour",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by = "combination",
+            free.coords = FALSE,
+            ncol = 3,
+            showNA = FALSE) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Travel demand not overlapping completely with any bus routes \nfor demand with overlap > 50%",
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            legend.stack = "horizontal",
+            frame = FALSE) -> map_demand_overlap_gtfs_st_diff_combinations
+
+map_demand_overlap_gtfs_st_diff_combinations
+
+tmap_save(tm =  map_demand_overlap_gtfs_st_diff_combinations, filename = paste0(plots_path, "map_demand_overlap_gtfs_st_diff_combinations.png"), dpi = 1080, width = 15)
+
+
+
+
+
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  tm_shape(od_demand_highest_route_overlap_diff %>%
+             mutate(overlap_frac_fct = cut(overlap_frac, breaks = seq(0, 1, by = 0.25)),
+                    vehicles_per_hour = round(1/(headway_secs/3600))) %>%
+             filter(overlap_frac >= 0.5, commute_all > 50)) +
+  tm_lines(col = "vehicles_per_hour",
+           lwd = "commute_all",
+           scale = 10,
+           palette = "Reds", #YlGn
+           style = "pretty",
+           alpha = 1,
+           title.lwd = "Demand",
+           title.col = "Vehicles per hour",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by = "combination",
+            free.coords = FALSE,
+            ncol = 3,
+            showNA = FALSE) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Travel demand not overlapping completely with any bus routes \nfor demand with overlap > 50%",
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            legend.stack = "horizontal",
+            frame = FALSE)
