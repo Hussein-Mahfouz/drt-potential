@@ -33,8 +33,8 @@ by a direct bus. This is done as follows:
     shortest paths connecting them. The assumption is that this is the
     path that cars would take. We add this geometry onto `od_demand`
 
-    1.  *Method*: route using
-        `r5r::detailed_itineraries(keep_geometry = TRUE)`
+    - *Method*: route using
+      `r5r::detailed_itineraries(keep_geometry = TRUE)`
 
 4.  Merge the demand onto the network, combining parallel lines in order
     to get total demand on each road segment. We call this
@@ -48,7 +48,18 @@ by a direct bus. This is done as follows:
       github
       issue](https://github.com/Hussein-Mahfouz/drt-potential/issues/26#issue-2078687863)
 
-5.  
+5.  Identify overlap between shortest path gemetries and high frequency
+    bus routes. Even though all these od pairs are not served by a
+    direct bus, they overlap with high frequency routes for part of
+    their journeys. We calculate the % of intersection between each
+    shortest path and the bus route it intersects with most.
+
+    - *Method*: `get_most_overlapping_route()` and
+      `get_overlap_inverse()` functions in
+      `code/eda_travel_demand_nobus.R`
+
+    This allows us to see which OD pairs could benefit from a first/last
+    mile service to a high frequency bus route
 
 The code is available in code/eda_travel_demand_nobus.R
 
