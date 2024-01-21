@@ -500,129 +500,129 @@ tm_shape(study_area) +
 
 # ARCHIVE FOR NOW
 
-
-
-ggplot(od_demand_sf_rank %>%
-         filter(ride_time > 5),
-       aes(x = distance_m/ride_time, y = speed_kph, color = combination)) +
-  geom_point()
-
-
-ggplot(od_demand_sf_rank %>%
-         filter(ride_time > 5, combination == "pt_wkday_morning"),
-       aes(x = distance_m/ride_time, y = speed_kph)) +
-  geom_point()
-
-ggplot(od_demand_sf_rank %>%
-         filter(ride_time > 5, combination != "car"),
-       aes(x = ride_time / total_time)) +
-  geom_histogram() +
-  facet_wrap(~combination, ncol = 3)
-
-
-
-# ----- exploratory plots
-ggplot(od_demand_sf_rank, aes(x = speed_kph, y = speed_percentile, color = combination)) +
-  geom_point()
-
-# speed
-od_demand_sf_rank %>%
-  filter(combination != "car") %>%
-  ggplot(aes(x = speed_kph, y = speed_percentile, color = combination)) +
-  geom_point()
-
-# demand
-od_demand_sf_rank %>%
-  filter(combination != "car") %>%
-  ggplot(aes(x = commute_all, y = demand_percentile, color = combination)) +
-  geom_point()
-
-od_demand_sf_rank %>%
-  filter(combination != "car") %>%
-  ggplot(aes(x = demand_percentile, fill = combination)) +
-  geom_histogram() +
-  facet_wrap(~combination, ncol = 3)
-
-od_demand_sf_rank %>%
-  filter(combination != "car") %>%
-  ggplot(aes(x = commute_all, fill = combination)) +
-  geom_histogram() +
-  facet_wrap(~combination, ncol = 3)
-
-
-od_demand_sf_rank_f <- od_demand_sf_rank %>%
-  filter(combination == "pt_wkday_morning")
-
-
-od_demand_sf_rank %>%
-  filter(combination == "pt_wkday_morning") %>%
-  # as.factor to avoid "continuous value to discrete scale" error
-  ggplot(aes(x = speed_percentile, y = demand_percentile, color = distance_m)) +
-  geom_point() +
-  scale_color_distiller(palette="Reds", direction = 1)
-
-
-od_demand_sf_rank %>%
-  filter(combination != "car") %>%
-  # as.factor to avoid "contiuous value to discrete scale
-  ggplot(aes(x = speed_percentile, y = demand_percentile, color = distance_m)) +
-  geom_point() +
-  scale_color_distiller(palette="Reds", direction = 1) +
-  facet_wrap(~combination, ncol = 3)
-
-
-
-
-
-# round n_rides to whole number
-# TODO: move this further upstream (previous script)
-od_demand_sf_rank <- od_demand_sf_rank %>%
-  mutate(n_rides = round(n_rides))
-
-
-# ---------- 5. Create communities based on demand (or travel time?)
-   # different community for PT and PVT
-
-# ----------- 5. Plots
-
-# ----------- prep the layer
-# TODO: remove this when we have multiple start times (currently the od_supply df only has 7:30 - WHY? )
-od_demand_sf_rank <- od_demand_sf_rank %>%
-  filter(combination == "pt_wkday_morning")
-
-
-# ----------- 6. Maps
-
-
-
-
-
-
-
-
-
-sfnetworks::as_sfnetwork(od_demand_sf_rank, directed = FALSE) -> x
-
-x %>% activate(nodes) %>%
-  mutate(group = tidygraph::group_louvain(weights = `commute_all`)) -> x2
-
-# OR
-# x2 = x %>%
-#   morph(to_linegraph) %>%
-#   mutate(group = tidygraph::group_louvain(weights = "commute_all")) %>%
-#   unmorph()
-
-
-plot(st_geometry(x, "edges"), col = "grey", lwd = 0.5)
-plot(st_geometry(study_area))
-
-x2 %>%
-  activate("nodes") %>%
-  st_as_sf() %>%
-  transmute(group = as.factor(group)) %>%
-  plot(lwd = 4, add = TRUE)
-
-
-
-
-
+#
+#
+# ggplot(od_demand_sf_rank %>%
+#          filter(ride_time > 5),
+#        aes(x = distance_m/ride_time, y = speed_kph, color = combination)) +
+#   geom_point()
+#
+#
+# ggplot(od_demand_sf_rank %>%
+#          filter(ride_time > 5, combination == "pt_wkday_morning"),
+#        aes(x = distance_m/ride_time, y = speed_kph)) +
+#   geom_point()
+#
+# ggplot(od_demand_sf_rank %>%
+#          filter(ride_time > 5, combination != "car"),
+#        aes(x = ride_time / total_time)) +
+#   geom_histogram() +
+#   facet_wrap(~combination, ncol = 3)
+#
+#
+#
+# # ----- exploratory plots
+# ggplot(od_demand_sf_rank, aes(x = speed_kph, y = speed_percentile, color = combination)) +
+#   geom_point()
+#
+# # speed
+# od_demand_sf_rank %>%
+#   filter(combination != "car") %>%
+#   ggplot(aes(x = speed_kph, y = speed_percentile, color = combination)) +
+#   geom_point()
+#
+# # demand
+# od_demand_sf_rank %>%
+#   filter(combination != "car") %>%
+#   ggplot(aes(x = commute_all, y = demand_percentile, color = combination)) +
+#   geom_point()
+#
+# od_demand_sf_rank %>%
+#   filter(combination != "car") %>%
+#   ggplot(aes(x = demand_percentile, fill = combination)) +
+#   geom_histogram() +
+#   facet_wrap(~combination, ncol = 3)
+#
+# od_demand_sf_rank %>%
+#   filter(combination != "car") %>%
+#   ggplot(aes(x = commute_all, fill = combination)) +
+#   geom_histogram() +
+#   facet_wrap(~combination, ncol = 3)
+#
+#
+# od_demand_sf_rank_f <- od_demand_sf_rank %>%
+#   filter(combination == "pt_wkday_morning")
+#
+#
+# od_demand_sf_rank %>%
+#   filter(combination == "pt_wkday_morning") %>%
+#   # as.factor to avoid "continuous value to discrete scale" error
+#   ggplot(aes(x = speed_percentile, y = demand_percentile, color = distance_m)) +
+#   geom_point() +
+#   scale_color_distiller(palette="Reds", direction = 1)
+#
+#
+# od_demand_sf_rank %>%
+#   filter(combination != "car") %>%
+#   # as.factor to avoid "contiuous value to discrete scale
+#   ggplot(aes(x = speed_percentile, y = demand_percentile, color = distance_m)) +
+#   geom_point() +
+#   scale_color_distiller(palette="Reds", direction = 1) +
+#   facet_wrap(~combination, ncol = 3)
+#
+#
+#
+#
+#
+# # round n_rides to whole number
+# # TODO: move this further upstream (previous script)
+# od_demand_sf_rank <- od_demand_sf_rank %>%
+#   mutate(n_rides = round(n_rides))
+#
+#
+# # ---------- 5. Create communities based on demand (or travel time?)
+#    # different community for PT and PVT
+#
+# # ----------- 5. Plots
+#
+# # ----------- prep the layer
+# # TODO: remove this when we have multiple start times (currently the od_supply df only has 7:30 - WHY? )
+# od_demand_sf_rank <- od_demand_sf_rank %>%
+#   filter(combination == "pt_wkday_morning")
+#
+#
+# # ----------- 6. Maps
+#
+#
+#
+#
+#
+#
+#
+#
+#
+# sfnetworks::as_sfnetwork(od_demand_sf_rank, directed = FALSE) -> x
+#
+# x %>% activate(nodes) %>%
+#   mutate(group = tidygraph::group_louvain(weights = `commute_all`)) -> x2
+#
+# # OR
+# # x2 = x %>%
+# #   morph(to_linegraph) %>%
+# #   mutate(group = tidygraph::group_louvain(weights = "commute_all")) %>%
+# #   unmorph()
+#
+#
+# plot(st_geometry(x, "edges"), col = "grey", lwd = 0.5)
+# plot(st_geometry(study_area))
+#
+# x2 %>%
+#   activate("nodes") %>%
+#   st_as_sf() %>%
+#   transmute(group = as.factor(group)) %>%
+#   plot(lwd = 4, add = TRUE)
+#
+#
+#
+#
+#

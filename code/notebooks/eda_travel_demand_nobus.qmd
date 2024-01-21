@@ -45,7 +45,7 @@ The purpose of this notebook is to look at travel demand that is not met by a di
 
 The code is available in code/eda_travel_demand_nobus.R
 
-## Merging Travel Demand 
+## Merging Travel Demand
 
 ![](images/map_aggregate_flows_overline_vs_base.png)
 
@@ -83,7 +83,7 @@ Here we look demand from individual od pairs that are not served by a direct bus
 
 For each geometry in `od_pair_no_direct`, we:
 
-1.   get it's intersection with each high frequency bus in the gtfs feed.
+1.  get it's intersection with each high frequency bus in the gtfs feed.
 
 2.  identify the bus route that intersects with it most and calculate the length of intersection as a fraction of the od pair geometry (i.e. how much of the journey between A and B is covered by a high frequency bus route).
 
@@ -109,7 +109,7 @@ The maps below show the results for different times of day. We visualize the par
 
 ![](images/map_demand_overlap_gtfs_st_diff_evening_wkend.png)
 
-### All times of day (Overlap \> 50%) 
+### All times of day (Overlap \> 50%)
 
 Let's focus on geometries that have a high overlap with high frequency bus routes. These are a good indication of potential first/ last mile interventions such as a DRT service area
 

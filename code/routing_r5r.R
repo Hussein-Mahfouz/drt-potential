@@ -36,12 +36,6 @@ study_area <- study_area_geographies(study_area = study_area,
                                      geography = geography)
 
 
-
-
-
-
-
-
 # r5r requires a POINT sf object with WGS84 CRS
 study_area <- study_area %>%
   st_transform(4326) %>%
@@ -162,6 +156,7 @@ arrow::write_parquet(tt_results_expanded_s, paste0(travel_time_path, geography, 
 
 # -------------- CALCULATE DETAILED ITINERARIES TO GET CAR SHORTEST PATH GEOMETRIES
 
+#TODO: create function to spin up an r5 routable graph -> move function to R/ and source it here -> move this part to pt_or_drt.R and source the function there as well
 
 shortest_path_car <- r5r::detailed_itineraries(r5r_core = r5r_core,
                                                origins = study_area_r5,
