@@ -53,32 +53,29 @@ Synthetic populations already exist through the Synthertic Population Estimation
 
 ### Software / Code
 
+-   [humanleague package](https://github.com/virgesmith/humanleague)
+
 ## Step 2: **Add activity patterns to population**
 
 The second step is to attach an activity schedule to each individual in the synthetic population. This step requires a household travel survey (or time use dataset on a sample of the population). Each individual from the synthetic population is matched onto a profile from the household travel survey. Methods for matching include:
 
-1.  statistical matching [@d2006statistical; @namazi2017unconstrained; @manon2023drt]. These methods use households travel surveys and sociodemographic attributes to attach activity chains to individuals. The method consists of matching each synthetic agent to an activity schedule from the survey based on socio-demographic and socio-economic attributes
+### Statistical Matching
 
-2.  data-driven methods
+1.  Statistical matching [@d2006statistical; @namazi2017unconstrained; @manon2023drt]. These methods use households travel surveys and sociodemographic attributes to attach activity chains to individuals. The method consists of matching each synthetic agent to an activity schedule from the survey based on socio-demographic and socio-economic attributes
 
-    1.  Sequence alignment https://doi.org/10.1111/j.1467-8306.2007.00536.x
+### Data-driven methods
 
-    2.  Markov Chain Monte Carlo (MCMC) simulation https://www.sciencedirect.com/science/article/pii/S0968090X1630095X
+1.  Sequence alignment [@shoval2007sequence]
 
-    3.  Bayesian networks:
+2.  Markov Chain Monte Carlo (MCMC) simulation [@saadi2016forecasting]
 
-        1.  https://www.sciencedirect.com/science/article/pii/S0968090X20307105
+3.  Bayesian networks [@joubert2020activity; @sallard2023travel]
 
-        2.  https://www.sciencedirect.com/science/article/pii/S1877050923005707
+1.  Passed to activity based models and statistical models create activity chains step-by-step (CEMDAP; ActivitySim; actiTopp) - "More often, however, synthetic populations are passed to activity-based models (Arentze et al., 2007; Pendyala et al., 2012) where a sequence of statistical models is applied to construct activity chains step by step. Examples of activity-based models are CEMDAP (Bhat et al., 2008), which is based on the Dallas-Fort Worth region in the USA, or the rule-based model TASHA (Roorda et al., 2008), which is specifically designed for the Greater Toronto area in Canada. Other notable examples of activity-based models are ActivitySim (ActivitySim, 2020) and actiTopp (Hilgert et al., 2017)"
 
-        ```{=html}
-        <!-- -->
-        ```
-        1.  Passed to activity based models and statistical models create activity chains step-by-step (CEMDAP; ActivitySim; actiTopp) - "More often, however, synthetic populations are passed to activity-based models (Arentze et al., 2007; Pendyala et al., 2012) where a sequence of statistical models is applied to construct activity chains step by step. Examples of activity-based models are CEMDAP (Bhat et al., 2008), which is based on the Dallas-Fort Worth region in the USA, or the rule-based model TASHA (Roorda et al., 2008), which is specifically designed for the Greater Toronto area in Canada. Other notable examples of activity-based models are ActivitySim (ActivitySim, 2020) and actiTopp (Hilgert et al., 2017)"
+2.  *data requirements*: **National Travel Survey** or Time Use Survey
 
-3.  *data requirements*: **National Travel Survey** or Time Use Survey
-
-4.  *code*: ?
+3.  *code*: ?
 
 ## Step 3: **Assign activities to geographic locations**
 
