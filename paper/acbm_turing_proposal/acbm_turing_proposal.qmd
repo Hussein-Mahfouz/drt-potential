@@ -25,7 +25,7 @@ csl: ../elsevier-harvard.csl
 
 In multimodal transport planning, 4-step models have been the default for decades. However these models have theoretical and technical limitations [@rasouli2014activity]:
 
--   they lack of integrity (consistency between sub-models). This means that they lack behavioral realism; allocation of individuals to destinations that are infeasible in reality as theydo not match their time budget
+-   they lack of integrity (consistency between sub-models). This means that they lack behavioral realism; allocation of individuals to destinations that are infeasible in reality as they do not match their time budget
 
 -   they do not capture the dependence of trips in a trip chain, or between members of the same household (e.g. school drop-off). This means that only direct policy effects are studied; the effect of changes in a persons travel on other members of the household are not addressed.
 
@@ -39,6 +39,38 @@ Activity-based models are grounded in the idea that travel demand is an outcome 
 
 Besides model integrity, there are many benefits to this disaggregate modeling approach, including the ability to model dynamic modes such as demand-responsive transport and to look at equity implications of different scenarios. (CITE!).
 
+## Types of AcBM
+
+There are a number of approaches for generating AcBMs. These can broadly be grouped under 3 different categories [@rasouli2014activity]:
+
+<!--# check review in [@sallard2023travel] -->
+
+### Constraint-based models
+
+-   **Constraint-based models**: do not predict but check whether an activity chain is feasible given space-time constraints
+
+### **Utility-maximizing models**
+
+-   based on premise that individuals try to maximise utility when deciding between a set of activity-travel patterns
+
+    -   grounded in discrete choice modeling, and mainly use the nested logit.
+
+    -   tend to ignore constraints faced by individuals and households when scheduling
+
+    -   3 modeling approaches
+
+        -   *daily activity schedule model*: nested logit model
+
+        -   Prism-Constrained activity travel simulator: accounts for prism (space-time) constraints and availability of travel modes
+
+            -   nested logit for activity type choice. Another one for destination and transport mode
+
+        -   CEMDEP: differentiates between workers and non-workers
+
+### **Computational process (or rule-based) models**
+
+uses decision heuristics that mimic underlying decision-making process. This means including preferences as well as prior commitments and constraints. Activities are scheduled with other household individuals. They are based on complex decision trees
+
 # Building an AcBM
 
 AcBMs normally rely on a synthetic population to which activities are added.
@@ -51,13 +83,25 @@ Synthetic poulations are composed of agents that have charateristics resembling 
 
 Synthetic populations already exist through the Synthertic Population Estimation and Scenario Projection (SPENSER) tool [@lomax2022open]. The opensource package humanleague [@smith2018humanleague] allows for the creation of synthetic populations using Iterative Propotional Fitting (IPF), Quasirandom Integer Sampling (QIS) and Quasirandom Integer Sampling of IPF (QISI)
 
+### Population projection for future years
+
+A number of different population projection methods are referred to in @predhumeau2023synthetic :
+
+-   *Static projection [@lomax2022open] :* Reconstruction methods like IPF are applied to a base synthetic population to make it fit projected marginals[^1]
+
+-   *Dynamic projection [@fatmi2017baseline; @bae2016combining]*: Ageing the population, adding and removing individuals through births, deaths, and migration
+
+-   *Resampling*: using the base population, and duplicating or removing individuals to fit the projected marginals
+
+[^1]: projected marginals are estimated future values of demographic variables (e.g. age, sex, race) for specific subgroups of the population.
+
 ### Software / Code
 
 -   [humanleague package](https://github.com/virgesmith/humanleague)
 
 ## Step 2: **Add activity patterns to population**
 
-The second step is to attach an activity schedule to each individual in the synthetic population. This step requires a household travel survey (or time use dataset on a sample of the population). Each individual from the synthetic population is matched onto a profile from the household travel survey. Methods for matching include:
+The second step is to attach an activity schedule to each individual in the synthetic population. This step requires a household travel survey (or time use dataset) for a sample of the population. Each individual from the synthetic population is matched onto a profile from the household travel survey. Methods for matching include:
 
 ### Statistical Matching
 
@@ -65,19 +109,45 @@ The second step is to attach an activity schedule to each individual in the synt
 
 ### Data-driven methods
 
-1.  Sequence alignment [@shoval2007sequence]
+1.  Sequence alignment [@shoval2007sequence] "To include the sequential dependencies of daily activities, some studies have suggested the use of Sequence Alignment Methods (SAMs) (Joh and Timmermans, 2011 https://doi.org/10.3141/2231-02; Joh et al., 2002 <https://doi.org/10.1016/S0191-2615(01)00009-1>; Wilson, 1998 https://doi.org/10.1068/a301017),"
 
 2.  Markov Chain Monte Carlo (MCMC) simulation [@saadi2016forecasting]
 
-3.  Bayesian networks [@joubert2020activity; @sallard2023travel]
+3.  Bayesian networks [@joubert2020activity; @sallard2023travel]. The latter use Bayesian Networks to estimate both the synthetic population and the activity schedules.
 
-1.  Passed to activity based models and statistical models create activity chains step-by-step (CEMDAP; ActivitySim; actiTopp) - "More often, however, synthetic populations are passed to activity-based models (Arentze et al., 2007; Pendyala et al., 2012) where a sequence of statistical models is applied to construct activity chains step by step. Examples of activity-based models are CEMDAP (Bhat et al., 2008), which is based on the Dallas-Fort Worth region in the USA, or the rule-based model TASHA (Roorda et al., 2008), which is specifically designed for the Greater Toronto area in Canada. Other notable examples of activity-based models are ActivitySim (ActivitySim, 2020) and actiTopp (Hilgert et al., 2017)"
-
-2.  *data requirements*: **National Travel Survey** or Time Use Survey
-
-3.  *code*: ?
+4.  Passed to activity based models and statistical models create activity chains step-by-step (CEMDAP; ActivitySim; actiTopp) - "More often, however, synthetic populations are passed to activity-based models (Arentze et al., 2007; Pendyala et al., 2012) where a sequence of statistical models is applied to construct activity chains step by step. Examples of activity-based models are CEMDAP (Bhat et al., 2008), which is based on the Dallas-Fort Worth region in the USA, or the rule-based model TASHA (Roorda et al., 2008), which is specifically designed for the Greater Toronto area in Canada. Other notable examples of activity-based models are ActivitySim (ActivitySim, 2020) and actiTopp (Hilgert et al., 2017)"
 
 ## Step 3: **Assign activities to geographic locations**
+
+Many approaches in the literature focus on matching individuals to activity schedules, but do not proceed to imposing the generated schedules onto geographic space. This step is essential for agent-based transport simulations such as MATSim.
+
+### Primary locations 
+
+Methods exist for assigning agents to residential and primary locations. Residential location models are mainly based on discrete choice [@schirmer2014role], but can also microsynthesis[^2] [@lomax2022open]. The choice of primary locations such as work and school is modeled using gravity [@sa2004determinants] or radiation models [@simini2012universal; @yang2014limits] . A comparison of both can be found in @masucci2013gravity. @vitins2016integration introduce a utility-maximising model with capacity constraints added through the use of shadow prices.
+
+[^2]: I am not sure about this statement. Does [@lomax2022open] assign individuals to home locations (household level not area-level)?
+
+### Secondary locations 
+
+On their own, the approaches for primary location assignment cannot be used to model an entire trip chain which includes secondary locations[^3] (e.g. grocery shopping) [@horl2023relaxation].
+
+[^3]: Sometimes also described as discretionary locations.
+
+Approaches that fill in gaps between primary locations include:
+
+Space-time prisms
+
+This includes generating feasible secondary locations that can be reached within the time budget of the individual (time budgets are determined from their assigned activity schedules). Travel time matrices are needed to determine feasible destinations. Methods for choosing a destination from the feasile set include choice models [@yoon2012feasibility; @justen2013use] and more recently, bayesian networks [@ma2018bayesian]. @horl2023relaxation propose an algorithm that assigns secondary locations by attempting to reproduce the distance distributions in the data. It does not attempt to model the underlying choice process, and they emphasise that it is a location assignment model, not a location choice model. The main benefits are the minimal data requirements (activity chains, reference distance distributions, and activity locations) and that a choice model does not need to be estimated. The model is meant to give preliminary results which can later be refined in an agent-based simulation.
+
+Optimization
+
+A different approach involves solving the Traveling Salesman Problem with Time Windows (TSP-TW) [@esztergar2018extensions; @esztergar2020trip]
+
+<!--# traveling salesman approach with time windows https://www.mdpi.com/2071-1050/12/16/6422 https://www.tandfonline.com/doi/full/10.1080/10630732.2017.1407998 -->
+
+Data-driven approaches
+
+These involve creating activity plans from mobile phone data
 
 -   mainly for discretionary activities (fixed activities can be from a gravity model)
 
@@ -97,7 +167,7 @@ The second step is to attach an activity schedule to each individual in the synt
 
 Some approaches do step 2 and 3 simultaneously (not sequentially). These include
 
-1.  AcBM (what lit review did I get this from?)
+1.  AcBM (what lit review did I get this from?) Horl I think
 
 2.  Mixed Integer Optimisation: https://www.sciencedirect.com/science/article/pii/S0968090X23002802
 
