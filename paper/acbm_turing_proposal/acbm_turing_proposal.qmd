@@ -41,35 +41,19 @@ Besides model integrity, there are many benefits to this disaggregate modeling a
 
 ## Types of AcBM
 
-There are a number of approaches for generating AcBMs. These can broadly be grouped under 3 different categories [@rasouli2014activity]:
+There are a number of approaches for generating AcBMs. @rasouli2014activity group the modeling approaches under 3 different categories:
 
 <!--# check review in [@sallard2023travel] -->
 
-### Constraint-based models
-
--   **Constraint-based models**: do not predict but check whether an activity chain is feasible given space-time constraints
-
-### **Utility-maximizing models**
-
--   based on premise that individuals try to maximise utility when deciding between a set of activity-travel patterns
-
+-   **Constraint-based models**: These do not generate activity schedules but check whether an activity chain is feasible given space-time constraints
+-   **Utility-maximizing models:** These are discrete choice models based on premise that individuals try to maximise utility when deciding between a set of activity-travel patterns. The CEMDEP model [@bhat2004comprehensive] is one of the most popular models in this category include These models fail to capture imperfect beaviour and use homgeneous utility functions which don't capture the variation in preferences between individuals \[@sallard2023travel\].
     -   grounded in discrete choice modeling, and mainly use the nested logit.
 
-    -   tend to ignore constraints faced by individuals and households when scheduling
+<!--# 3 modeling approaches: [1] daily activity schedule model: nested logit model  ……. [2] Prism-Constrained activity travel simulator: accounts for prism (space-time) constraints and availability of travel modes  nested logit for activity type choice. Another one for destination and transport mode -->
 
-    -   3 modeling approaches
+-   **Computational process (or rule-based) models:** these use decision heuristics that mimic underlying decision-making process. This means including preferences as well as prior commitments and constraints. Examples include ALBATROSS [@arentze2004learning] which uses complex decision trees, and TASHA [@miller2003prototype] which relies on empirical distributions.
 
-        -   *daily activity schedule model*: nested logit model
-
-        -   Prism-Constrained activity travel simulator: accounts for prism (space-time) constraints and availability of travel modes
-
-            -   nested logit for activity type choice. Another one for destination and transport mode
-
-        -   CEMDEP: differentiates between workers and non-workers
-
-### **Computational process (or rule-based) models**
-
-uses decision heuristics that mimic underlying decision-making process. This means including preferences as well as prior commitments and constraints. Activities are scheduled with other household individuals. They are based on complex decision trees
+The reality has become slightly more complex, and the pipeline of building an activity-based model can involve combinations of these methods (e.g. utility-based models with spacetime prism constraints). Below we go over the different steps involved in building an AcBM, and the different methods used for each one.
 
 # Building an AcBM
 
@@ -133,45 +117,17 @@ On their own, the approaches for primary location assignment cannot be used to m
 
 [^3]: Sometimes also described as discretionary locations.
 
-Approaches that fill in gaps between primary locations include:
+The most common approaches for filling in gaps between primary locations are based on *space-time prisms*. This involves 2 steps:
 
-Space-time prisms
+1.  Generating feasible secondary locations that can be reached within the time budget of the individual (time budgets are determined from their assigned activity schedules). Travel time matrices are needed to determine feasible destinations.
 
-This includes generating feasible secondary locations that can be reached within the time budget of the individual (time budgets are determined from their assigned activity schedules). Travel time matrices are needed to determine feasible destinations. Methods for choosing a destination from the feasile set include choice models [@yoon2012feasibility; @justen2013use] and more recently, bayesian networks [@ma2018bayesian]. @horl2023relaxation propose an algorithm that assigns secondary locations by attempting to reproduce the distance distributions in the data. It does not attempt to model the underlying choice process, and they emphasise that it is a location assignment model, not a location choice model. The main benefits are the minimal data requirements (activity chains, reference distance distributions, and activity locations) and that a choice model does not need to be estimated. The model is meant to give preliminary results which can later be refined in an agent-based simulation.
+2.  Choosing a destination from the feasible set. Methods include choice models [@yoon2012feasibility; @justen2013use] and more recently, bayesian networks [@ma2018bayesian]. @horl2023relaxation propose an alternative algorithm that assigns secondary locations by attempting to reproduce the distance distributions in the data. It does not attempt to model the underlying choice process, and they emphasise that it is a location assignment model, not a location choice model. The main benefits are the minimal data requirements (activity chains, reference distance distributions, and activity locations) and that a choice model does not need to be estimated. The model is meant to give preliminary results which can later be refined in an agent-based simulation.
 
-Optimization
+Another less common approach is based on optimization. It involves solving the Traveling Salesman Problem with Time Windows (TSP-TW) [@esztergar2018extensions; @esztergar2020trip]
 
-A different approach involves solving the Traveling Salesman Problem with Time Windows (TSP-TW) [@esztergar2018extensions; @esztergar2020trip]
+A third approach involves creating activity patterns from mobile phone data without the need for travel surveys. These involve creating activity plans from mobile phone data which can either be disaggregated [@jiang2016timegeo; @lin2017deep] or aggregated [@anda2021synthesising]. Aggregated, privacy-preserving methods are an important development in facilitating the use of user trajectory data. However, the proprietary nature of mobile phone data can be a barrier to adopting methods that are based on it.
 
-<!--# traveling salesman approach with time windows https://www.mdpi.com/2071-1050/12/16/6422 https://www.tandfonline.com/doi/full/10.1080/10630732.2017.1407998 -->
-
-Data-driven approaches
-
-These involve creating activity plans from mobile phone data
-
--   mainly for discretionary activities (fixed activities can be from a gravity model)
-
-1.  *explanation*: we take the trip chains assigned to each individual, and project them onto geographic locations. This method
-
-2.  *method*:
-
-    Discretionary activities
-
-    1.  Space time prisms
-
-        1.  step 1: determine feasible destinations for discretionary activities given primary activity constraints (location and time)
-
-        2.  step 2: choose a candidate from the choice set using (a) spatial sampling or (b) discrete choice modeling ([Hörl and Axhausen 2021](https://www.tandfonline.com/doi/full/10.1080/23249935.2021.1982068))
-
-    2.  Traveling Salesman Problem with Windows (Optimisation) - (Esztergár-Kiss et al., 2018, 2020)
-
-Some approaches do step 2 and 3 simultaneously (not sequentially). These include
-
-1.  AcBM (what lit review did I get this from?) Horl I think
-
-2.  Mixed Integer Optimisation: https://www.sciencedirect.com/science/article/pii/S0968090X23002802
-
-3.  *data requirements*:
+1.  *data requirements*:
 
     -   Activity locations: these can be queried from OSM. The ONS has a [POI dataset](https://www.ordnancesurvey.co.uk/products/points-of-interest) for Britain. Arup also have a package ([osmox](https://github.com/arup-group/osmox/tree/main)) for this exact purpose
 
@@ -179,7 +135,7 @@ Some approaches do step 2 and 3 simultaneously (not sequentially). These include
 
     -   PT supply? Do we need a tt matrix between locations showing which OD pairs can be reached by which mode? Probably
 
-4.  *code*:
+2.  *code*:
 
     -   sampling locations while accounting for journey time constraints: [pam code](https://github.com/arup-group/pam/blob/main/examples/10_advanced_spatial_sampling.ipynb)
 
@@ -191,27 +147,31 @@ Some approaches do step 2 and 3 simultaneously (not sequentially). These include
 
 # Open Research Areas
 
--   predicting activity patterns along a longer time horizon.
+The shift from tradiditonal 4-step models to activity-based transport models opens up many exciting research areas. Developing tools and pipelines for generating activity based models can allow us to:
+
+-    predict activity patterns along a longer time horizon. (Axhausen 2007 paper)
 
     -   Needs change dynamically in response to weather, seasons, specific events etc
 
     -   build up of stress over time can lead to breaking travel habits
 
--   include route choice as part of the larger choice problem. Currently route choice / assignment still comes after demand generation, and this violates integrity of the models -\> THIS IS WHAT MATSIM DOES
-
 -   use activity patterns to measure quality of life by looking at amount of discretionary time (and what activities are done in it?)
 
--   Models that account for attitudes, nonlinear perception, learning, bounded rationality etc)
+-   USe activity as input into agent-based simulations
 
--   Group decision making (family) and incorporating social networks
+    -   include route choice as part of the larger choice problem. Currently route choice / assignment still comes after demand generation, and this violates integrity of the models -\> THIS IS WHAT MATSIM DOES
+
+    -   Models that account for attitudes, nonlinear perception, learning, bounded rationality etc)
+
+-   Model the effects of group decision making (family) and incorporate social networks into our models
 
     -   check zotero folder
 
--   Dynamic plans [@auld2012activity] -\> if we have a model pipelines that generates dynamic plans (i.e. spontaneous decision to go to the shop after going for dinner), we can simulate scenarios with spontaneity and see how the transport supply accommodates it. These scenarios would more closely resemble the actual process of activity scheduling.
+-   Study how the transport and land-use facilitate dynamic plans [@auld2012activity]: if we have a model pipelines that generates dynamic plans (i.e. spontaneous decision to go to the shop after going for dinner), we can simulate scenarios with spontaneity and see how the transport supply accommodates it. These scenarios would more closely resemble the actual process of activity scheduling.
 
--   Feedback loop between network design and activity plans
+-   Look at feedback loop between network design and activity plans. This includes both the road network [@kang2013activity] and the public transport network. Demand is elastic, and is a function of infrastructure and the transport network.
 
-    -   "On activity-based network design problems": *"This research takes a step in advancing NDP theory where OD demand is not known a priori, but rather is the subject of responses in household itinerary choices that depend on the infrastructure improvements. Using simple examples, we show that falsely assuming that household itineraries are not elastic can result in a lack of understanding in certain phenomena; e.g., increasing traffic even without increasing economic activity due to relaxing of space--time prism constraints, or worsening of utility despite infrastructure investments in cases where household objectives may conflict."*
+    -   Research could involve agent-based simulations
 
 ### 
 
