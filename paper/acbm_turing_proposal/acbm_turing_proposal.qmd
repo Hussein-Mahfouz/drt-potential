@@ -25,7 +25,7 @@ csl: ../elsevier-harvard.csl
 
 In multimodal transport planning, 4-step models have been the default for decades. However these models have theoretical and technical limitations [@rasouli2014activity]:
 
--   they lack of integrity (consistency between sub-models). This means that they lack behavioral realism; allocation of individuals to destinations that are infeasible in reality as they do not match their time budget
+-   they lack of integrity (consistency between sub-models). This means that they lack behavioral realism; allocation of individuals to destinations that are infeasible in reality as they do not match their time budget.
 
 -   they do not capture the dependence of trips in a trip chain, or between members of the same household (e.g. school drop-off). This means that only direct policy effects are studied; the effect of changes in a persons travel on other members of the household are not addressed.
 
@@ -43,10 +43,8 @@ Besides model integrity, there are many benefits to this disaggregate modeling a
 
 There are a number of approaches for generating AcBMs. @rasouli2014activity group the modeling approaches under 3 different categories:
 
-<!--# check review in [@sallard2023travel] -->
-
 -   **Constraint-based models**: These do not generate activity schedules but check whether an activity chain is feasible given space-time constraints
--   **Utility-maximizing models:** These are discrete choice models based on premise that individuals try to maximise utility when deciding between a set of activity-travel patterns. The CEMDEP model [@bhat2004comprehensive] is one of the most popular models in this category include These models fail to capture imperfect beaviour and use homgeneous utility functions which don't capture the variation in preferences between individuals \[@sallard2023travel\].
+-   **Utility-maximizing models:** These are discrete choice models based on premise that individuals try to maximise utility when deciding between a set of activity-travel patterns. The CEMDEP model [@bhat2004comprehensive] is one of the most popular models in this category. Notable issues with these models is that they fail to capture imperfect behaviour and use homgeneous utility functions which don't capture the variation in preferences between individuals \[@sallard2023travel\].
     -   grounded in discrete choice modeling, and mainly use the nested logit.
 
 <!--# 3 modeling approaches: [1] daily activity schedule model: nested logit model  ……. [2] Prism-Constrained activity travel simulator: accounts for prism (space-time) constraints and availability of travel modes  nested logit for activity type choice. Another one for destination and transport mode -->
@@ -57,11 +55,11 @@ The reality has become slightly more complex, and the pipeline of building an ac
 
 # Building an AcBM
 
-AcBMs normally rely on a synthetic population to which activities are added.
+AcBMs normally rely on a synthetic population to which activities are then added.
 
 ## Step 1: **Generate synthetic population**
 
-Synthetic poulations are composed of agents that have charateristics resembling real people, with the distribution of characteristics matching that of the real population. A number of methods exist to create synthetic populations, including synthetic reconstruction, combinatorial optimisation, and statistical learning (see [@fig-synth_pop_methods])
+Synthetic populations are composed of agents that have characteristics resembling real people, with the distribution of characteristics matching that of the real population. A number of methods exist to create synthetic populations, including synthetic reconstruction, combinatorial optimisation, and statistical learning (see [@fig-synth_pop_methods])
 
 ![Popular methods for synthetic population generation [@fabrice2021comparing]](images/synthetic_pop_methods_diagram.png){#fig-synth_pop_methods}
 
@@ -79,9 +77,7 @@ A number of different population projection methods are referred to in @predhume
 
 [^1]: projected marginals are estimated future values of demographic variables (e.g. age, sex, race) for specific subgroups of the population.
 
-### Software / Code
-
--   [humanleague package](https://github.com/virgesmith/humanleague)
+![](images/synthetic_pop.png)
 
 ## Step 2: **Add activity patterns to population**
 
@@ -93,13 +89,13 @@ The second step is to attach an activity schedule to each individual in the synt
 
 ### Data-driven methods
 
-1.  Sequence alignment [@shoval2007sequence] "To include the sequential dependencies of daily activities, some studies have suggested the use of Sequence Alignment Methods (SAMs) (Joh and Timmermans, 2011 https://doi.org/10.3141/2231-02; Joh et al., 2002 <https://doi.org/10.1016/S0191-2615(01)00009-1>; Wilson, 1998 https://doi.org/10.1068/a301017),"
+1.  Sequence alignment [@shoval2007sequence]
+
+    <!--# "To include the sequential dependencies of daily activities, some studies have suggested the use of Sequence Alignment Methods (SAMs) (Joh and Timmermans, 2011 https://doi.org/10.3141/2231-02; Joh et al., 2002 https://doi.org/10.1016/S0191-2615(01)00009-1; Wilson, 1998 https://doi.org/10.1068/a301017)," -->
 
 2.  Markov Chain Monte Carlo (MCMC) simulation [@saadi2016forecasting]
 
 3.  Bayesian networks [@joubert2020activity; @sallard2023travel]. The latter use Bayesian Networks to estimate both the synthetic population and the activity schedules.
-
-4.  Passed to activity based models and statistical models create activity chains step-by-step (CEMDAP; ActivitySim; actiTopp) - "More often, however, synthetic populations are passed to activity-based models (Arentze et al., 2007; Pendyala et al., 2012) where a sequence of statistical models is applied to construct activity chains step by step. Examples of activity-based models are CEMDAP (Bhat et al., 2008), which is based on the Dallas-Fort Worth region in the USA, or the rule-based model TASHA (Roorda et al., 2008), which is specifically designed for the Greater Toronto area in Canada. Other notable examples of activity-based models are ActivitySim (ActivitySim, 2020) and actiTopp (Hilgert et al., 2017)"
 
 ## Step 3: **Assign activities to geographic locations**
 
@@ -125,31 +121,85 @@ The most common approaches for filling in gaps between primary locations are bas
 
 Another less common approach is based on optimization. It involves solving the Traveling Salesman Problem with Time Windows (TSP-TW) [@esztergar2018extensions; @esztergar2020trip]
 
-A third approach involves creating activity patterns from mobile phone data without the need for travel surveys. These involve creating activity plans from mobile phone data which can either be disaggregated [@jiang2016timegeo; @lin2017deep] or aggregated [@anda2021synthesising]. Aggregated, privacy-preserving methods are an important development in facilitating the use of user trajectory data. However, the proprietary nature of mobile phone data can be a barrier to adopting methods that are based on it.
+A third approach involves creating activity patterns from mobile phone data without the need for travel surveys. The data can either be disaggregated [@jiang2016timegeo; @lin2017deep] or aggregated [@anda2021synthesising]. Aggregated, privacy-preserving methods are an important development in facilitating the use of user trajectory data. However, the proprietary nature of mobile phone data can be a barrier to adopting methods that are based on it.
 
-1.  *data requirements*:
+![](images/acbm_activity_synthesis.png)
 
-    -   Activity locations: these can be queried from OSM. The ONS has a [POI dataset](https://www.ordnancesurvey.co.uk/products/points-of-interest) for Britain. Arup also have a package ([osmox](https://github.com/arup-group/osmox/tree/main)) for this exact purpose
+<!--# Step 4: Validation -->
 
-    -   Individuals with activity chains (from step 2)
+<!--# https://www.sciencedirect.com/science/article/pii/S0957417415001657 -->
 
-    -   PT supply? Do we need a tt matrix between locations showing which OD pairs can be reached by which mode? Probably
+## Data Inputs
 
-2.  *code*:
+### Synthetic population 
 
-    -   sampling locations while accounting for journey time constraints: [pam code](https://github.com/arup-group/pam/blob/main/examples/10_advanced_spatial_sampling.ipynb)
+-   Socio-demographic data (census)
 
-    -   possibly useful [code on discretionary locations](https://github.com/arup-group/pam/blob/main/examples/17_advanced_discretionary_locations.ipynb) - need to check how it is different to 1st approach / whether I will create a datset with non-mandatory activities
+-   Health surveys
 
-## Step 4: **Validation**
+### Activity-based model
 
--   https://www.sciencedirect.com/science/article/pii/S0957417415001657
+**Activity generation and scheduling**
+
+-   Household travel survey
+
+    -   NTS
+
+    -   Time Use Survey
+
+**Feasible locations**
+
+-   Activity locations: these can be queried from OSM. The ONS has a [POI dataset](https://www.ordnancesurvey.co.uk/products/points-of-interest) for Britain. Arup also have a package ([osmox](https://github.com/arup-group/osmox/tree/main)) for this exact purpose
+
+**Location choice**
+
+-   Commuting matrices
+
+    -   census
+
+-   GTFS feeds, which we use to get travel time matrices by mode at different times of day
+
+![](images/input_data.png)
+
+## Software / Code
+
+### Synthetic population
+
+**Population projections**
+
+-   https://github.com/nismod/ukpopulation
+
+-   https://github.com/nismod/microsimulation (check this one again)
+
+**Synthetic reconstruction (Microsimulation)**
+
+-   [humanleague package](https://github.com/virgesmith/humanleague)
+
+**Scenario Modeling**
+
+-   https://github.com/nismod/simim
+
+**Spatial distribution at sub-zone level**
+
+-   https://github.com/geospatialncl/OpenUDM
+
+### Activity-based modeling
+
+**Entire pipeline**
+
+-   [ActivitySim](https://activitysim.github.io/activitysim/v1.2.0/index.html#)
+
+**Location choice**
+
+-   sampling locations while accounting for journey time constraints: [pam code](https://github.com/arup-group/pam/blob/main/examples/10_advanced_spatial_sampling.ipynb)
+
+-   [code on discretionary locations](https://github.com/arup-group/pam/blob/main/examples/17_advanced_discretionary_locations.ipynb)
 
 # Open Research Areas
 
-The shift from tradiditonal 4-step models to activity-based transport models opens up many exciting research areas. Developing tools and pipelines for generating activity based models can allow us to:
+The shift from traditional 4-step models to activity-based transport models opens up many exciting research areas. Developing tools and pipelines for generating activity based models can allow us to:
 
--    predict activity patterns along a longer time horizon. (Axhausen 2007 paper)
+-   predict activity patterns along a longer time horizon. (Axhausen 2007 paper)
 
     -   Needs change dynamically in response to weather, seasons, specific events etc
 
@@ -157,7 +207,7 @@ The shift from tradiditonal 4-step models to activity-based transport models ope
 
 -   use activity patterns to measure quality of life by looking at amount of discretionary time (and what activities are done in it?)
 
--   USe activity as input into agent-based simulations
+-   Use activity as input into agent-based simulations
 
     -   include route choice as part of the larger choice problem. Currently route choice / assignment still comes after demand generation, and this violates integrity of the models -\> THIS IS WHAT MATSIM DOES
 
@@ -165,39 +215,11 @@ The shift from tradiditonal 4-step models to activity-based transport models ope
 
 -   Model the effects of group decision making (family) and incorporate social networks into our models
 
-    -   check zotero folder
-
 -   Study how the transport and land-use facilitate dynamic plans [@auld2012activity]: if we have a model pipelines that generates dynamic plans (i.e. spontaneous decision to go to the shop after going for dinner), we can simulate scenarios with spontaneity and see how the transport supply accommodates it. These scenarios would more closely resemble the actual process of activity scheduling.
 
 -   Look at feedback loop between network design and activity plans. This includes both the road network [@kang2013activity] and the public transport network. Demand is elastic, and is a function of infrastructure and the transport network.
 
     -   Research could involve agent-based simulations
-
-### 
-
-# Notes
-
-## Types of AcBM
-
--   **Constraint-based models**: do not predict but check whether an activity chain is feasible given space-time constraints
-
--   **Utility-maximising models**: based on premise that individuals try to maximise utility when deciding between a set of activity-travel patterns
-
-    -   grounded in discrete choice modeling, and mainly use the nested logit.
-
-    -   tend to ignore constraints faced by individuals and households when scheduling
-
-    -   3 modeling approaches
-
-        -   *daily activity schedule model*: nested logit model
-
-        -   Prism-Constrained activity travel simulator: accounts for prism (space-time) constraints and availability of travel modes
-
-            -   nested logit for activity type choice. Another one for destination and transport mode
-
-        -   CEMDEP: differentiates between workers and non-workers
-
--   **Computational process models:** uses decision heuristics that mimic underlying decision-making process. This means including preferences as well as prior commitments and constraints. Activities are scheduled with other household individuals
 
 \pagebreak
 
