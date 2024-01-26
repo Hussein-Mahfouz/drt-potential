@@ -199,11 +199,11 @@ A third approach involves creating activity patterns from mobile phone data with
 
 The shift from traditional 4-step models to activity-based transport models opens up many exciting research areas. Developing tools and pipelines for generating activity based models can allow us to:
 
--   predict activity patterns along a longer time horizon. (Axhausen 2007 paper)
+-   predict activity patterns along a longer time horizon [@beige2008long; @beige2012interdependencies]
 
     -   Needs change dynamically in response to weather, seasons, specific events etc
 
-    -   build up of stress over time can lead to breaking travel habits
+        -   build up of stress over time can lead to breaking travel habits
 
 -   use activity patterns to measure quality of life by looking at amount of discretionary time (and what activities are done in it?)
 
