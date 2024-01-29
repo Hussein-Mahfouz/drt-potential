@@ -3,12 +3,12 @@ title: "Building an Activity-Base Model"
 date: "`r format(Sys.time(), '%d %m %y')`"
 format:
   #gfm: default
-  html:
-    toc: true
-  # docx:
+  # html:
   #   toc: true
-  #   toc-depth: 2
-  #   number-sections: true
+  docx:
+    toc: true
+    toc-depth: 2
+    number-sections: true
   # pdf:
   #   toc: true
   #   number-sections: true
@@ -63,7 +63,7 @@ Synthetic populations are composed of agents that have characteristics resemblin
 
 ![Popular methods for synthetic population generation [@fabrice2021comparing]](images/synthetic_pop_methods_diagram.png){#fig-synth_pop_methods}
 
-Synthetic populations already exist through the Synthertic Population Estimation and Scenario Projection (SPENSER) tool [@lomax2022open]. The opensource package humanleague [@smith2018humanleague] allows for the creation of synthetic populations using Iterative Propotional Fitting (IPF), Quasirandom Integer Sampling (QIS) and Quasirandom Integer Sampling of IPF (QISI)
+Synthetic populations already exist through the Synthetic Population Estimation and Scenario Projection (SPENSER) tool [@lomax2022open]. The opensource package humanleague [@smith2018humanleague] allows for the creation of synthetic populations using Iterative Propotional Fitting (IPF), Quasirandom Integer Sampling (QIS) and Quasirandom Integer Sampling of IPF (QISI). The synthetic population catalyst [@salat2023synthetic] built on SPENSER to create synthetic populations for all lieutenancy areas in England.
 
 ### Population projection for future years
 
@@ -85,25 +85,29 @@ The second step is to attach an activity schedule to each individual in the synt
 
 ### Statistical Matching
 
-1.  Statistical matching [@d2006statistical; @namazi2017unconstrained; @manon2023drt]. These methods use households travel surveys and sociodemographic attributes to attach activity chains to individuals. The method consists of matching each synthetic agent to an activity schedule from the survey based on socio-demographic and socio-economic attributes
+1.  Statistical matching [@d2006statistical; @namazi2017unconstrained; @manon2023drt]. These methods use households travel surveys and sociodemographic attributes to attach activity chains to individuals. The method consists of matching each synthetic agent to an activity schedule from the survey based on socio-demographic and socio-economic attributes. The activity schedule in the surveys include mode of travel, and so the mode choice of synthetic agents is derived from the statistical matching approach.
 
 ### Data-driven methods
 
-1.  Sequence alignment [@shoval2007sequence]
+1.  Sequence alignment [@shoval2007sequence]: This method is used to check if synthesised daily plans are good representations of reality
 
     <!--# "To include the sequential dependencies of daily activities, some studies have suggested the use of Sequence Alignment Methods (SAMs) (Joh and Timmermans, 2011 https://doi.org/10.3141/2231-02; Joh et al., 2002 https://doi.org/10.1016/S0191-2615(01)00009-1; Wilson, 1998 https://doi.org/10.1068/a301017)," -->
 
-2.  Markov Chain Monte Carlo (MCMC) simulation [@saadi2016forecasting]
+2.  profile Hidden Markov Models (pHMM) [@saadi2016forecasting]
 
-3.  Bayesian networks [@joubert2020activity; @sallard2023travel]. The latter use Bayesian Networks to estimate both the synthetic population and the activity schedules.
+3.  Bayesian networks
 
-## Step 3: **Assign activities to geographic locations**
+    1.  [@joubert2020activity]: The approach only models activity sequences and mode choice, and is extended in @de2022explainable to model time spent at each activity. It could be used to predict mode of travel given activity sequence.
+
+    2.   [@sallard2023travel]: They compare Bayesian Networks with statistical matching and find comparable performance in generating activity chains. Unlike @joubert2020activity and @de2022explainable, the approach does not consider mode choice.
+
+## Step 3: **Assign activities to geographic locations** 
 
 Many approaches in the literature focus on matching individuals to activity schedules, but do not proceed to imposing the generated schedules onto geographic space. This step is essential for agent-based transport simulations such as MATSim.
 
 ### Primary locations 
 
-Methods exist for assigning agents to residential and primary locations. Residential location models are mainly based on discrete choice [@schirmer2014role], but can also microsynthesis[^2] [@lomax2022open]. The choice of primary locations such as work and school is modeled using gravity [@sa2004determinants] or radiation models [@simini2012universal; @yang2014limits] . A comparison of both can be found in @masucci2013gravity. @vitins2016integration introduce a utility-maximising model with capacity constraints added through the use of shadow prices.
+Methods exist for assigning agents to residential and primary locations. Residential location models are mainly based on discrete choice [@schirmer2014role], but can also use microsynthesis[^2] [@lomax2022open]. The choice of primary locations such as work and school is modeled using gravity [@sa2004determinants] or radiation models [@simini2012universal; @yang2014limits] . A comparison of both can be found in @masucci2013gravity. @vitins2016integration introduce a utility-maximising model with capacity constraints added through the use of shadow prices.
 
 [^2]: I am not sure about this statement. Does [@lomax2022open] assign individuals to home locations (household level not area-level)?
 
@@ -123,7 +127,25 @@ Another less common approach is based on optimization. It involves solving the T
 
 A third approach involves creating activity patterns from mobile phone data without the need for travel surveys. The data can either be disaggregated [@jiang2016timegeo; @lin2017deep] or aggregated [@anda2021synthesising]. Aggregated, privacy-preserving methods are an important development in facilitating the use of user trajectory data. However, the proprietary nature of mobile phone data can be a barrier to adopting methods that are based on it.
 
+Research on next location prediction could also be used to identify discretionary location choice. This work requires mobile phone data, and methods include neural networks [@hong2023context] and large language models [@wang2023would].
+
 ![](images/acbm_activity_synthesis.png)
+
+## Mode Choice
+
+Mode choice can either be done in Step 2, or in step 3.
+
+**Step 2**
+
+In statistical matching approaches @manon2023drt, the activity schedule in the surveys include mode of travel, and so the mode choice of synthetic agents is derived from the statistical matching approach.
+
+@ma2017causal use bayesian networks to predict mode choice using socio-demographic, spatial, and journey characteristic variables. The work focuses on commuting trips but can be extended to look at entire activity chains, while adding constraints to maintain model integrity. @joubert2020activity use bayesian networks to predict mode choice throughout the activity chain, with modes being predicted sequentially for each trip chain, and posterior probabilities being updated as you move to the next trip. The approach only models activity sequences and mode choice, but not time spent at each activity. @de2022explainable extend the model to include activity durations.
+
+**Step 3**
+
+Discrete choice models that combine residential location, car ownership, activity schedules, and mode choice.[^4] @pinjari2011modeling use commuting trips, while @ben1998integration use entire activity schedules
+
+[^4]: I have not looked at this properly and I don't yet understand how it fits into the pipeline
 
 <!--# Step 4: Validation -->
 
@@ -220,6 +242,13 @@ The shift from traditional 4-step models to activity-based transport models open
 -   Look at feedback loop between network design and activity plans. This includes both the road network [@kang2013activity] and the public transport network. Demand is elastic, and is a function of infrastructure and the transport network.
 
     -   Research could involve agent-based simulations
+
+-   Personalised incentives for sustainable mobility [@xiong2020integrated]
+
+    -   Stage 1: For each travel behavior that might be specified (incentivized), identify the best compensation scheme to offer the agent.
+
+    -   Stage 2: For each agent, determine the best choice of behavior to incentivize via a system-level optimization approach based on
+        Stage 1 incentives.
 
 \pagebreak
 
