@@ -123,6 +123,10 @@ od_sd <- od_supply_filtered %>%
   inner_join(od_demand,
              by = c("Origin" = from_id_col, "Destination" = to_id_col, "start_time" = "departure_time"))
 
+# # save output
+# arrow::write_parquet(od_sd, paste0("data/interim/travel_demand/", toupper(geography), "/od_pairs_demand_and_supply.parquet"))
+
+
 # ----------- 3. Get the total potential ridership on each unique trip (sd = supply_demand)
 
 # Method 1: all_to_all
