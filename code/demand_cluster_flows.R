@@ -2,6 +2,7 @@ library(tidyverse)
 library(sf)
 library(lwgeom)
 library(spatstat)
+library(dbscan)
 
 
 source("R/study_area_geographies.R")
@@ -122,7 +123,7 @@ flow_distance = function(study_area, flows){
     print(paste0("Getting distances for Origin: ", i, " ....."))
 
     # filter to specific origin
-    flows_origin_i <- flows %>% filter(Origin == study_area$MSOA21CD[1])
+    flows_origin_i <- flows %>% filter(Origin == study_area$MSOA21CD[i])
 
     # create grid
     flows_origin_i_grid <- expand_grid(flow_ID_a = flows_origin_i$flow_ID,
@@ -164,6 +165,25 @@ test <- flow_distance(study_area = study_area,
                       flows = x)
 
 test2 <- bind_rows(test)
+
+
+# convert from long to wide
+test2 %>%
+  select(flow_ID_a, flow_ID_b, fd) %>%
+  pivot_wider(names_from = flow_ID_b, values_from = fd) %>%
+  column_to_rownames(var = "flow_ID_a") -> test3
+
+
+# this is a sparse matrix (lot's of OD pairs without flow, so most pairs of OD pairs don't exist)
+# replace NA with a very high number?
+max(test3, na.rm = TRUE)
+
+test3[is.na(test3)] <- max(test3, na.rm = TRUE) * 2
+
+# hdbscan
+
+res = dbscan::hdbscan(test3, minPts = 50)
+
 
 
 
