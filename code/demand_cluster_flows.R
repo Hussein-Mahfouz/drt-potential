@@ -69,13 +69,15 @@ od_demand_filtered = filter_matrix_by_distance(zones = study_area,
 
 # ----- STEP 1: Get distance between flows
 
+
+# --- a. prepare the data
+
 # metric crs
 od_demand_filtered <- od_demand_filtered %>%
   st_transform(3857)
 
 # Add columns for coordinates of startpoint (X, Y) and endpoint (U, V)
-
-x <- od_demand_filtered %>%
+od_demand_xyuv <- od_demand_filtered %>%
   mutate(x = as_tibble(st_coordinates(st_startpoint(od_demand_filtered)))$X,
          y = as_tibble(st_coordinates(st_startpoint(od_demand_filtered)))$Y,
          u = as_tibble(st_coordinates(st_endpoint(od_demand_filtered)))$X,
@@ -83,45 +85,14 @@ x <- od_demand_filtered %>%
   st_drop_geometry()
 
 # create flow ID column
-x <- x %>%
+od_demand_xyuv <- od_demand_xyuv %>%
   mutate(flow_ID = paste(Origin, Destination, sep = "-"))
 
 
-# filter to specific origin
-x_origin_i <- x %>% filter(Origin == study_area$MSOA21CD[1])
+# --- b. Calculate distance matrix
 
-# create grid
-x_origin_i_grid <- expand_grid(flow_ID_a = x_origin_i$flow_ID,
-                               flow_ID_b = x_origin_i$flow_ID)
-
-# add the coordinate data
-x_origin_i_grid2 <- x_origin_i_grid %>%
-  # --- add flow_a coordinates
-  inner_join(x %>%
-              select(flow_ID, x, y, u, v, distance_m),
-            by = c("flow_ID_a" = "flow_ID")) %>%
-  # rename coordinate columns by adding a suffix
-  rename_with(.fn = ~ paste0(.x, "_i"), .cols = c("x", "y", "u", "v", "distance_m")) %>%
-  # --- add flow_b coordinates
-  inner_join(x %>%
-               select(flow_ID, x, y, u, v, distance_m),
-             by = c("flow_ID_b" = "flow_ID")) %>%
-  # rename coordinate columns by adding a suffix
-  rename_with(.fn = ~ paste0(.x, "_j"), .cols = c("x", "y", "u", "v", "distance_m"))
-
-# ----- get "Flow Distance" and "Flow Dissimilarity"
-
-# Flow Distance
-
-x_origin_i_grid2 <- x_origin_i_grid2 %>%
-  mutate(fd = sqrt(0.5 * ((x_i - x_j)^2 + (y_i - y_j)^2) +
-              0.5 * ((u_i - u_j)^2 + (v_i - v_j)^2)),
-         fds = sqrt((0.5 * ((x_i - x_j)^2 + (y_i - y_j)^2) +
-                      0.5 * ((u_i - u_j)^2 + (v_i - v_j)^2)) / (distance_m_i * distance_m_j)))
-
-
-
-flow_distance = function(study_area, flows, geoid){
+# Function to get flow distance and flow dissimilarity by iterating over Origins
+flow_distance = function(study_area, flows, alpha = 1, beta = 1, geoid){
   # empty list to store results for each origin
   results <- vector(mode = "list", length = nrow(study_area))
 
@@ -135,7 +106,7 @@ flow_distance = function(study_area, flows, geoid){
 
     # create grid
     flows_origin_i_grid <- expand_grid(flow_ID_a = flows_origin_i$flow_ID,
-                                   flow_ID_b = flows_origin_i$flow_ID)
+                                       flow_ID_b = flows_origin_i$flow_ID)
 
     # add the coordinate data
     flows_origin_i_grid <- flows_origin_i_grid %>%
@@ -154,12 +125,13 @@ flow_distance = function(study_area, flows, geoid){
 
     # ----- get "Flow Distance" and "Flow Dissimilarity"
 
-    # Flow Distance
     flows_origin_i_grid <- flows_origin_i_grid %>%
-      mutate(fd = sqrt(0.5 * ((x_i - x_j)^2 + (y_i - y_j)^2) +
-                         0.5 * ((u_i - u_j)^2 + (v_i - v_j)^2)),
-             fds = sqrt((0.5 * ((x_i - x_j)^2 + (y_i - y_j)^2) +
-                           0.5 * ((u_i - u_j)^2 + (v_i - v_j)^2)) / (distance_m_i * distance_m_j)))
+      # Flow Distance
+      mutate(fd = sqrt(alpha * ((x_i - x_j)^2 + (y_i - y_j)^2) +
+                         beta * ((u_i - u_j)^2 + (v_i - v_j)^2)),
+      # Flow Dissimilarity
+             fds = sqrt((alpha * ((x_i - x_j)^2 + (y_i - y_j)^2) +
+                           beta * ((u_i - u_j)^2 + (v_i - v_j)^2)) / (distance_m_i * distance_m_j)))
 
     # add results to list
     results[[i]] <- flows_origin_i_grid
@@ -168,64 +140,62 @@ flow_distance = function(study_area, flows, geoid){
   return(results)
 }
 
-
-test <- flow_distance(study_area = study_area,
-                      flows = x,
+# apply function to get distances
+distances <- flow_distance(study_area = study_area,
+                      flows = od_demand_xyuv,
+                      alpha = 1,
+                      beta = 1,
                       geoid = geoid_col)
 
-test2 <- bind_rows(test)
+# convert from list of dfs to one df
+distances <- bind_rows(distances)
 
-# replace na values with
 
 
-# convert from long to wide
-test2 %>%
+# convert df to a distance matrix
+dist_mat <- distances %>%
   select(flow_ID_a, flow_ID_b, fds) %>%
   pivot_wider(names_from = flow_ID_b, values_from = fds) %>%
-  column_to_rownames(var = "flow_ID_a") -> test3
+  column_to_rownames(var = "flow_ID_a")
 
 
 
 # this is a sparse matrix (lot's of OD pairs without flow, so most pairs of OD pairs don't exist)
 # replace NA with a very high number?
-max(test3, na.rm = TRUE)
+max(dist_mat, na.rm = TRUE)
 
-test3[is.na(test3)] <- max(test3, na.rm = TRUE) * 2
-
-
-# hdbscan
-
-# sample
-test4 <- test3[1:5000, 1:5000]
-test4 <- test3
+dist_mat[is.na(dist_mat)] <- max(dist_mat, na.rm = TRUE) * 2
 
 
-# CLUSTERING
+# ------------------------- CLUSTERING USING DBSCAN ------------------------- #
 
-# ---------- HDBSCAN
+#  ---------- STEP 1: Decide on Epsilon (ε) and minPTS
 
-res = dbscan::hdbscan(test4, minPts = 50)
+# epsilon (ε) is a parameter used to define the maximum distance threshold
+# for points to be considered as neighbors. minPTS is the minimum number of points
+# needed in a radius (ε) for a cluster to be formed
 
+# ----- K-nearest neighbor knee plot
+kNNdistplot(dist_mat, k = 100)
 
-# ---------- OTHER (DBSAN / OPTICS)
+# ----- Explore distance distribution of matrix
 
-# in dbscan / optics, we need to define eps. epsilon (ε) is a parameter used to
-# define the maximum distance threshold for points to be considered as neighbors
+# distance distribution of the flows
+hist(distances$fds)
 
-# we need to look at the distance distribution of the flows
-hist(test2$fds)
+# ----- Monte Carlo simulation to get mean value of distances
 
 # if we consider all flows, the distance is skewed by flows that START at the same O
 # or end at the same D, and this will give us clusters of flows that either start or end at the same point
 
-n <- nrow(test2)  # Number of rows in your dataframe
+n <- nrow(distances)  # Number of rows in your dataframe
 num_samples <- 100  # Number of random samples
 repetitions <- 1000  # Number of times to repeat the process
 
 # Define a function to calculate the sum of "distance" column for random samples
 mean_distance <- function() {
   sample_indices <- sample(1:n, num_samples, replace = FALSE)
-  subset_df <- test2[sample_indices, ]
+  subset_df <- distances[sample_indices, ]
   return(mean(subset_df$fds))
 }
 
@@ -234,41 +204,45 @@ results <- replicate(repetitions, mean_distance())
 hist(results)
 
 
-# ---------- DBSCAN (with wights)
+# ---------- STEP 2: Create Weights
 
-# get weights
-test4 %>%
+# We have an OD matrix where each flow vector represents n commuters. We need to weight each vector
+# by the number of commuters so that minPTS works correctly and doesn't treat each vector as 1 item.
+
+# The weights vector needs to match the rows of the distance matrix
+
+# --- get weights
+w <- dist_mat %>%
   rownames_to_column(var = "flow_ID") %>%
   select(flow_ID) %>%
+  # add commuting data to
   inner_join(od_demand_filtered %>%
                st_drop_geometry() %>%
                mutate(flow_ID = paste0(Origin, "-", Destination)) %>%
                select(flow_ID, commute_all),
-             by = "flow_ID") -> w
+             by = "flow_ID")
 
-
+# weight vector
 w_vec <- as.vector(w$commute_all)
 
-res = dbscan::dbscan(test4, minPts = 400, eps = 6, weights = w_vec)
+# cluster option 1: border points assigned to cluster
+cluster_dbscan = dbscan::dbscan(dist_mat,
+                                minPts = 250,
+                                eps = 1.2,
+                                weights = w_vec)
+
+# # cluster option 2: border points not assigned to cluster
+# cluster_dbscan = dbscan::dbscan(dist_mat,
+#                                 minPts = 200,
+#                                 eps = 1.3,
+#                                 weights = w_vec,
+#                                 borderPoints = FALSE)
 
 
-
-# ---------- OPTICS
-res = dbscan::optics(test4, eps = 1, minPts = 20)
-plot(res)
-# get eps_cl from plot y axis (threshold that seperates the clusters)
-res = extractDBSCAN(res, eps_cl = 1.7)
-# plot again to see clustering results
-plot(res)
-
-# attempt to precomute weighted distance matrix
-
-# # Apply weights to the distance matrix
-# weighted_distance_matrix <- test4 * weights %*% t(weights)
+#cluster_dbscan = dbscan::dbscan(dist_mat, minPts = 500, eps = (max(distances$fds) * 5/8), weights = w_vec)
 
 
-
-
+unique(cluster_dbscan$cluster)
 
 
 
@@ -284,23 +258,23 @@ plot(res)
 
 
 # get results
-test5 <- test4 %>%
-  mutate(cluster = res$cluster)
+cluster_dbscan_res <- dist_mat %>%
+  mutate(cluster = cluster_dbscan$cluster)
 
 # prepare data for joining
-test5 %>%
+cluster_dbscan_res <- cluster_dbscan_res %>%
   rownames_to_column(var = "flow_ID") %>%
-  select(flow_ID, cluster) -> test5
+  select(flow_ID, cluster)
 
 
 # add geometry back
 
-od_demand_filtered %>%
+cluster_dbscan_res <- od_demand_filtered %>%
   mutate(flow_ID = paste0(Origin, "-", Destination)) %>%
-  inner_join(test5, by = "flow_ID") -> test6
+  inner_join(cluster_dbscan_res, by = "flow_ID")
 
 # plot
-plot(test6["cluster"])
+plot(cluster_dbscan_res["cluster"])
 
 
 
@@ -311,8 +285,9 @@ tm_shape(study_area) +
   tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
-tm_shape(test6 %>%
-           filter(distance_m > 20000, cluster < 20) %>%
+tm_shape(cluster_dbscan_res %>%
+           #filter(cluster < 20) %>%
+           #filter(distance_m > 20000) %>%
            mutate(cluster = as.factor(cluster))) +
   tm_lines(lwd = "commute_all",
            col = "cluster",
@@ -325,7 +300,7 @@ tm_shape(test6 %>%
            legend.col.is.portrait = FALSE) +
   tm_facets(by = "cluster",
             free.coords = FALSE,
-            nrow = 4,
+            nrow = 3,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = "Clustering flows using HDBSCAN",
@@ -336,14 +311,6 @@ tm_shape(test6 %>%
             legend.outside.position = "bottom",
             legend.stack = "horizontal",
             frame = FALSE)
-
-
-test6 %>% group_by(cluster) %>%
-  st_drop_geometry() %>%
-  summarise(commute_all = sum(commute_all)) -> p
-
-
-
 
 
 # Option 2: Flow Dissimilarity
