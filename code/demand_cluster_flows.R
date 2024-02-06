@@ -3,6 +3,7 @@ library(sf)
 library(lwgeom)
 library(spatstat)
 library(dbscan)
+library(tmap)
 
 
 source("R/study_area_geographies.R")
@@ -23,6 +24,13 @@ study_area = study_area_geographies(study_area = study_area,
 
 study_area <- study_area %>%
   st_cast("MULTIPOLYGON")
+
+# move the geographic ID to the first column. od::points_to_od() only keeps the first column as ID
+
+geoid_col = paste0(geography, "21CD")
+
+study_area <- study_area %>%
+  relocate(all_of(geoid_col), .before = everything())
 
 # ----------- 2.  Census OD data
 
@@ -113,7 +121,7 @@ x_origin_i_grid2 <- x_origin_i_grid2 %>%
 
 
 
-flow_distance = function(study_area, flows){
+flow_distance = function(study_area, flows, geoid){
   # empty list to store results for each origin
   results <- vector(mode = "list", length = nrow(study_area))
 
@@ -123,7 +131,7 @@ flow_distance = function(study_area, flows){
     print(paste0("Getting distances for Origin: ", i, " ....."))
 
     # filter to specific origin
-    flows_origin_i <- flows %>% filter(Origin == study_area$MSOA21CD[i])
+    flows_origin_i <- flows %>% filter(Origin == study_area[[geoid]][i])
 
     # create grid
     flows_origin_i_grid <- expand_grid(flow_ID_a = flows_origin_i$flow_ID,
@@ -162,16 +170,20 @@ flow_distance = function(study_area, flows){
 
 
 test <- flow_distance(study_area = study_area,
-                      flows = x)
+                      flows = x,
+                      geoid = geoid_col)
 
 test2 <- bind_rows(test)
+
+# replace na values with
 
 
 # convert from long to wide
 test2 %>%
-  select(flow_ID_a, flow_ID_b, fd) %>%
-  pivot_wider(names_from = flow_ID_b, values_from = fd) %>%
+  select(flow_ID_a, flow_ID_b, fds) %>%
+  pivot_wider(names_from = flow_ID_b, values_from = fds) %>%
   column_to_rownames(var = "flow_ID_a") -> test3
+
 
 
 # this is a sparse matrix (lot's of OD pairs without flow, so most pairs of OD pairs don't exist)
@@ -180,19 +192,159 @@ max(test3, na.rm = TRUE)
 
 test3[is.na(test3)] <- max(test3, na.rm = TRUE) * 2
 
+
 # hdbscan
 
-res = dbscan::hdbscan(test3, minPts = 50)
+# sample
+test4 <- test3[1:5000, 1:5000]
+test4 <- test3
+
+
+# CLUSTERING
+
+# ---------- HDBSCAN
+
+res = dbscan::hdbscan(test4, minPts = 50)
+
+
+# ---------- OTHER (DBSAN / OPTICS)
+
+# in dbscan / optics, we need to define eps. epsilon (ε) is a parameter used to
+# define the maximum distance threshold for points to be considered as neighbors
+
+# we need to look at the distance distribution of the flows
+hist(test2$fds)
+
+# if we consider all flows, the distance is skewed by flows that START at the same O
+# or end at the same D, and this will give us clusters of flows that either start or end at the same point
+
+n <- nrow(test2)  # Number of rows in your dataframe
+num_samples <- 100  # Number of random samples
+repetitions <- 1000  # Number of times to repeat the process
+
+# Define a function to calculate the sum of "distance" column for random samples
+mean_distance <- function() {
+  sample_indices <- sample(1:n, num_samples, replace = FALSE)
+  subset_df <- test2[sample_indices, ]
+  return(mean(subset_df$fds))
+}
+
+# Use replicate to repeat the process
+results <- replicate(repetitions, mean_distance())
+hist(results)
+
+
+# ---------- DBSCAN (with wights)
+
+# get weights
+test4 %>%
+  rownames_to_column(var = "flow_ID") %>%
+  select(flow_ID) %>%
+  inner_join(od_demand_filtered %>%
+               st_drop_geometry() %>%
+               mutate(flow_ID = paste0(Origin, "-", Destination)) %>%
+               select(flow_ID, commute_all),
+             by = "flow_ID") -> w
+
+
+w_vec <- as.vector(w$commute_all)
+
+res = dbscan::dbscan(test4, minPts = 400, eps = 6, weights = w_vec)
+
+
+
+# ---------- OPTICS
+res = dbscan::optics(test4, eps = 1, minPts = 20)
+plot(res)
+# get eps_cl from plot y axis (threshold that seperates the clusters)
+res = extractDBSCAN(res, eps_cl = 1.7)
+# plot again to see clustering results
+plot(res)
+
+# attempt to precomute weighted distance matrix
+
+# # Apply weights to the distance matrix
+# weighted_distance_matrix <- test4 * weights %*% t(weights)
 
 
 
 
-hi <- spatstat.geom::psp(x0 = x$x, y0 = x$y, x1 = x$u, y1 = x$v,
-                         window <- spatstat.geom::as.owin(study_area %>%
-                                                            st_transform(3857)))
 
 
-hi2 <- hi %>% Lest(.)
+
+
+
+
+
+
+
+
+# ----------------------------------------
+
+
+
+# get results
+test5 <- test4 %>%
+  mutate(cluster = res$cluster)
+
+# prepare data for joining
+test5 %>%
+  rownames_to_column(var = "flow_ID") %>%
+  select(flow_ID, cluster) -> test5
+
+
+# add geometry back
+
+od_demand_filtered %>%
+  mutate(flow_ID = paste0(Origin, "-", Destination)) %>%
+  inner_join(test5, by = "flow_ID") -> test6
+
+# plot
+plot(test6["cluster"])
+
+
+
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+tm_shape(test6 %>%
+           filter(distance_m > 20000, cluster < 20) %>%
+           mutate(cluster = as.factor(cluster))) +
+  tm_lines(lwd = "commute_all",
+           col = "cluster",
+           scale = 10,
+           palette = "Accent", #YlGn
+           #style = "pretty",
+           alpha = 1,
+           title.col = "Cluster",
+           #title.lwd = "Vehicles per hour",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by = "cluster",
+            free.coords = FALSE,
+            nrow = 4,
+            showNA = FALSE) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Clustering flows using HDBSCAN",
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            legend.stack = "horizontal",
+            frame = FALSE)
+
+
+test6 %>% group_by(cluster) %>%
+  st_drop_geometry() %>%
+  summarise(commute_all = sum(commute_all)) -> p
+
+
+
+
 
 # Option 2: Flow Dissimilarity
 
