@@ -1,7 +1,7 @@
 library(tidyverse)
 library(sf)
 library(lwgeom)
-library(spatstat)
+# library(spatstat)
 library(dbscan)
 library(tmap)
 
@@ -63,7 +63,12 @@ od_demand_filtered = filter_matrix_by_distance(zones = study_area,
                                                od_matrix = od_demand,
                                                dist_threshold = 500)
 
+# # try removing ODs with low flows
+# od_demand_filtered <- od_demand_filtered %>%
+#   filter(commute_all < 10)
 
+od_demand_filtered <- od_demand_filtered %>%
+  filter(distance_m <= max(distance_m) / 7)
 
 ########## ------------ "Spatial Cluster Detection in Spatial Flow Data" ---------- ##########
 
@@ -227,7 +232,7 @@ w_vec <- as.vector(w$commute_all)
 
 # cluster option 1: border points assigned to cluster
 cluster_dbscan = dbscan::dbscan(dist_mat,
-                                minPts = 250,
+                                minPts = 500,
                                 eps = 1.2,
                                 weights = w_vec)
 
@@ -276,7 +281,17 @@ cluster_dbscan_res <- od_demand_filtered %>%
 # plot
 plot(cluster_dbscan_res["cluster"])
 
-
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  tm_shape(cluster_dbscan_res %>%
+             filter(cluster == 7) %>%
+             #filter(distance_m > 20000) %>%
+             mutate(cluster = as.factor(cluster)),) +
+  tm_lines(lwd = "commute_all")
 
 
 tm_shape(study_area) +
@@ -324,3 +339,6 @@ tm_shape(cluster_dbscan_res %>%
 # alternatively, spatstat::kest() is a function for Ripley's K (unclear if useful)
 # https://andrewmaclachlan.github.io/CASA0005repo/detecting-spatial-patterns.html
 
+
+
+hist(od_demand_filtered$commute_all, breaks = 200)
