@@ -8,67 +8,13 @@ library(tmap)
 
 source("R/study_area_geographies.R")
 source("R/filter_od_matrix.R")
+source("code/demand_cluster_flows_prep.R")
 
 
 ########## ----------------------- Read in the data ----------------------- ##########
-
-# ----------- 1. Study area
-
-# --- administrative boundaries
-study_area <- st_read("data/interim/study_area_boundary.geojson")
-
-# convert to desired resolution
-geography = "MSOA"
-study_area = study_area_geographies(study_area = study_area,
-                                    geography = geography)
-
-study_area <- study_area %>%
-  st_cast("MULTIPOLYGON")
-
-# move the geographic ID to the first column. od::points_to_od() only keeps the first column as ID
-
-geoid_col = paste0(geography, "21CD")
-
-study_area <- study_area %>%
-  relocate(all_of(geoid_col), .before = everything())
-
-# ----------- 2.  Census OD data
-
-# Demand (census) + supply (travel time) data
-
-od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
-
-# filter to specific combination
-# TODO: get seperate flows for car and pt, and keep two combinations
-od_demand <- od_demand %>%
-  filter(combination == "pt_wkday_morning")
-
-# rename columns as most functions are applied on generic column names
-from_id_col = paste0(geography, "21CD_home")
-to_id_col = paste0(geography, "21CD_work")
-
-od_demand = od_demand %>%
-  rename("Origin" = all_of(from_id_col),
-         "Destination" = all_of(to_id_col))
-########## ----------------------- Convert df to sf desire lines ----------------------- ##########
-
-
-# --- create desire lines and remove od pairs with very short distance
-
-# TODO: edit this to avoid clusters of very short flows
-  # "Density-based clustering for bivariate-flow data" (section 5.2): preprocessing step to avoid
-  # clusters of very short flows. this involves splitting the data into 3 chunks
-  # based on length (
-od_demand_filtered = filter_matrix_by_distance(zones = study_area,
-                                               od_matrix = od_demand,
-                                               dist_threshold = 500)
-
-# # try removing ODs with low flows
-# od_demand_filtered <- od_demand_filtered %>%
-#   filter(commute_all < 10)
-
-od_demand_filtered <- od_demand_filtered %>%
-  filter(distance_m <= max(distance_m) / 7)
+# geography <- "MSOA"
+#
+# od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering.geojson"))
 
 ########## ------------ "Spatial Cluster Detection in Spatial Flow Data" ---------- ##########
 
@@ -77,21 +23,43 @@ od_demand_filtered <- od_demand_filtered %>%
 
 # --- a. prepare the data
 
-# metric crs
-od_demand_filtered <- od_demand_filtered %>%
-  st_transform(3857)
+# - metric crs
+od_demand_jittered <- od_demand_jittered %>%
+  st_transform(3857) %>%
+  # add distance column
+  mutate(distance_m =  units::drop_units(sf::st_length(.)))
 
-# Add columns for coordinates of startpoint (X, Y) and endpoint (U, V)
-od_demand_xyuv <- od_demand_filtered %>%
-  mutate(x = as_tibble(st_coordinates(st_startpoint(od_demand_filtered)))$X,
-         y = as_tibble(st_coordinates(st_startpoint(od_demand_filtered)))$Y,
-         u = as_tibble(st_coordinates(st_endpoint(od_demand_filtered)))$X,
-         v = as_tibble(st_coordinates(st_endpoint(od_demand_filtered)))$Y) %>%
+
+
+
+# - Add columns for coordinates of startpoint (X, Y) and endpoint (U, V)
+od_demand_xyuv <- od_demand_jittered %>%
+  mutate(x = as_tibble(st_coordinates(st_startpoint(od_demand_jittered)))$X,
+         y = as_tibble(st_coordinates(st_startpoint(od_demand_jittered)))$Y,
+         u = as_tibble(st_coordinates(st_endpoint(od_demand_jittered)))$X,
+         v = as_tibble(st_coordinates(st_endpoint(od_demand_jittered)))$Y) %>%
   st_drop_geometry()
 
-# create flow ID column
+
+# - Each OD pair needs a unique ID (for distance matrix)
+
+# assign unique id to each point
 od_demand_xyuv <- od_demand_xyuv %>%
-  mutate(flow_ID = paste(Origin, Destination, sep = "-"))
+  group_by(Origin, x, y) %>%
+  mutate(O_ID = cur_group_id()) %>%
+  ungroup() %>%
+  group_by(Destination, u, v) %>%
+  mutate(D_ID = cur_group_id()) %>%
+  ungroup()
+
+# assign unique id to each OD pair
+od_demand_xyuv <- od_demand_xyuv %>%
+  mutate(flow_ID = paste0(Origin, "_", O_ID, "-", Destination, "_", D_ID))
+
+# add the unique ID back onto the od sf because we will need it later
+od_demand_jittered <- od_demand_jittered %>%
+  bind_cols(od_demand_xyuv %>%
+              select(flow_ID))
 
 
 # --- b. Calculate distance matrix
@@ -145,12 +113,44 @@ flow_distance = function(study_area, flows, alpha = 1, beta = 1, geoid){
   return(results)
 }
 
-# apply function to get distances
-distances <- flow_distance(study_area = study_area,
+# ----- Apply function to get distances
+
+# Equal weight to Origins and Destinations
+distances_equal <- flow_distance(study_area = study_area,
                       flows = od_demand_xyuv,
                       alpha = 1,
                       beta = 1,
                       geoid = geoid_col)
+
+# Focus on flows that END in the same area
+distances_origin <- flow_distance(study_area = study_area,
+                                  flows = od_demand_xyuv,
+                                  alpha = 1.5,
+                                  beta = 0.5,
+                                  geoid = geoid_col)
+
+# Focus on flows that END in the same area
+distances_destination <- flow_distance(study_area = study_area,
+                                       flows = od_demand_xyuv,
+                                       alpha = 0.5,
+                                       beta = 1.5,
+                                       geoid = geoid_col)
+
+
+# which one are we using?
+
+clustering <- "equal"
+# clustering <- "origin"
+# clustering <- "destination"
+
+if(clustering == "equal"){
+  distances <- distances_equal
+} else if(clustering == "origin"){
+  distances <- distances_origin
+} else if(clustering == "destination"){
+  distances <- distances_destination
+}
+
 
 # convert from list of dfs to one df
 distances <- bind_rows(distances)
@@ -169,7 +169,7 @@ dist_mat <- distances %>%
 # replace NA with a very high number?
 max(dist_mat, na.rm = TRUE)
 
-dist_mat[is.na(dist_mat)] <- max(dist_mat, na.rm = TRUE) * 2
+dist_mat[is.na(dist_mat)] <- max(dist_mat, na.rm = TRUE) * 3
 
 
 # ------------------------- CLUSTERING USING DBSCAN ------------------------- #
@@ -181,7 +181,7 @@ dist_mat[is.na(dist_mat)] <- max(dist_mat, na.rm = TRUE) * 2
 # needed in a radius (ε) for a cluster to be formed
 
 # ----- K-nearest neighbor knee plot
-kNNdistplot(dist_mat, k = 100)
+# kNNdistplot(dist_mat, k = 100)
 
 # ----- Explore distance distribution of matrix
 
@@ -195,7 +195,7 @@ hist(distances$fds)
 
 n <- nrow(distances)  # Number of rows in your dataframe
 num_samples <- 100  # Number of random samples
-repetitions <- 1000  # Number of times to repeat the process
+repetitions <- 3000  # Number of times to repeat the process
 
 # Define a function to calculate the sum of "distance" column for random samples
 mean_distance <- function() {
@@ -221,25 +221,26 @@ w <- dist_mat %>%
   rownames_to_column(var = "flow_ID") %>%
   select(flow_ID) %>%
   # add commuting data to
-  inner_join(od_demand_filtered %>%
-               st_drop_geometry() %>%
-               mutate(flow_ID = paste0(Origin, "-", Destination)) %>%
+  inner_join(od_demand_jittered %>%
                select(flow_ID, commute_all),
              by = "flow_ID")
 
 # weight vector
 w_vec <- as.vector(w$commute_all)
 
+
+# ---------- STEP 3: Cluster
+
 # cluster option 1: border points assigned to cluster
 cluster_dbscan = dbscan::dbscan(dist_mat,
-                                minPts = 500,
-                                eps = 1.2,
+                                minPts = 300, # 250
+                                eps = 1.3, # 1.7
                                 weights = w_vec)
 
 # # cluster option 2: border points not assigned to cluster
 # cluster_dbscan = dbscan::dbscan(dist_mat,
-#                                 minPts = 200,
-#                                 eps = 1.3,
+#                                 minPts = 250,
+#                                 eps = 1,
 #                                 weights = w_vec,
 #                                 borderPoints = FALSE)
 
@@ -251,15 +252,7 @@ unique(cluster_dbscan$cluster)
 
 
 
-
-
-
-
-
-
-
-# ----------------------------------------
-
+# ------------------------- VISUALISE RESULTS ------------------------- #
 
 
 # get results
@@ -274,8 +267,7 @@ cluster_dbscan_res <- cluster_dbscan_res %>%
 
 # add geometry back
 
-cluster_dbscan_res <- od_demand_filtered %>%
-  mutate(flow_ID = paste0(Origin, "-", Destination)) %>%
+cluster_dbscan_res <- od_demand_jittered %>%
   inner_join(cluster_dbscan_res, by = "flow_ID")
 
 # plot
@@ -288,7 +280,7 @@ tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
   tm_shape(cluster_dbscan_res %>%
-             filter(cluster == 7) %>%
+             filter(cluster == 5) %>%
              #filter(distance_m > 20000) %>%
              mutate(cluster = as.factor(cluster)),) +
   tm_lines(lwd = "commute_all")
@@ -318,7 +310,7 @@ tm_shape(cluster_dbscan_res %>%
             nrow = 3,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = "Clustering flows using HDBSCAN",
+            main.title = "Clustering flows using DBSCAN",
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
@@ -328,17 +320,3 @@ tm_shape(cluster_dbscan_res %>%
             frame = FALSE)
 
 
-# Option 2: Flow Dissimilarity
-
-
-# ----- STEP 2: Hotspot detection
-
-# may have to compute Ripley's K from scratch using the equation (as we have the distance, not the actual points)
-# see wikipedia for eqn
-
-# alternatively, spatstat::kest() is a function for Ripley's K (unclear if useful)
-# https://andrewmaclachlan.github.io/CASA0005repo/detecting-spatial-patterns.html
-
-
-
-hist(od_demand_filtered$commute_all, breaks = 200)

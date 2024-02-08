@@ -52,6 +52,7 @@ to_id_col = paste0(geography, "21CD_work")
 od_demand = od_demand %>%
   rename("Origin" = all_of(from_id_col),
          "Destination" = all_of(to_id_col))
+
 ########## ----------------------- Convert df to sf desire lines ----------------------- ##########
 
 
@@ -69,14 +70,35 @@ od_demand_filtered = filter_matrix_by_distance(zones = study_area,
 
 ########## ----------------------- Jitter the points ----------------------- ##########
 
-#  ----- STEP 1: Layer to use as subpoints
+#####  ----- STEP 1: Layer to use as subpoints
+
+# Population Density Grid - Source: WorldPop https://hub.worldpop.org/
+
+# load in the layer
+sub_zones = terra::rast("data/external/population_density_grid_uk/gbr_pd_2020_1km_UNadj.tif")
+
+# convert from raster to vector
+sub_zones = sub_zones %>%
+  terra::as.points() %>%
+  sf::st_as_sf()
+
+# filter to geographic extent
+sub_zones <- sub_zones %>%
+  st_transform(st_crs(study_area)) %>%
+  st_filter(study_area)
+
+# rename population density column
+sub_zones <- sub_zones %>%
+  rename(population = gbr_pd_2020_1km_UNadj)
 
 
-#  ----- STEP 2: Jittering
+
+
+##### ----- STEP 2: Jittering
 
 # arguments are here: https://github.com/dabreegster/odjitter?tab=readme-ov-file#details
 
-od_jittered = odjitter::jitter(
+od_demand_jittered = odjitter::jitter(
 
   # ----- arguments for FLOW DATA ----- #
 
@@ -87,7 +109,7 @@ od_jittered = odjitter::jitter(
   # column with the flows (to be disaggregated)
   disaggregation_key = "commute_all",
   # What's the maximum number of trips per output OD row that's allowed?
-  disaggregation_threshold = 50,
+  disaggregation_threshold = 95,
 
   # ----- arguments for ZONES ----- #
 
@@ -97,22 +119,31 @@ od_jittered = odjitter::jitter(
   # ----- Arguments for SUBPOINTS ----- #
 
   # subpoints to jitter origins and destinations to
-  subpoints = ,
+  subpoints = sub_zones,
   # # alternatively, define different points for origins and destinations
   # subpoints_origins = points_home,
   # subpoints_destinations = points_work,
 
   # If specified, this column will be used to more frequently choose subpoints in `subpoints_origins_path` with a higher weight value.
   # Otherwise all subpoints will be equally likely to be chosen
-  weight_key_origins = ,
-  weight_key_destinations = ,
+  weight_key_origins = population,
+  weight_key_destinations = population,
 
   # ----- arguments OTHER ----- #
 
   # Guarantee that jittered origin and destination points are at least this distance apart
   min_distance_meters = 500,
-  deduplicate_pairs = FALSE
+  deduplicate_pairs = TRUE
 )
+
+# jittered returns fractions. Round them
+od_demand_jittered <- od_demand_jittered %>%
+  mutate(commute_all = round(commute_all))
+
+
+# ---------- save output
+
+st_write(od_demand_jittered, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering.geojson"), delete_dsn = TRUE)
 
 
 
