@@ -65,24 +65,16 @@ od_demand_jittered <- od_demand_jittered %>%
 # --- b. Calculate distance matrix
 
 # Function to get flow distance and flow dissimilarity by iterating over Origins
-flow_distance = function(study_area, flows, alpha = 1, beta = 1, geoid){
-  # empty list to store results for each origin
-  results <- vector(mode = "list", length = nrow(study_area))
+flow_distance = function(flows, alpha = 1, beta = 1){
 
-  for (i in 1:nrow(study_area)){
+    print("creating unique pairs of flows ...")
+    # create combination pairs of all flows
+    flows_grid <- expand_grid(flow_ID_a = flows$flow_ID,
+                              flow_ID_b = flows$flow_ID)
 
-    #status updates
-    print(paste0("Getting distances for Origin: ", i, " ....."))
-
-    # filter to specific origin
-    flows_origin_i <- flows %>% filter(Origin == study_area[[geoid]][i])
-
-    # create grid
-    flows_origin_i_grid <- expand_grid(flow_ID_a = flows_origin_i$flow_ID,
-                                       flow_ID_b = flows_origin_i$flow_ID)
-
+    print("adding coordinate data back onto the unique pairs ...")
     # add the coordinate data
-    flows_origin_i_grid <- flows_origin_i_grid %>%
+    flows_grid <- flows_grid %>%
       # --- add flow_a coordinates
       inner_join(flows %>%
                    select(flow_ID, x, y, u, v, distance_m),
@@ -98,44 +90,25 @@ flow_distance = function(study_area, flows, alpha = 1, beta = 1, geoid){
 
     # ----- get "Flow Distance" and "Flow Dissimilarity"
 
-    flows_origin_i_grid <- flows_origin_i_grid %>%
+    print("calculating flow distance and flow dissimiliarity ...")
+
+
+    flows_grid <- flows_grid %>%
       # Flow Distance
       mutate(fd = sqrt(alpha * ((x_i - x_j)^2 + (y_i - y_j)^2) +
                          beta * ((u_i - u_j)^2 + (v_i - v_j)^2)),
-      # Flow Dissimilarity
+             # Flow Dissimilarity
              fds = sqrt((alpha * ((x_i - x_j)^2 + (y_i - y_j)^2) +
                            beta * ((u_i - u_j)^2 + (v_i - v_j)^2)) / (distance_m_i * distance_m_j)))
 
-    # add results to list
-    results[[i]] <- flows_origin_i_grid
 
-  }
-  return(results)
+  return(flows_grid)
 }
 
-# ----- Apply function to get distances
 
-# Equal weight to Origins and Destinations
-distances_equal <- flow_distance(study_area = study_area,
-                      flows = od_demand_xyuv,
-                      alpha = 1,
-                      beta = 1,
-                      geoid = geoid_col)
+# -------- Apply function to get distances:
 
-# Focus on flows that END in the same area
-distances_origin <- flow_distance(study_area = study_area,
-                                  flows = od_demand_xyuv,
-                                  alpha = 1.5,
-                                  beta = 0.5,
-                                  geoid = geoid_col)
-
-# Focus on flows that END in the same area
-distances_destination <- flow_distance(study_area = study_area,
-                                       flows = od_demand_xyuv,
-                                       alpha = 0.5,
-                                       beta = 1.5,
-                                       geoid = geoid_col)
-
+# --- step 1: Set alpha and Beta:
 
 # which one are we using?
 
@@ -144,20 +117,28 @@ clustering <- "equal"
 # clustering <- "destination"
 
 if(clustering == "equal"){
-  distances <- distances_equal
+  # Equal weight to Origins and Destinations
+  alpha = 1
+  beta = 1
 } else if(clustering == "origin"){
-  distances <- distances_origin
+  # Focus on flows that START in the same area
+  alpha = 1.5
+  beta = 0.5
 } else if(clustering == "destination"){
-  distances <- distances_destination
+  # Focus on flows that END in the same area
+  alpha = 0.5
+  beta = 1.5
 }
 
 
-# convert from list of dfs to one df
-distances <- bind_rows(distances)
+# --- step 2: Apply the function
+distances <- flow_distance(flows = od_demand_xyuv,
+                           alpha = alpha,
+                           beta = beta)
 
 
 
-# convert df to a distance matrix
+# --- step 3: Convert df to a distance matrix
 dist_mat <- distances %>%
   select(flow_ID_a, flow_ID_b, fds) %>%
   pivot_wider(names_from = flow_ID_b, values_from = fds) %>%
@@ -165,11 +146,13 @@ dist_mat <- distances %>%
 
 
 
-# this is a sparse matrix (lot's of OD pairs without flow, so most pairs of OD pairs don't exist)
-# replace NA with a very high number?
-max(dist_mat, na.rm = TRUE)
+# --- step 4: Remove NAs from distance matrix
 
-dist_mat[is.na(dist_mat)] <- max(dist_mat, na.rm = TRUE) * 3
+# # this is a sparse matrix (lot's of OD pairs without flow, so most pairs of OD pairs don't exist)
+# # replace NA with a very high number?
+# max(dist_mat, na.rm = TRUE)
+#
+# dist_mat[is.na(dist_mat)] <- max(dist_mat, na.rm = TRUE) * 3
 
 
 # ------------------------- CLUSTERING USING DBSCAN ------------------------- #
@@ -186,7 +169,7 @@ dist_mat[is.na(dist_mat)] <- max(dist_mat, na.rm = TRUE) * 3
 # ----- Explore distance distribution of matrix
 
 # distance distribution of the flows
-hist(distances$fds)
+hist(distances$fds, breaks = 100)
 
 # ----- Monte Carlo simulation to get mean value of distances
 
@@ -233,8 +216,9 @@ w_vec <- as.vector(w$commute_all)
 
 # cluster option 1: border points assigned to cluster
 cluster_dbscan = dbscan::dbscan(dist_mat,
-                                minPts = 300, # 250
-                                eps = 1.3, # 1.7
+                                minPts = 70, # 125
+                                eps = 8, # 9.5
+                                #borderPoints = FALSE,
                                 weights = w_vec)
 
 # # cluster option 2: border points not assigned to cluster
@@ -270,6 +254,13 @@ cluster_dbscan_res <- cluster_dbscan_res %>%
 cluster_dbscan_res <- od_demand_jittered %>%
   inner_join(cluster_dbscan_res, by = "flow_ID")
 
+# check size per cluster
+cluster_dbscan_res %>%
+  st_drop_geometry() %>%
+  group_by(cluster) %>%
+  summarise(size = n(), commuters = sum(commute_all)) %>%
+  arrange(desc(size))
+
 # plot
 plot(cluster_dbscan_res["cluster"])
 
@@ -280,11 +271,16 @@ tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
   tm_shape(cluster_dbscan_res %>%
-             filter(cluster == 5) %>%
+             filter(cluster == 3) %>%
              #filter(distance_m > 20000) %>%
              mutate(cluster = as.factor(cluster)),) +
   tm_lines(lwd = "commute_all")
 
+# filter out big clusters for plotting
+big_clusters <- cluster_dbscan_res %>%
+  group_by(cluster) %>%
+  mutate(size = n()) %>%
+  ungroup()
 
 tm_shape(study_area) +
   tm_borders(col = "grey60",
@@ -292,8 +288,8 @@ tm_shape(study_area) +
   tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
-tm_shape(cluster_dbscan_res %>%
-           #filter(cluster < 20) %>%
+tm_shape(big_clusters %>%
+           filter(size > 10, size < 1000) %>%
            #filter(distance_m > 20000) %>%
            mutate(cluster = as.factor(cluster))) +
   tm_lines(lwd = "commute_all",
