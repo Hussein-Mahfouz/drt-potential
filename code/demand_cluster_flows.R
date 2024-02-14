@@ -15,6 +15,7 @@ source("code/demand_cluster_flows_prep.R")
 # geography <- "MSOA"
 #
 # od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering.geojson"))
+# od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_mode.geojson"))
 
 ########## ------------ "Spatial Cluster Detection in Spatial Flow Data" ---------- ##########
 
@@ -254,12 +255,19 @@ cluster_dbscan_res <- cluster_dbscan_res %>%
 cluster_dbscan_res <- od_demand_jittered %>%
   inner_join(cluster_dbscan_res, by = "flow_ID")
 
-# check size per cluster
+# check size per cluster and total commuters per cluster
 cluster_dbscan_res %>%
   st_drop_geometry() %>%
   group_by(cluster) %>%
-  summarise(size = n(), commuters = sum(commute_all)) %>%
+  summarise(size = n(), commuters_sum = sum(commute_all)) %>%
   arrange(desc(size))
+
+# add size and total commuters columns
+cluster_dbscan_res <- cluster_dbscan_res %>%
+  group_by(cluster) %>%
+  mutate(size = n(),
+         commuters_sum = sum(commute_all)) %>%
+  ungroup()
 
 # plot
 plot(cluster_dbscan_res["cluster"])
@@ -271,16 +279,13 @@ tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
   tm_shape(cluster_dbscan_res %>%
-             filter(cluster == 3) %>%
+             filter(cluster == 10) %>%
              #filter(distance_m > 20000) %>%
              mutate(cluster = as.factor(cluster)),) +
   tm_lines(lwd = "commute_all")
 
-# filter out big clusters for plotting
-big_clusters <- cluster_dbscan_res %>%
-  group_by(cluster) %>%
-  mutate(size = n()) %>%
-  ungroup()
+
+### ---------- Plot 1: Top n Clusters (Facet Plot) ---------- ###
 
 tm_shape(study_area) +
   tm_borders(col = "grey60",
@@ -288,9 +293,9 @@ tm_shape(study_area) +
   tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
-tm_shape(big_clusters %>%
-           filter(size > 10, size < 1000) %>%
-           #filter(distance_m > 20000) %>%
+tm_shape(cluster_dbscan_res %>%
+           filter(size > 5, size < 1000) %>%
+           filter(commuters_sum > 200) %>%
            mutate(cluster = as.factor(cluster))) +
   tm_lines(lwd = "commute_all",
            col = "cluster",
@@ -303,7 +308,103 @@ tm_shape(big_clusters %>%
            legend.col.is.portrait = FALSE) +
   tm_facets(by = "cluster",
             free.coords = FALSE,
-            nrow = 3,
+            nrow = 2,
+            showNA = FALSE) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Clustering flows using DBSCAN (clusters with > 200 commuters)",
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            legend.stack = "horizontal",
+            frame = FALSE)
+
+
+### ---------- Plot 2: Compare mode composition of each cluster (desire line level) ---------- ###
+
+
+
+
+# get bus ridership as a fraction of car ridership
+cluster_dbscan_res_mode <- cluster_dbscan_res %>%
+  mutate(commute_frac = commute_bus / commute_car)
+
+
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  tm_shape(cluster_dbscan_res_mode %>%
+             filter(size > 5, size < 1000) %>%
+             filter(commuters_sum > 200) %>%
+             mutate(cluster = as.factor(cluster))) +
+  tm_lines(lwd = "commute_all",
+           col = "commute_frac",
+           scale = 10,
+           palette = "RdYlGn", #Accent
+           #style = "pretty",
+           alpha = 1,
+           title.col = "Fraction of bus to car users",
+           #title.lwd = "Vehicles per hour",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by = "cluster",
+            free.coords = FALSE,
+            nrow = 2,
+            showNA = FALSE) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Clustering flows using DBSCAN (clusters with > 200 commuters)",
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            legend.stack = "horizontal",
+            frame = FALSE)
+
+
+### ---------- Plot 3: Compare mode composition of each cluster (cluster level) ---------- ###
+
+
+# Get mode composition of entire cluster
+
+cluster_dbscan_res_mode_summary <- cluster_dbscan_res_mode %>%
+  st_drop_geometry() %>%
+  group_by(cluster, size) %>%
+  summarise(across(starts_with("commute_"), sum)) %>%
+  ungroup() %>%
+  mutate(commute_frac_cluster = round(commute_bus / commute_car, 2))
+
+# add commuting fraction
+cluster_dbscan_res_mode <- cluster_dbscan_res_mode %>%
+  inner_join(cluster_dbscan_res_mode_summary %>% select(cluster, commute_frac_cluster), by = "cluster")
+
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  tm_shape(cluster_dbscan_res_mode %>%
+             filter(size > 5, size < 1000) %>%
+             filter(commuters_sum > 200) %>%
+             mutate(cluster = as.factor(cluster))) +
+  tm_lines(lwd = "commute_all",
+           col = "commute_frac_cluster",
+           scale = 10,
+           palette = "RdYlGn", #Accent
+           #style = "pretty",
+           alpha = 1,
+           title.col = "Fraction of bus to car",
+           #title.lwd = "Vehicles per hour",
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by = "cluster",
+            free.coords = FALSE,
+            nrow = 2,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = "Clustering flows using DBSCAN",
@@ -316,3 +417,18 @@ tm_shape(big_clusters %>%
             frame = FALSE)
 
 
+
+
+
+
+
+
+
+# Get bounding box of cluster
+big_clusters %>%
+  filter(cluster == 31) %>%
+  st_union() %>%
+  st_convex_hull() -> x
+
+plot(st_geometry(study_area %>% st_transform(3857)))
+plot(st_geometry(x), add = TRUE, col = "red")

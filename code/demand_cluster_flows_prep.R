@@ -13,7 +13,8 @@ source("R/filter_od_matrix.R")
 
 
 ########## ----------------------- Read in the data ----------------------- ##########
-
+# is the data disaggregated by mode?
+mode <- TRUE
 # ----------- 1. Study area
 
 # --- administrative boundaries
@@ -38,7 +39,13 @@ study_area <- study_area %>%
 
 # Demand (census) + supply (travel time) data
 
-od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
+if(mode == FALSE){
+  # data with "commute_all" only
+  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
+} else{
+  # data with modes
+  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode.parquet"))
+}
 
 # filter to specific combination
 # TODO: get seperate flows for car and pt, and keep two combinations
@@ -138,12 +145,18 @@ od_demand_jittered = odjitter::jitter(
 
 # jittered returns fractions. Round them
 od_demand_jittered <- od_demand_jittered %>%
-  mutate(commute_all = round(commute_all))
+  mutate(across(starts_with("commute_"), round))
 
 
 # ---------- save output
 
-st_write(od_demand_jittered, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering.geojson"), delete_dsn = TRUE)
+if(mode == FALSE){
+  # data with "commute_all" only
+  st_write(od_demand_jittered, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering.geojson"), delete_dsn = TRUE)
+} else{
+  # data with modes
+  st_write(od_demand_jittered, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_mode.geojson"), delete_dsn = TRUE)
+}
 
 
 
