@@ -12,6 +12,7 @@ library(sfnetworks)
 source("R/study_area_geographies.R")
 source("R/filter_od_matrix.R")
 
+geography = "MSOA"
 
 # --- where do we want to save the plots?
 plots_path <- paste0("data/processed/plots/eda/od_performance/", geography, "/")
@@ -27,7 +28,6 @@ plots_path <- paste0("data/processed/plots/eda/od_performance/", geography, "/")
 study_area <- st_read("data/interim/study_area_boundary.geojson")
 
 # convert to desired resolution
-geography = "MSOA"
 study_area = study_area_geographies(study_area = study_area,
                                     geography = geography)
 
