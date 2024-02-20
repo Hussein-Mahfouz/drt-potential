@@ -226,7 +226,7 @@ hist(results)
 # function to get clustering results for many combinations
 dbscan_sensitivity_res <- dbscan_sensitivity(distance_matrix = dist_mat,
                                              options_epsilon <- c(0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 7.5, 8, 9),
-                                             options_minpts <- c(50, 100, 150, 175, 200, 250, 300, 400, 500, 700, 1000, 1500, 3000, 5000, 10000),
+                                             options_minpts <- c(50, 75, 100, 150, 175, 200, 250, 300, 400, 500, 700, 1000, 1500, 3000, 5000, 10000),
                                              weights = w_vec,
                                              flows = st_drop_geometry(od_demand_jittered)
                                              )
@@ -235,27 +235,43 @@ dbscan_sensitivity_res <- dbscan_sensitivity(distance_matrix = dist_mat,
 arrow::write_parquet(dbscan_sensitivity_res, paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity.parquet"))
 # dbscan_sensitivity_res <- arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity.parquet"))
 
+
+# All results plotted together
 dbscan_sensitivity_res %>%
   filter(cluster != 0) %>%
   ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
   geom_col() +
+  scale_y_continuous(trans='log10') +
   facet_wrap(~id, scales = "fixed") +
-  labs(title = "Sensitivity analysis for clustering", subtitle = "Varying {eps} and {minPts}", x = "Cluster no.", y = "No. of commuters") +
-  theme_minimal()
+  labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
+       subtitle = "Parameter combinations that returned more than 1 cluster",
+       x = "Cluster no.",
+       y = "No. of od pairs in cluster",
+       fill= "No. of commuters") +
+ theme_minimal()
+
+ggsave("data/processed/plots/eda/od_clustering/sensitivity_analysis_eps_minpts_all.png", width = 14, height = 10)
 
 dbscan_sensitivity_res %>%
   filter(cluster != 0) %>%
   group_by(id) %>%
   #mutate(clusters = n()) %>%
+  # How many clusters have more than 5 od pairs in them?
   mutate(clusters = sum(size > 5)) %>%
   ungroup() %>%
   filter(clusters > 5) %>%
   ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
   geom_col() +
+  scale_y_continuous(trans='log10') +
   facet_wrap(~id, scales = "fixed") +
-  labs(title = "Sensitivity analysis for clustering", subtitle = "Varying {eps} and {minPts}", x = "Cluster no.", y = "No. of commuters") +
+  labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
+       subtitle = "Parameter combinations with > 5 clusters having at least 5 od pairs each",
+       x = "Cluster no.",
+       y = "No. of od pairs in cluster",
+       fill= "No. of commuters") +
   theme_minimal()
 
+ggsave("data/processed/plots/eda/od_clustering/sensitivity_analysis_eps_minpts_filtered.png", width = 14, height = 10)
 
 
 ###  ---------- STEP 3: Cluster ---------- ###
@@ -346,7 +362,7 @@ tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
 tm_shape(cluster_dbscan_res %>%
-           filter(size > 5, size < 1000) %>%
+           filter(size > 7, size < 1000) %>%
            filter(commuters_sum > 200) %>%
            mutate(cluster = as.factor(cluster))) +
   tm_lines(lwd = "commute_all",
@@ -356,8 +372,10 @@ tm_shape(cluster_dbscan_res %>%
            #style = "pretty",
            alpha = 1,
            title.col = "Cluster",
-           #title.lwd = "Vehicles per hour",
-           legend.col.is.portrait = FALSE) +
+           title.lwd = "No. of commuters",
+           legend.col.is.portrait = FALSE,
+           # remove "missing from legend
+           showNA = FALSE) +
   tm_facets(by = "cluster",
             free.coords = FALSE,
             nrow = 2,
@@ -391,18 +409,19 @@ tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
   tm_shape(cluster_dbscan_res_mode %>%
-             filter(size > 5, size < 1000) %>%
+             filter(size > 7, size < 1000) %>%
              filter(commuters_sum > 200) %>%
              mutate(cluster = as.factor(cluster))) +
   tm_lines(lwd = "commute_all",
            col = "commute_frac",
            scale = 10,
            palette = "RdYlGn", #Accent
-           #style = "pretty",
            alpha = 1,
            title.col = "Fraction of bus to car users",
-           #title.lwd = "Vehicles per hour",
-           legend.col.is.portrait = FALSE) +
+           title.lwd = "No. of commuters",
+           legend.col.is.portrait = FALSE,
+           # remove "missing from legend
+           showNA = FALSE) +
   tm_facets(by = "cluster",
             free.coords = FALSE,
             nrow = 2,
@@ -452,8 +471,10 @@ tm_shape(study_area) +
            #style = "pretty",
            alpha = 1,
            title.col = "Fraction of bus to car",
-           #title.lwd = "Vehicles per hour",
-           legend.col.is.portrait = FALSE) +
+           title.lwd = "No. of commuters",
+           legend.col.is.portrait = FALSE,
+           # remove "missing from legend
+           showNA = FALSE) +
   tm_facets(by = "cluster",
             free.coords = FALSE,
             nrow = 2,
@@ -474,11 +495,15 @@ tm_shape(study_area) +
 
 
 
-
+cluster_dbscan_res_mode %>%
+  st_drop_geometry() %>%
+  group_by(cluster) %>%
+  summarise(size = n()) %>%
+  arrange(desc(size))
 
 # Get bounding box of cluster
-big_clusters %>%
-  filter(cluster == 31) %>%
+cluster_dbscan_res_mode %>%
+  filter(cluster == 59) %>%
   st_union() %>%
   st_convex_hull() -> x
 
