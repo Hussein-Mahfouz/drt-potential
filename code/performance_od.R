@@ -5,14 +5,16 @@ library(tidyverse)
 library(sf)
 library(tmap)
 
-library(tidygraph)
-library(sfnetworks)
+# library(tidygraph)
+# library(sfnetworks)
 
 
 source("R/study_area_geographies.R")
 source("R/filter_od_matrix.R")
 
 geography = "MSOA"
+# are we processing the data that is disaggregated by mode?
+mode = FALSE
 
 # --- where do we want to save the plots?
 plots_path <- paste0("data/processed/plots/eda/od_performance/", geography, "/")
@@ -38,7 +40,12 @@ study_area <- study_area %>%
 
 # ----- Travel time and demand matrix
 
-od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
+if(mode == TRUE){
+  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode.parquet"))
+
+} else{
+  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
+}
 
 
 
@@ -60,7 +67,7 @@ od_demand <- od_demand %>%
 # filter od pairs by euclidian distance
 od_demand_sf = filter_matrix_by_distance(zones = study_area,
                                          od_matrix = od_demand,
-                                         dist_threshold = 1000)
+                                         dist_threshold = 500)
 
 
 # ----------- 3. Get travel speeds
@@ -99,8 +106,19 @@ od_demand_sf_rank <- od_demand_sf %>%
   ungroup()
 
 
+# ---------- 5. Save the output
 
-# ---------- 5. Map the results
+if(mode == TRUE){
+  arrow::write_parquet(st_drop_geometry(od_demand_sf_rank), paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode_with_speed.parquet"))
+
+} else{
+  arrow::write_parquet(st_drop_geometry(od_demand_sf_rank), paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_with_speed.parquet"))
+}
+
+
+
+
+# ---------- 6. Map the results
 
 
 # Lwd: Demand between OD pairs,
