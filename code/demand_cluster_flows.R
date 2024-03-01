@@ -9,14 +9,89 @@ library(tmap)
 source("R/study_area_geographies.R")
 source("R/filter_od_matrix.R")
 source("R/dbscan_sensitivity.R")
-source("code/demand_cluster_flows_prep.R")
+#source("code/demand_cluster_flows_prep.R")
 
 
 ########## ----------------------- Read in the data ----------------------- ##########
-# geography <- "MSOA"
+geography <- "MSOA"
+
+# od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios.geojson"))
+od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_mode.geojson"))
+
+# path tp save plots
+plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/")
+
+# ----------- 1. Study area
+
+# --- administrative boundaries
+study_area <- st_read("data/interim/study_area_boundary.geojson")
+
+# convert to desired resolution
+geography = "MSOA"
+study_area = study_area_geographies(study_area = study_area,
+                                    geography = geography)
+
+study_area <- study_area %>%
+  st_cast("MULTIPOLYGON")
+
+# move the geographic ID to the first column. od::points_to_od() only keeps the first column as ID
+
+geoid_col = paste0(geography, "21CD")
+
+study_area <- study_area %>%
+  relocate(all_of(geoid_col), .before = everything())
+
+########## ----------------------- Different parameter combinations  ----------------------- ##########
+
+# # 1) All flows + equal weight to origins and destinations (for flow distance)
+# scenario <- 1
+# clustering <- "equal"
+# distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
 #
-# od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering.geojson"))
-# od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_mode.geojson"))
+# # 2) Flows with poor PT supply + equal weight to origins and destinations (for flow distance)
+# scenario <- 2
+# clustering <- "equal"
+# distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
+#
+# # 3) Flows with poor PT supply and low potential demand + and equal weight to origins and destinations (for flow distance)
+# scenario <- 3
+# clustering <- "equal"
+# distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
+#
+# # 2) Focusing on shorter distances
+# scenario <- 3
+# clustering <- "equal"
+# distance_threshold <- 5000
+
+# # 2) Focusing on shorter distances
+scenario <- 3
+clustering <- "equal"
+distance_threshold <- 10000
+#
+# # 3) Changing alpha and beta
+# scenario <- 3
+# clustering <- "origin"
+# distance_threshold <- 5000
+
+
+
+######### ---------------------- What scenario are we analyzing? ------------------ ##########
+
+# Scenario 1: All OD pairs
+# Scenario 2: All OD pairs with poor PT supply
+# Scenario 3: All OD pairs with poor PT supply and low potential demand
+
+if(scenario == 1){
+  od_demand_jittered <- od_demand_jittered %>%
+    filter(scenario_1 == 1)
+} else if(scenario == 2){
+  od_demand_jittered <- od_demand_jittered %>%
+    filter(scenario_2 == 1)
+} else if(scenario == 3){
+  od_demand_jittered <- od_demand_jittered %>%
+    filter(scenario_3 == 1)
+}
+
 
 ########## ------------ "Spatial Cluster Detection in Spatial Flow Data" ---------- ##########
 
@@ -32,8 +107,10 @@ od_demand_jittered <- od_demand_jittered %>%
   mutate(distance_m =  units::drop_units(sf::st_length(.)))
 
 # # split by distance
-# od_demand_jittered <- od_demand_jittered %>%
-#   filter(distance_m < 0.25*max(distance_m))
+od_demand_jittered <- od_demand_jittered %>%
+  #filter(distance_m < 0.25*max(distance_m))
+  filter(distance_m < distance_threshold) # distance in meters
+
 
 
 # - Add columns for coordinates of startpoint (X, Y) and endpoint (U, V)
@@ -115,10 +192,6 @@ flow_distance = function(flows, alpha = 1, beta = 1){
 # --- step 1: Set alpha and Beta:
 
 # which one are we using?
-
-clustering <- "equal"
-# clustering <- "origin"
-# clustering <- "destination"
 
 if(clustering == "equal"){
   # Equal weight to Origins and Destinations
@@ -202,23 +275,23 @@ hist(distances$fds, breaks = 100)
 
 # ----- Monte Carlo simulation to get mean value of distances (for epsilon)
 
-# if we consider all flows, the distance is skewed by flows that START at the same O
-# or end at the same D, and this will give us clusters of flows that either start or end at the same point
-
-n <- nrow(distances)  # Number of rows in your dataframe
-num_samples <- 100  # Number of random samples
-repetitions <- 3000  # Number of times to repeat the process
-
-# Define a function to calculate the sum of "distance" column for random samples
-mean_distance <- function() {
-  sample_indices <- sample(1:n, num_samples, replace = FALSE)
-  subset_df <- distances[sample_indices, ]
-  return(mean(subset_df$fds))
-}
-
-# Use replicate to repeat the process
-results <- replicate(repetitions, mean_distance())
-hist(results)
+# # if we consider all flows, the distance is skewed by flows that START at the same O
+# # or end at the same D, and this will give us clusters of flows that either start or end at the same point
+#
+# n <- nrow(distances)  # Number of rows in your dataframe
+# num_samples <- 100  # Number of random samples
+# repetitions <- 3000  # Number of times to repeat the process
+#
+# # Define a function to calculate the sum of "distance" column for random samples
+# mean_distance <- function() {
+#   sample_indices <- sample(1:n, num_samples, replace = FALSE)
+#   subset_df <- distances[sample_indices, ]
+#   return(mean(subset_df$fds))
+# }
+#
+# # Use replicate to repeat the process
+# results <- replicate(repetitions, mean_distance())
+# hist(results)
 
 
 # ----- Sensitivity analysis(for different epsilon and minpts combinaitons)
@@ -364,6 +437,7 @@ tm_shape(study_area) +
 tm_shape(cluster_dbscan_res %>%
            filter(size > 7, size < 1000) %>%
            filter(commuters_sum > 200) %>%
+           filter(cluster != 0) %>%
            mutate(cluster = as.factor(cluster))) +
   tm_lines(lwd = "commute_all",
            col = "cluster",
@@ -373,7 +447,7 @@ tm_shape(cluster_dbscan_res %>%
            alpha = 1,
            title.col = "Cluster",
            title.lwd = "No. of commuters",
-           legend.col.is.portrait = FALSE,
+           legend.col.show = FALSE,
            # remove "missing from legend
            showNA = FALSE) +
   tm_facets(by = "cluster",
@@ -381,14 +455,17 @@ tm_shape(cluster_dbscan_res %>%
             nrow = 2,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = "Clustering flows using DBSCAN (clusters with > 200 commuters)",
+            main.title = paste0("Clustered flows - Scenario ", scenario, " (Clusters with > 200 commuters)"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
             legend.stack = "horizontal",
-            frame = FALSE)
+            frame = FALSE) -> map_cluster_results
+
+tmap_save(tm = map_cluster_results, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, ".png"), width = 15, dpi = 1080)
+
 
 
 ### ---------- Plot 2: Compare mode composition of each cluster (desire line level) ---------- ###
@@ -411,13 +488,14 @@ tm_shape(study_area) +
   tm_shape(cluster_dbscan_res_mode %>%
              filter(size > 7, size < 1000) %>%
              filter(commuters_sum > 200) %>%
+             filter(cluster != 0) %>%
              mutate(cluster = as.factor(cluster))) +
   tm_lines(lwd = "commute_all",
            col = "commute_frac",
            scale = 10,
            palette = "RdYlGn", #Accent
            alpha = 1,
-           title.col = "Fraction of bus to car users",
+           title.col = "Fraction of Bus to Car users",
            title.lwd = "No. of commuters",
            legend.col.is.portrait = FALSE,
            # remove "missing from legend
@@ -427,15 +505,16 @@ tm_shape(study_area) +
             nrow = 2,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = "Clustering flows using DBSCAN (clusters with > 200 commuters)",
+            main.title = paste0("Clustered flows - Scenario ", scenario, " (Clusters with > 200 commuters)"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
             legend.stack = "horizontal",
-            frame = FALSE)
+            frame = FALSE) -> map_cluster_results_bus_frac
 
+tmap_save(tm = map_cluster_results_bus_frac, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac.png"), width = 15, dpi = 1080)
 
 ### ---------- Plot 3: Compare mode composition of each cluster (cluster level) ---------- ###
 
@@ -461,8 +540,9 @@ tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
   tm_shape(cluster_dbscan_res_mode %>%
-             filter(size > 5, size < 1000) %>%
+             filter(size > 7, size < 1000) %>%
              filter(commuters_sum > 200) %>%
+             filter(cluster != 0) %>%
              mutate(cluster = as.factor(cluster))) +
   tm_lines(lwd = "commute_all",
            col = "commute_frac_cluster",
@@ -470,7 +550,7 @@ tm_shape(study_area) +
            palette = "RdYlGn", #Accent
            #style = "pretty",
            alpha = 1,
-           title.col = "Fraction of bus to car",
+           title.col = "Fraction of Bus to Car users",
            title.lwd = "No. of commuters",
            legend.col.is.portrait = FALSE,
            # remove "missing from legend
@@ -480,16 +560,17 @@ tm_shape(study_area) +
             nrow = 2,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = "Clustering flows using DBSCAN",
+            main.title = paste0("Clustered flows - Scenario ", scenario, " (Clusters with > 200 commuters)"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
             legend.outside = TRUE,
             legend.outside.position = "bottom",
             legend.stack = "horizontal",
-            frame = FALSE)
+            frame = FALSE) -> map_cluster_results_bus_frac_grouped
 
 
+tmap_save(tm = map_cluster_results_bus_frac_grouped, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped.png"), width = 15, dpi = 1080)
 
 
 
@@ -503,11 +584,12 @@ cluster_dbscan_res_mode %>%
 
 # Get bounding box of cluster
 cluster_dbscan_res_mode %>%
-  filter(cluster == 59) %>%
+  filter(cluster == 119) %>%
   st_union() %>%
   st_convex_hull() -> x
 
 plot(st_geometry(study_area %>% st_transform(3857)))
 plot(st_geometry(x), add = TRUE, col = "red")
+
 
 

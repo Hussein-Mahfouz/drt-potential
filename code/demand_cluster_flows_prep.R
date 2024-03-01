@@ -18,14 +18,6 @@ source("R/filter_od_matrix.R")
 mode <- TRUE
 #mode <- FALSE
 
-# which layer are we jittering?
-# Option 1: All OD pairs
-# Option 2: OD pairs with poor PT supply (many transfers or low travel speed)
-# Option 3: OD pairs with poor PT supply and low potential demand
-
-
-option <- 1
-
 
 # ----------- 1. Study area
 
@@ -68,6 +60,7 @@ od_demand <- od_demand %>%
 
 od_demand <- od_demand %>%
   select(-distance_m)
+
 # # rename columns as most functions are applied on generic column names
 # from_id_col = paste0(geography, "21CD_home")
 # to_id_col = paste0(geography, "21CD_work")
@@ -92,35 +85,7 @@ od_demand_filtered = filter_matrix_by_distance(zones = study_area,
 # add unique id for each row
 od_demand_filtered <- od_demand_filtered %>%
   mutate(od_id = paste0(Origin, "-", Destination, "-", combination))
-########## ----------------------- Decide on the OD pairs we want to analyse ----------------------- ##########
 
-# Option 1: All OD pairs
-# Option 2: OD pairs with poor PT supply (many transfers or low travel speed)
-# Option 3: OD pairs with poor PT supply and low potential demand
-
-# Option 1:
-od_demand_1 <- od_demand_filtered
-
-# Option 2:
-od_demand_2 <- od_demand_filtered %>%
-  # transfers - NA transfers means there is no option to go by bus
-  filter(n_rides > 1 | is.na(n_rides) |
-           speed_percentile < 0.5 | is.na(speed_percentile))
-
-
-# option 3:
-
-# get percentiles
-od_demand_3 <- od_demand_filtered %>%
-  mutate(demand_route_percentile = percent_rank(potential_demand_equal_split),
-         demand_route_percentile_fct = cut(demand_route_percentile,
-                                    breaks = seq(0, 1, by = 0.25),
-                                    include.lowest = TRUE))
-
-
-# od_filtered: keeps od pairs in od_demand_poor_Supply that have low pd on routes
-od_demand_3 <- od_demand_3 %>%
-  filter(od_id %in% od_demand_2$od_id & demand_route_percentile < 0.5)
 
 
 ########## ----------------------- Jitter the points ----------------------- ##########
@@ -151,17 +116,6 @@ sub_zones <- sub_zones %>%
 
 ##### ----- STEP 2: Jittering
 
-
-# what layer are we jittering
-if(option == 1){
-  od_demand_for_jittering = od_demand_1
-} else if(option == 2){
-  od_demand_for_jittering = od_demand_2
-} else if(option == 3){
-  od_demand_for_jittering = od_demand_3
-}
-
-
 # # --- clear temp directory:
 unlink(paste0(normalizePath(tempdir()), "/", dir(tempdir())), recursive = TRUE)
 # confirm it's empty
@@ -176,7 +130,7 @@ od_demand_jittered = odjitter::jitter(
 
   # ----- arguments for FLOW DATA ----- #
 
-  od = od_demand_for_jittering,
+  od = od_demand_filtered,
   # column in "od" that specifies where trips originate
   origin_key = "Origin",
   destination_key = "Destination",
@@ -215,47 +169,66 @@ od_demand_jittered <- od_demand_jittered %>%
   mutate(across(starts_with("commute_"), round))
 
 
-# ---------- save output
 
 
-if(option == 1){
+########## ----------------------- Decide on the SCENARIOS we want to analyse ----------------------- ##########
 
-  if(mode == FALSE){
-    # data with "commute_all" only
-    st_write(od_demand_jittered, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_all.geojson"), delete_dsn = TRUE)
-  } else{
-    # data with modes
-    st_write(od_demand_jittered, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_mode_all.geojson"), delete_dsn = TRUE)
-  }
-} else if(option == 2){
+# Scenario 1: All OD pairs
+# Scenario 2: All OD pairs with poor PT supply
+# Scenario 3: All OD pairs with poor PT supply and low potential demand
 
-  if(mode == FALSE){
-    # data with "commute_all" only
-    st_write(od_demand_jittered, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_poor_supply.geojson"), delete_dsn = TRUE)
-  } else{
-    # data with modes
-    st_write(od_demand_jittered, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_mode_poor_supply.geojson"), delete_dsn = TRUE)
-  }
-} else if(option == 3){
+# ----- Option 1: All OD pairs
 
-  if(mode == FALSE){
-    # data with "commute_all" only
-    st_write(od_demand_jittered, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_poor_supply_low_pd.geojson"), delete_dsn = TRUE)
-  } else{
-    # data with modes
-    st_write(od_demand_jittered, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_mode_poor_supply_low_pd.geojson"), delete_dsn = TRUE)
-  }
-}
+od_demand_1 <- od_demand_filtered
+
+# ----- Option 2: OD pairs with poor PT supply (many transfers or low travel speed)
+
+od_demand_2 <- od_demand_filtered %>%
+  # transfers - NA transfers means there is no option to go by bus
+  filter(n_rides > 1 | is.na(n_rides) |
+           speed_percentile < 0.5 | is.na(speed_percentile))
+
+
+# ----- Option 3: OD pairs with poor PT supply and low potential demand
+
+# get percentiles
+od_demand_3 <- od_demand_filtered %>%
+  mutate(demand_route_percentile = percent_rank(potential_demand_equal_split),
+         demand_route_percentile_fct = cut(demand_route_percentile,
+                                           breaks = seq(0, 1, by = 0.25),
+                                           include.lowest = TRUE))
+
+# od_filtered: keeps od pairs in od_demand_poor_Supply that have low pd on routes
+od_demand_3 <- od_demand_3 %>%
+  filter(od_id %in% od_demand_2$od_id & demand_route_percentile < 0.5)
+
+
+
+### -----  Add a column to identify which scenarios each od pair belongs to
+
+# od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_mode.geojson"))
+
+# add a column to identify which scenarios each od pair belongs to
+od_demand_jittered_scenarios <- od_demand_jittered %>%
+  mutate(od_id = paste0(Origin, "-", Destination, "-", combination)) %>%
+  mutate(scenario_1 = case_when(od_id %in% od_demand_1$od_id ~ 1,
+                                TRUE ~ 0),
+         scenario_2 = case_when(od_id %in% od_demand_2$od_id ~ 1,
+                                TRUE ~ 0),
+         scenario_3 = case_when(od_id %in% od_demand_3$od_id ~ 1,
+                                TRUE ~ 0)
+  )
+
+
+### Save the sfs for each scenario
 
 
 if(mode == FALSE){
   # data with "commute_all" only
-  st_write(od_demand_jittered, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering.geojson"), delete_dsn = TRUE)
+  st_write(od_demand_jittered_scenarios, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios.geojson"), delete_dsn = TRUE)
+
 } else{
   # data with modes
-  st_write(od_demand_jittered, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_mode.geojson"), delete_dsn = TRUE)
-}
-
-
-
+  st_write(od_demand_jittered_scenarios, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_mode.geojson"), delete_dsn = TRUE)
+  }
 
