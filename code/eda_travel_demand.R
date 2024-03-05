@@ -39,21 +39,23 @@ study_area <- study_area %>%
 
 # --- travel time and demand (ttd) matrix
 
-ttd_matrix <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
+#ttd_matrix <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
+ttd_matrix <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_with_speed_and_pd.parquet"))
 # TODO: move this line of code to script that creates n_rides (probably routing_r5r or r5r_routing_wrappers (where rows are summarised))
 ttd_matrix <- ttd_matrix %>%
   mutate(n_rides = round(n_rides))
 
-from_id_col = paste0(geography, "21CD_home")
-to_id_col = paste0(geography, "21CD_work")
-
+# from_id_col = paste0(geography, "21CD_home")
+# to_id_col = paste0(geography, "21CD_work")
+from_id_col = "Origin"
+to_id_col = "Destination"
 # -------------------- Analysis
 
 
 # Get median values per origin
 ttd_matrix_o <- ttd_matrix %>%
   group_by(across(all_of(from_id_col)), combination, departure_time) %>%
-  summarise(across(c(contains("_time"), n_rides), median, na.rm = TRUE),
+  summarise(across(c(ends_with("_time"), n_rides), median, na.rm = TRUE),
             # number of destinations that can be reached
             reachable_destinations = n(),
             # TODO: number of destinations that can be reached directly
@@ -66,7 +68,7 @@ ttd_matrix_o <- ttd_matrix %>%
 # Get median values per destination
 ttd_matrix_d <- ttd_matrix %>%
   group_by(across(all_of(to_id_col)), combination, departure_time) %>%
-  summarise(across(c(contains("_time"), n_rides), median, na.rm = TRUE),
+  summarise(across(c(ends_with("_time"), n_rides), median, na.rm = TRUE),
             # number of origins that can reach the destination
             reachable_origins = n()) %>%
   ungroup() %>%
@@ -482,6 +484,49 @@ tmap_save(tm = map_od_pairs_one_route_facet_headway, filename = paste0(plots_pat
 
 
 
+# Lets plot the potential demand on the busiest route serving each OD pair
+# This is equivalent to scenario 3 in the paper
+
+ttd_matrix_sf <- filter_matrix_by_distance(study_area,
+                                           ttd_matrix %>% select(-distance_m),
+                                           1000)
+
+ttd_matrix_sf <- ttd_matrix_sf %>%
+  mutate(across(contains("potential_demand"), ~ . / 1000))
+
+tm_shape(study_area) +
+  tm_borders(alpha = 0.2) +
+  # background: plot od pairs that can't be reached by PT
+tm_shape(ttd_matrix_sf %>%
+           filter(is.na(speed_percentile_fct))) +
+  tm_lines(col = "grey90",
+           alpha = 0.5) +
+tm_shape(ttd_matrix_sf %>%
+           filter(!is.na(speed_percentile_fct))) +
+  tm_lines(col = "potential_demand_equal_split",
+           #lwd = "potential_demand_equal_split",
+           palette = "RdYlGn",
+           title.col = "No. of potential commuters on busiest route serving OD pair ('000)          ",
+           alpha = 0.3,
+           scale = 3,
+           legend.col.is.portrait = FALSE) +
+  tm_facets(by="speed_percentile_fct",
+            nrow = 2,
+            free.coords=FALSE)+
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Potential demand (Faceted by speed (percentiles) of travel between OD pairs using PT)", # this works if you need it
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            # legend title
+            legend.text.size = 1,
+            legend.outside = TRUE,
+            legend.outside.position = "bottom",
+            frame = FALSE) ->  map_od_pairs_route_demand
+
+map_od_pairs_route_demand
+
+tmap_save(tm = map_od_pairs_route_demand, filename = paste0(plots_path, "map_od_pairs_demand_busiest_route.png"), width = 15, dpi = 720, asp = 0)
 
 
 
