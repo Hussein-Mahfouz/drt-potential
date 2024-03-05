@@ -121,9 +121,9 @@ While experts agree that DRT service provision should be based on demand [@dft20
 
 We apply a spatial clustering approach to flow data to identify spatial concentrations in travel demand. For demand, we use Origin-Destination (OD) commuting (flow) data from the 2021 UK census. Spatial statistics methods for cluster detection - such as DBSCAN [@ester1996density] - have mainly been developed for point data. Recently custom distance metrics that account for the multilocation nature of line data have allowed these methods to extend to flow data [@tao2016spatial].
 
-We use the DBSCAN algorithm with the custom distance metric introduced by @tao2016spatial. Let the flow process $F_{i}$ with origin $O_{i} (x_{i}, y_{i})$ and $D_{i} (u_{i}, v_{i})$ be modeled as a vector point with 4 coordinates $F_{i}(x_{i}, y_{i}, u_{i}, v_{i})$. The flow dissimilarity between $F_{i}$ and $F_{j}$, $FDS_{ij}$ is calculated as:
+We use the DBSCAN algorithm with the custom distance metric introduced by @tao2016spatial. Let the flow process $F_{i}$ with origin $O_{i} (x_{i}, y_{i})$ and $D_{i} (u_{i}, v_{i})$ be modeled as a vector point with 4 coordinates $F_{i}(x_{i}, y_{i}, u_{i}, v_{i})$. The calculation for flow dissimilarity between $F_{i}$ and $F_{j}$, $FDS_{ij}$ is shown in @eq-fds.
 
-$$FDS_{ij} = \sqrt{\frac{\alpha[(x_{i} - x_{j})^2 + (y_{i} - y_{j})^2] + \beta [(u_{i} - u_{j})^2 + (v_{i} - v_{j})^2]}{L_{i}L_{j}}}$$
+$$FDS_{ij} = \sqrt{\frac{\alpha[(x_{i} - x_{j})^2 + (y_{i} - y_{j})^2] + \beta [(u_{i} - u_{j})^2 + (v_{i} - v_{j})^2]}{L_{i}L_{j}}}$$ {#eq-fds}
 
 where $\alpha$ and $\beta$ control the relative importance of the origins / destinations: higher $\alpha$ means we focus more on origins and vice-versa ($\alpha > 0$; $\beta > 0$; $\alpha + \beta = 2$). Dividing by the geometric mean of the flow lengths ($L_{i}$ and $L_{j}$ ) implies that, all else being equal, flow pairs of longer length are considered closer than shorter ones.
 
@@ -169,19 +169,23 @@ OD pairs with high potential demand are not included in $OD_{3}$ as there is suf
 
 ## Results
 
--   average no of transfers (Incorrect!! - input data needs editing)
+Our routing analysis shows us the number of transfers required to travel between each OD pair. The majority of OD pairs require at least 1 transfer (2 buses), as shown in @fig-od-transfers
 
-    -   to all destinations
+<!--# average no of transfers (Incorrect!! - input data needs editing) -->
 
-    ![](images/map_desire_commuting_facet_transfers.png)
+![Connectivity of OD pairs](images/map_desire_commuting_facet_transfers.png){#fig-od-transfers}
 
-    -   to all destinations (weighted by demand between od pair)
-    -   
-    -   od pairs with low speed and high demand
+The clustering analysis shows a number of different clusters, some of which cut across the entire study area
 
-    ![](images/map_desire_commuting_low_speed_high_demand_facet_rides.png)
+![Clustering OD pairs with poor PT supply (Scenario 2)](images/map_clusters_scenario_2_equal_bus_frac_grouped.png){#fig-cluster-scenario-2-equal-bus-frac}
 
-    -   which od pairs are partially served by a route and can benefit from a first / last mile service to access the route?
+-   to all destinations (weighted by demand between od pair)
+-   
+-   od pairs with low speed and high demand
+
+![](images/map_desire_commuting_low_speed_high_demand_facet_rides.png)
+
+-   which od pairs are partially served by a route and can benefit from a first / last mile service to access the route?
 
 # Discussion
 
