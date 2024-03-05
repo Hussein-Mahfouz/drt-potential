@@ -179,18 +179,13 @@ The clustering analysis shows a number of different clusters, some of which cut 
 
 ![Clustering OD pairs with poor PT supply (Scenario 2)](images/map_clusters_scenario_2_equal_bus_frac_grouped.png){#fig-cluster-scenario-2-equal-bus-frac}
 
-Looking at the combination of transport supply and potential travel demand, we can see that the majority of OD pairs
+Looking at the combination of transport supply and potential travel demand, we can see that travel to / from outer MSOAs is particularly slow. OD pairs with low speed and low potential demand are most prominent in the North East section of or study area.
 
-![](images/map_od_pairs_demand_busiest_route.png){#fig-od-demand-scenario-3}
+![](images/map_od_pairs_demand_busiest_route_speed.png){#fig-od-demand-scenario-3}
 
--   to all destinations (weighted by demand between od pair)
--   
--   od pairs with low speed and high demand
+![](images/map_clusters_scenario_3_equal_bus_frac_grouped.png){#fig-cluster-scenario-3-equal-bus-frac}
 
-```{=html}
-<!-- -->
-```
--   which od pairs are partially served by a route and can benefit from a first / last mile service to access the route?
+![](images/map_clusters_scenario_3_equal_length_10000_bus_frac_grouped.png){#fig-cluster-scenario-3-equal-bus-frac-length-1000}
 
 # Discussion
 
