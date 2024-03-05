@@ -529,4 +529,43 @@ map_od_pairs_route_demand
 tmap_save(tm = map_od_pairs_route_demand, filename = paste0(plots_path, "map_od_pairs_demand_busiest_route.png"), width = 15, dpi = 720, asp = 0)
 
 
+# same map but faceted by demand (col = speed)
+
+tm_shape(study_area) +
+  tm_borders(alpha = 0.2) +
+  # background: plot od pairs that can't be reached by PT
+  tm_shape(ttd_matrix_sf %>%
+             filter(is.na(speed_percentile_fct))) +
+  tm_lines(col = "grey90",
+           alpha = 0.5) +
+  tm_shape(ttd_matrix_sf %>%
+             filter(!is.na(speed_percentile_fct)) %>%
+             mutate(potential_demand_equal_split_fct = cut(potential_demand_equal_split, breaks = c(0, 10, 20, 30,  40)))
+           ) +
+  tm_lines(col = "speed_percentile_fct",
+           #lwd = "potential_demand_equal_split",
+           palette = "-RdYlGn",
+           title.col = "Travel speed by PT \nbetween OD pairs \n(percentiles)",
+           alpha = 0.3,
+           scale = 3,
+           #legend.col.is.portrait = FALSE
+           ) +
+  tm_facets(by="potential_demand_equal_split_fct",
+            nrow = 1,
+            free.coords=FALSE)+
+  tm_layout(fontfamily = 'Georgia',
+            main.title = "Travel speed between OD pairs \nFaceted by potential demand on busiest route directly serving each OD pair", # this works if you need it
+            main.title.size = 1.3,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            # legend title
+            legend.text.size = 1,
+            legend.outside = TRUE,
+            legend.outside.position = "right",
+            frame = FALSE) ->  map_od_pairs_route_demand_speed
+
+map_od_pairs_route_demand_speed
+
+tmap_save(tm = map_od_pairs_route_demand_speed, filename = paste0(plots_path, "map_od_pairs_demand_busiest_route_speed.png"), width = 10, dpi = 720, asp = 0)
+
 
