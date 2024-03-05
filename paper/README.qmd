@@ -115,7 +115,7 @@ Following the new powers given to local transport authorities under the bus serv
 
 In this section we go over the data and methods used in our analysis. First, we introduce a clustering approach for determining how travel demand is concentrated geographically (@sec-method-clustering-flow-data). We propose to apply the algorithm on three different scenarios; 1) all flow data, 2) OD pairs with poor public transport supply, 3) OD pairs with poor public transport supply and low potential demand. In @sec-method-transport-supply we show how public transport supply is calculated and define poor public transport supply. In @sec-method-transport-demand, we explain potential demand and how it is calculated.
 
-## Clustering flow data  {#sec-method-clustering-flow-data}
+## Clustering flow data {#sec-method-clustering-flow-data}
 
 While experts agree that DRT service provision should be based on demand [@dft2020regulatory], there are no agreed upon methods for how demand gaps that suit DRT can be identified in a way that allows DRT to be integrated with public transport.
 
@@ -179,12 +179,17 @@ The clustering analysis shows a number of different clusters, some of which cut 
 
 ![Clustering OD pairs with poor PT supply (Scenario 2)](images/map_clusters_scenario_2_equal_bus_frac_grouped.png){#fig-cluster-scenario-2-equal-bus-frac}
 
+Looking at the combination of transport supply and potential travel demand, we can see that the majority of OD pairs
+
+![](images/map_od_pairs_demand_busiest_route.png){#fig-od-demand-scenario-3}
+
 -   to all destinations (weighted by demand between od pair)
 -   
 -   od pairs with low speed and high demand
 
-![](images/map_desire_commuting_low_speed_high_demand_facet_rides.png)
-
+```{=html}
+<!-- -->
+```
 -   which od pairs are partially served by a route and can benefit from a first / last mile service to access the route?
 
 # Discussion
