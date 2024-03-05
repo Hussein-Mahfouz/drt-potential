@@ -52,11 +52,11 @@ study_area <- study_area %>%
 # scenario <- 2
 # clustering <- "equal"
 # distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
-#
+
 # # 3) Flows with poor PT supply and low potential demand + and equal weight to origins and destinations (for flow distance)
-# scenario <- 3
-# clustering <- "equal"
-# distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
+scenario <- 3
+clustering <- "equal"
+distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
 #
 # # 2) Focusing on shorter distances
 # scenario <- 3
@@ -64,9 +64,9 @@ study_area <- study_area %>%
 # distance_threshold <- 5000
 
 # # 2) Focusing on shorter distances
-scenario <- 3
-clustering <- "equal"
-distance_threshold <- 10000
+# scenario <- 3
+# clustering <- "equal"
+# distance_threshold <- 10000
 #
 # # 3) Changing alpha and beta
 # scenario <- 3
@@ -452,7 +452,7 @@ tm_shape(cluster_dbscan_res %>%
            showNA = FALSE) +
   tm_facets(by = "cluster",
             free.coords = FALSE,
-            nrow = 2,
+            nrow = 3,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows - Scenario ", scenario, " (Clusters with > 200 commuters)"),
@@ -464,7 +464,9 @@ tm_shape(cluster_dbscan_res %>%
             legend.stack = "horizontal",
             frame = FALSE) -> map_cluster_results
 
-tmap_save(tm = map_cluster_results, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, ".png"), width = 15, dpi = 1080)
+map_cluster_results
+
+tmap_save(tm = map_cluster_results, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, ".png"), width = 15, dpi = 1080, asp = 0)
 
 
 
@@ -502,7 +504,7 @@ tm_shape(study_area) +
            showNA = FALSE) +
   tm_facets(by = "cluster",
             free.coords = FALSE,
-            nrow = 2,
+            nrow = 3,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows - Scenario ", scenario, " (Clusters with > 200 commuters)"),
@@ -514,7 +516,9 @@ tm_shape(study_area) +
             legend.stack = "horizontal",
             frame = FALSE) -> map_cluster_results_bus_frac
 
-tmap_save(tm = map_cluster_results_bus_frac, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac.png"), width = 15, dpi = 1080)
+map_cluster_results_bus_frac
+
+tmap_save(tm = map_cluster_results_bus_frac, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac.png"), width = 15, dpi = 1080, asp = 0)
 
 ### ---------- Plot 3: Compare mode composition of each cluster (cluster level) ---------- ###
 
@@ -557,7 +561,7 @@ tm_shape(study_area) +
            showNA = FALSE) +
   tm_facets(by = "cluster",
             free.coords = FALSE,
-            nrow = 2,
+            nrow = 3,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows - Scenario ", scenario, " (Clusters with > 200 commuters)"),
@@ -569,8 +573,9 @@ tm_shape(study_area) +
             legend.stack = "horizontal",
             frame = FALSE) -> map_cluster_results_bus_frac_grouped
 
+map_cluster_results_bus_frac_grouped
 
-tmap_save(tm = map_cluster_results_bus_frac_grouped, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped.png"), width = 15, dpi = 1080)
+tmap_save(tm = map_cluster_results_bus_frac_grouped, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped.png"), width = 15, dpi = 1080, asp = 0)
 
 
 
