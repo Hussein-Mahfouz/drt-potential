@@ -96,6 +96,10 @@ gtfs_rail_filtered <- filter_gtfs_feed_internal(gtfs_feed = gtfs_rail,
 gtfs_bus_filtered_df <- bind_rows(gtfs_bus_filtered)
 gtfs_rail_filtered_df <- bind_rows(gtfs_rail_filtered)
 
+# save the output
+st_write(gtfs_bus_filtered_df, "data/interim/gtfs_freq/gtfs_bus_sf.geojson", delete_dsn =TRUE)
+st_write(gtfs_rail_filtered_df, "data/interim/gtfs_freq/gtfs_rail_sf.geojson", delete_dsn =TRUE)
+
 # Bus headway (morning peak)
 
 tm_shape(study_area) +

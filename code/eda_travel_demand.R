@@ -112,7 +112,9 @@ od_supply_filtered = filter_matrix_by_distance(zones = study_area,
 # combine ttd matrix with matrix showing bus provision for ODs
 od_sd <- od_supply_filtered %>%
   #TODO: check if we need an inner join (we only have 1 start time atm)
-  left_join(ttd_matrix,
+  #left_join(ttd_matrix,
+  # full join so that we include all OD pairs, not just the ones with a direct bus
+  full_join(ttd_matrix,
             by = c("Origin" = from_id_col,
                    "Destination" = to_id_col,
                    "start_time" = "departure_time"))
@@ -171,20 +173,20 @@ tm_shape(od_sd_sf) +
            title.col = "No. of commuters \n(census 2021)",
            lwd = "commute_all",
            legend.lwd.show = FALSE,
-           legend.col.is.portrait = FALSE,
+           #legend.col.is.portrait = FALSE,
            scale = 10) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = "Commuting (census 2021)", # this works if you need it
+            main.title = "Commuting - Top 10% of OD pairs (Census 2021)", # this works if you need it
             main.title.size = 1.3,
             main.title.color = "azure4",
             main.title.position = "left",
-            legend.outside = TRUE,
-            legend.outside.position = "bottom",
+            #legend.outside = TRUE,
+            #legend.outside.position = "bottom",
             frame = FALSE) -> map_desire_commuting
 
 map_desire_commuting
 
-tmap_save(tm = map_desire_commuting, filename = paste0(plots_path, "map_desire_commuting.png"), width = 15, dpi = 1080)
+tmap_save(tm = map_desire_commuting, filename = paste0(plots_path, "map_desire_commuting.png"), width = 10, dpi = 720, asp = 0)
 
 
 
@@ -196,29 +198,34 @@ tm_shape(study_area) +
 tm_shape(od_sd_sf) +
   tm_lines(col = "grey80",
            alpha = 0.02) +
-  tm_shape(od_sd_sf) +
+  tm_shape(od_sd_sf %>%
+             #filter(commute_all > quantile(commute_all, probs = 0.50, na.rm = TRUE)) %>%
+             mutate(transfers = n_rides - 1)) +
   tm_lines(col = "commute_all",
            title.col = "No. of commuters \n(census 2021)",
            lwd = "commute_all",
            legend.lwd.show = FALSE,
-           legend.col.is.portrait = FALSE,
+           #legend.col.is.portrait = FALSE,
            palette = "YlOrRd",
+           alpha = 0.8,
            scale = 10) +
-  tm_facets(by = "n_rides",
+  tm_facets(by = "transfers",
             free.coords = FALSE,
+            # for "Missing label"
+            textNA = paste0(max(od_sd_sf$n_rides, na.rm = TRUE), "+ or not possible"),
             nrow = 1)  +  # so that the maps aren't different sizes
   tm_layout(fontfamily = 'Georgia',
-            main.title = "Minimum number of buses required to reach destination", # this works if you need it
+            main.title = "Minimum number of transfers required to reach destination", # this works if you need it
             main.title.size = 1.3,
             main.title.color = "azure4",
             main.title.position = "left",
-            legend.outside = TRUE,
-            legend.outside.position = "bottom",
+            #legend.outside = TRUE,
+            #legend.outside.position = "bottom",
             frame = FALSE)  -> map_desire_commuting_facet_transfers
 
 map_desire_commuting_facet_transfers
 
-tmap_save(tm =map_desire_commuting_facet_transfers, filename = paste0(plots_path, "map_desire_commuting_facet_transfers.png"), width = 15, dpi = 1080)
+tmap_save(tm =map_desire_commuting_facet_transfers, filename = paste0(plots_path, "map_desire_commuting_facet_transfers.png"), height = 4, dpi = 720, asp = 0)
 
 
 tm_shape(study_area) +
@@ -227,30 +234,34 @@ tm_shape(study_area) +
   tm_shape(od_sd_sf) +
   tm_lines(col = "grey80",
            alpha = 0.02) +
-  tm_shape(od_sd_sf  %>%
-             filter(n_rides > 1)) +
+  tm_shape(od_sd_sf %>%
+             #filter(commute_all > quantile(commute_all, probs = 0.50, na.rm = TRUE)) %>%
+             mutate(transfers = n_rides - 1) %>%
+             filter(transfers > 1 | is.na(transfers))) +
   tm_lines(col = "commute_all",
            title.col = "No. of commuters \n(census 2021)",
            lwd = "commute_all",
            legend.lwd.show = FALSE,
-           legend.col.is.portrait = FALSE,
+           #legend.col.is.portrait = FALSE,
            palette = "YlOrRd",
            scale = 10) +
-  tm_facets(by = "n_rides",
+  tm_facets(by = "transfers",
             free.coords = FALSE,
+            # for "Missing label"
+            textNA = paste0(max(od_sd_sf$n_rides, na.rm = TRUE), "+ or not possible"),
             nrow = 1)  +  # so that the maps aren't different sizes
   tm_layout(fontfamily = 'Georgia',
-            main.title = "Minimum number of buses required \nto reach destination", # this works if you need it
+            main.title = "Minimum number of transfers required to reach destination", # this works if you need it
             main.title.size = 1.3,
             main.title.color = "azure4",
             main.title.position = "left",
-            legend.outside = TRUE,
-            legend.outside.position = "bottom",
+            # legend.outside = TRUE,
+            # legend.outside.position = "bottom",
             frame = FALSE)  -> map_desire_commuting_mult_rides_facet_transfers
 
 map_desire_commuting_mult_rides_facet_transfers
 
-tmap_save(tm = map_desire_commuting_mult_rides_facet_transfers, filename = paste0(plots_path, "map_desire_commuting_mult_rides_facet_transfers.png"), width = 15, dpi = 1080)
+tmap_save(tm = map_desire_commuting_mult_rides_facet_transfers, filename = paste0(plots_path, "map_desire_commuting_mult_rides_facet_transfers.png"), width = 10, dpi = 1080, asp = 0)
 
 
 
