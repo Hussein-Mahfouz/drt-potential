@@ -177,7 +177,9 @@ Our routing analysis shows us the number of transfers required to travel between
 
 The clustering analysis shows a number of different clusters, some of which cut across the entire study area
 
-![Clustering OD pairs with poor PT supply (Scenario 2)](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped.png){#fig-cluster-scenario-2-equal-bus-frac}
+![Clustering OD pairs with poor PT supply (Scenario 2)](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs.png){#fig-cluster-scenario-2-equal-bus-frac}
+
+![](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly.png)
 
 Looking at the combination of transport supply and potential travel demand, we can see that travel to / from outer MSOAs is particularly slow. OD pairs with low speed and low potential demand are most prominent in the North East section of or study area.
 
@@ -185,7 +187,9 @@ Looking at the combination of transport supply and potential travel demand, we c
 
 ![](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped.png){#fig-cluster-scenario-3-equal-bus-frac}
 
-![](images/map_clusters_scenario_3_equal_length_10000_bus_frac_grouped.png){#fig-cluster-scenario-3-equal-bus-frac-length-1000}
+![](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs.png)
+
+![](images/map_clusters_scenario_3_equal_length_10000_bus_frac_grouped_gtfs.png){#fig-cluster-scenario-3-equal-bus-frac-length-1000}
 
 # Discussion
 
