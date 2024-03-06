@@ -54,14 +54,19 @@ study_area <- study_area %>%
 # distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
 
 # # 3) Flows with poor PT supply and low potential demand + and equal weight to origins and destinations (for flow distance)
-scenario <- 3
-clustering <- "equal"
-distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
+# scenario <- 3
+# clustering <- "equal"
+# distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
 #
 # # 2) Focusing on shorter distances
 # scenario <- 3
 # clustering <- "equal"
 # distance_threshold <- 5000
+
+# # 2) Focusing on shorter distances
+# scenario <- 3
+# clustering <- "equal"
+# distance_threshold <- 7500
 
 # # 2) Focusing on shorter distances
 # scenario <- 3
@@ -72,6 +77,11 @@ distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
 # scenario <- 3
 # clustering <- "origin"
 # distance_threshold <- 5000
+
+# # 3) Changing alpha and beta
+scenario <- 3
+clustering <- "origin"
+distance_threshold <- 10000
 
 
 
@@ -293,61 +303,62 @@ hist(distances$fds, breaks = 100)
 # results <- replicate(repetitions, mean_distance())
 # hist(results)
 
+#
+# # ----- Sensitivity analysis(for different epsilon and minpts combinaitons)
+#
+# # function to get clustering results for many combinations
+# dbscan_sensitivity_res <- dbscan_sensitivity(distance_matrix = dist_mat,
+#                                              options_epsilon <- c(0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 7.5, 8, 9),
+#                                              options_minpts <- c(50, 75, 100, 150, 175, 200, 250, 300, 400, 500, 700, 1000, 1500, 3000, 5000, 10000),
+#                                              weights = w_vec,
+#                                              flows = st_drop_geometry(od_demand_jittered)
+#                                              )
+#
+#
+# arrow::write_parquet(dbscan_sensitivity_res, paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity.parquet"))
+# # dbscan_sensitivity_res <- arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity.parquet"))
+#
+#
+# # All results plotted together
+# dbscan_sensitivity_res %>%
+#   filter(cluster != 0) %>%
+#   ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
+#   geom_col() +
+#   scale_y_continuous(trans='log10') +
+#   facet_wrap(~id, scales = "fixed") +
+#   labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
+#        subtitle = "Parameter combinations that returned more than 1 cluster",
+#        x = "Cluster no.",
+#        y = "No. of od pairs in cluster",
+#        fill= "No. of commuters") +
+#  theme_minimal()
+#
+# ggsave("data/processed/plots/eda/od_clustering/sensitivity_analysis_eps_minpts_all.png", width = 14, height = 10)
+#
+# dbscan_sensitivity_res %>%
+#   filter(cluster != 0) %>%
+#   group_by(id) %>%
+#   #mutate(clusters = n()) %>%
+#   # How many clusters have more than 5 od pairs in them?
+#   mutate(clusters = sum(size > 5)) %>%
+#   ungroup() %>%
+#   filter(clusters > 5) %>%
+#   ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
+#   geom_col() +
+#   scale_y_continuous(trans='log10') +
+#   facet_wrap(~id, scales = "fixed") +
+#   labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
+#        subtitle = "Parameter combinations with > 5 clusters having at least 5 od pairs each",
+#        x = "Cluster no.",
+#        y = "No. of od pairs in cluster",
+#        fill= "No. of commuters") +
+#   theme_minimal()
+#
+# ggsave("data/processed/plots/eda/od_clustering/sensitivity_analysis_eps_minpts_filtered.png", width = 14, height = 10)
+#
 
-# ----- Sensitivity analysis(for different epsilon and minpts combinaitons)
 
-# function to get clustering results for many combinations
-dbscan_sensitivity_res <- dbscan_sensitivity(distance_matrix = dist_mat,
-                                             options_epsilon <- c(0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 7.5, 8, 9),
-                                             options_minpts <- c(50, 75, 100, 150, 175, 200, 250, 300, 400, 500, 700, 1000, 1500, 3000, 5000, 10000),
-                                             weights = w_vec,
-                                             flows = st_drop_geometry(od_demand_jittered)
-                                             )
-
-
-arrow::write_parquet(dbscan_sensitivity_res, paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity.parquet"))
-# dbscan_sensitivity_res <- arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity.parquet"))
-
-
-# All results plotted together
-dbscan_sensitivity_res %>%
-  filter(cluster != 0) %>%
-  ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
-  geom_col() +
-  scale_y_continuous(trans='log10') +
-  facet_wrap(~id, scales = "fixed") +
-  labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
-       subtitle = "Parameter combinations that returned more than 1 cluster",
-       x = "Cluster no.",
-       y = "No. of od pairs in cluster",
-       fill= "No. of commuters") +
- theme_minimal()
-
-ggsave("data/processed/plots/eda/od_clustering/sensitivity_analysis_eps_minpts_all.png", width = 14, height = 10)
-
-dbscan_sensitivity_res %>%
-  filter(cluster != 0) %>%
-  group_by(id) %>%
-  #mutate(clusters = n()) %>%
-  # How many clusters have more than 5 od pairs in them?
-  mutate(clusters = sum(size > 5)) %>%
-  ungroup() %>%
-  filter(clusters > 5) %>%
-  ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
-  geom_col() +
-  scale_y_continuous(trans='log10') +
-  facet_wrap(~id, scales = "fixed") +
-  labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
-       subtitle = "Parameter combinations with > 5 clusters having at least 5 od pairs each",
-       x = "Cluster no.",
-       y = "No. of od pairs in cluster",
-       fill= "No. of commuters") +
-  theme_minimal()
-
-ggsave("data/processed/plots/eda/od_clustering/sensitivity_analysis_eps_minpts_filtered.png", width = 14, height = 10)
-
-
-###  ---------- STEP 3: Cluster ---------- ###
+###  --------------------  STEP 3: Cluster  -------------------- ###
 
 
 # cluster option 1: border points assigned to cluster
@@ -413,18 +424,16 @@ cluster_dbscan_res <- cluster_dbscan_res %>%
 # plot
 plot(cluster_dbscan_res["cluster"])
 
-tm_shape(study_area) +
-  tm_borders(col = "grey60",
-             alpha = 0.5) +
-  tm_shape(study_area) +
-  tm_fill(col = "grey95",
-          alpha = 0.5) +
-  tm_shape(cluster_dbscan_res %>%
-             filter(cluster == 10) %>%
-             #filter(distance_m > 20000) %>%
-             mutate(cluster = as.factor(cluster)),) +
-  tm_lines(lwd = "commute_all")
+# ----- assign number of rows dynamically for facet plot
 
+# get clusters to map
+cluster_dbscan_res %>%
+  filter(size > 7, size < 5000) %>%
+  filter(commuters_sum > 200) %>%
+  filter(cluster != 0) -> clusters_vis
+
+# we want maximum 4 maps per row
+rows <- round(length(unique(clusters_vis$cluster)) / 4)
 
 ### ---------- Plot 1: Top n Clusters (Facet Plot) ---------- ###
 
@@ -435,12 +444,13 @@ tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
 tm_shape(cluster_dbscan_res %>%
-           filter(size > 7, size < 1000) %>%
+           filter(size > 7, size < 5000) %>%
            filter(commuters_sum > 200) %>%
            filter(cluster != 0) %>%
            mutate(cluster = as.factor(cluster))) +
   tm_lines(lwd = "commute_all",
            col = "cluster",
+           #col = "darkgreen",
            scale = 10,
            palette = "Accent", #YlGn
            #style = "pretty",
@@ -452,7 +462,7 @@ tm_shape(cluster_dbscan_res %>%
            showNA = FALSE) +
   tm_facets(by = "cluster",
             free.coords = FALSE,
-            nrow = 3,
+            nrow = rows,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows - Scenario ", scenario, " (Clusters with > 200 commuters)"),
@@ -462,11 +472,13 @@ tm_shape(cluster_dbscan_res %>%
             legend.outside = TRUE,
             legend.outside.position = "bottom",
             legend.stack = "horizontal",
+            # remove panel headers
+            panel.show = FALSE,
             frame = FALSE) -> map_cluster_results
 
 map_cluster_results
 
-tmap_save(tm = map_cluster_results, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, ".png"), width = 15, dpi = 1080, asp = 0)
+tmap_save(tm = map_cluster_results, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, ".png"), width = 12, dpi = 1080, asp = 0)
 
 
 
@@ -488,7 +500,7 @@ tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
   tm_shape(cluster_dbscan_res_mode %>%
-             filter(size > 7, size < 1000) %>%
+             filter(size > 7, size < 5000) %>%
              filter(commuters_sum > 200) %>%
              filter(cluster != 0) %>%
              mutate(cluster = as.factor(cluster))) +
@@ -499,26 +511,28 @@ tm_shape(study_area) +
            alpha = 1,
            title.col = "Fraction of Bus to Car users",
            title.lwd = "No. of commuters",
-           legend.col.is.portrait = FALSE,
+           #legend.col.is.portrait = FALSE,
            # remove "missing from legend
            showNA = FALSE) +
   tm_facets(by = "cluster",
             free.coords = FALSE,
-            nrow = 3,
+            nrow = rows,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows - Scenario ", scenario, " (Clusters with > 200 commuters)"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
-            legend.outside = TRUE,
-            legend.outside.position = "bottom",
-            legend.stack = "horizontal",
+           #legend.outside = TRUE,
+            #legend.outside.position = "bottom",
+            #legend.stack = "horizontal",
+            # remove panel headers
+            panel.show = FALSE,
             frame = FALSE) -> map_cluster_results_bus_frac
 
 map_cluster_results_bus_frac
 
-tmap_save(tm = map_cluster_results_bus_frac, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac.png"), width = 15, dpi = 1080, asp = 0)
+tmap_save(tm = map_cluster_results_bus_frac, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac.png"), width = 12, dpi = 1080, asp = 0)
 
 ### ---------- Plot 3: Compare mode composition of each cluster (cluster level) ---------- ###
 
@@ -544,7 +558,7 @@ tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
   tm_shape(cluster_dbscan_res_mode %>%
-             filter(size > 7, size < 1000) %>%
+             filter(size > 7, size < 5000) %>%
              filter(commuters_sum > 200) %>%
              filter(cluster != 0) %>%
              mutate(cluster = as.factor(cluster))) +
@@ -556,45 +570,173 @@ tm_shape(study_area) +
            alpha = 1,
            title.col = "Fraction of Bus to Car users",
            title.lwd = "No. of commuters",
-           legend.col.is.portrait = FALSE,
+           #legend.col.is.portrait = FALSE,
            # remove "missing from legend
            showNA = FALSE) +
   tm_facets(by = "cluster",
             free.coords = FALSE,
-            nrow = 3,
+            nrow = rows,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows - Scenario ", scenario, " (Clusters with > 200 commuters)"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
-            legend.outside = TRUE,
-            legend.outside.position = "bottom",
-            legend.stack = "horizontal",
+            # legend.outside = TRUE,
+            # legend.outside.position = "bottom",
+            # legend.stack = "horizontal",
+            # remove panel headers
+            panel.show = FALSE,
             frame = FALSE) -> map_cluster_results_bus_frac_grouped
 
 map_cluster_results_bus_frac_grouped
 
-tmap_save(tm = map_cluster_results_bus_frac_grouped, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped.png"), width = 15, dpi = 1080, asp = 0)
+tmap_save(tm = map_cluster_results_bus_frac_grouped, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped.png"), width = 12, dpi = 1080, asp = 0)
+
+
+# --- Map with clusters ovelayed onto bus routes
+
+
+
+gtfs_bus <- st_read("data/interim/gtfs_freq/gtfs_bus_sf.geojson")
+
+# gtfs_bus <- gtfs_bus %>%
+#   st_filter(st_union(study_area), .predicate = st_within)
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+# bus layer
+tm_shape(gtfs_bus %>%
+           filter(scenario == "pt_wkday_morning") %>%
+           mutate(headway_inv = (1/headway_secs) * 3600) %>%
+           filter(headway_secs < 7200)) +
+  tm_lines(col = "grey75",
+           lwd = "headway_inv",
+           scale = 5,
+           palette = "-YlOrRd",
+           style = "pretty",
+           legend.col.show = FALSE,
+           alpha = 1,
+           title.lwd = "Buses/Hour",
+           #legend.lwd.is.portrait = FALSE
+           ) +
+# clusters
+tm_shape(cluster_dbscan_res_mode %>%
+             filter(size > 7, size < 5000) %>%
+             filter(commuters_sum > 200) %>%
+             filter(cluster != 0) %>%
+             mutate(cluster = as.factor(cluster))) +
+  tm_lines(lwd = "commute_all",
+           col = "commute_frac_cluster",
+           scale = 10,
+           palette = "RdYlGn", #Accent
+           #style = "pretty",
+           alpha = 1,
+           title.col = "Fraction of Bus to Car users",
+           title.lwd = "No. of commuters",
+           #legend.col.is.portrait = FALSE,
+           # remove "missing from legend
+           showNA = FALSE) +
+  tm_facets(by = "cluster",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = paste0("Clustered flows - Scenario ", scenario, " (Clusters with > 200 commuters)"),
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            #legend.outside = TRUE,
+            #legend.outside.position = "bottom",
+            #legend.stack = "horizontal",
+            # remove panel headers
+            panel.show = FALSE,
+            frame = FALSE) -> map_cluster_results_bus_frac_grouped_gtfs
+
+map_cluster_results_bus_frac_grouped_gtfs
+
+tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs.png"), width = 12, dpi = 1080, asp = 0)
 
 
 
 
 
-cluster_dbscan_res_mode %>%
-  st_drop_geometry() %>%
+# --- Map with clusters as polygons (convex_hull())
+
+# turn clusters into polygons using convex hull
+
+cluster_dbscan_res_mode_poly <- cluster_dbscan_res_mode %>%
+  filter(size > 7, size < 5000) %>%
+  filter(commuters_sum > 200) %>%
+  filter(cluster != 0) %>%
+  mutate(cluster = as.factor(cluster)) %>%
+  #head(1000) %>%
   group_by(cluster) %>%
-  summarise(size = n()) %>%
-  arrange(desc(size))
+  summarize(commuters_sum = first(commuters_sum),
+            commute_frac_cluster = first(commute_frac_cluster),
+            geometry = st_convex_hull(st_union(geometry))) %>%
+  ungroup()
 
-# Get bounding box of cluster
-cluster_dbscan_res_mode %>%
-  filter(cluster == 119) %>%
-  st_union() %>%
-  st_convex_hull() -> x
 
-plot(st_geometry(study_area %>% st_transform(3857)))
-plot(st_geometry(x), add = TRUE, col = "red")
+# plot
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  # bus layer
+tm_shape(gtfs_bus %>%
+             filter(scenario == "pt_wkday_morning") %>%
+             mutate(headway_inv = (1/headway_secs) * 3600) %>%
+             filter(headway_secs < 7200)) +
+  tm_lines(col = "grey70",
+           lwd = "headway_inv",
+           scale = 5,
+           palette = "-YlOrRd",
+           style = "pretty",
+           legend.col.show = FALSE,
+           alpha = 1,
+           title.lwd = "Buses/Hour",
+           #legend.lwd.is.portrait = FALSE
+  ) +
+  # clusters
+tm_shape(cluster_dbscan_res_mode_poly) +
+  tm_polygons(col = "commute_frac_cluster",
+              palette = "RdYlGn", #Accent
+              #style = "pretty",
+              alpha = 0.3,
+              title = "Fraction of Bus \nto Car users",
+              #legend.col.is.portrait = FALSE,
+              # remove "missing from legend
+              showNA = FALSE) +
+  tm_facets(by = "cluster",
+            #by = "commuters_sum",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = paste0("Clustered flows - Scenario ", scenario, " (Clusters with > 200 commuters)"),
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            #legend.outside = TRUE,
+            #legend.outside.position = "bottom",
+            #legend.stack = "horizontal",
+            # remove panel headers
+            panel.show = FALSE,
+            frame = FALSE) -> map_cluster_results_bus_frac_grouped_gtfs_poly
+
+map_cluster_results_bus_frac_grouped_gtfs_poly
+
+tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly.png"), width = 12, dpi = 1080, asp = 0)
+
+
 
 
 
