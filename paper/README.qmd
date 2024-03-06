@@ -59,7 +59,7 @@ These different service offerings highlight the complexity of DRT planning. On t
 
 DRT systems tend to have a higher cost per passenger than fixed-route public transport, and this has been attributed to the economies of scale associate with higher capacity and operational efficiency of the latter [@currie2020most]. The high cost has been the primary reason for the failure of many DRT trials. Even in the the modern era where technology has driven a re-emergence of DRT, failure rates remain high. A study by @currie2020most on 120 DRT systems in 19 countries showed that, among the systems launched during the period from 2010-2019, 45% failed. As may be expected, the study showed DRT service life exponentially decreased as the operating cost increased.
 
-@enoch2006demand analyze 72 different DRT projects, and identify 3 factors that determine success or failure: Internal Environment (operating characteristics), Micro-Environment (partnerships between operators and local authorities), and Macro-Environment (land-use patterns). For internal environment, they warn against unnecesarilty flexible services, and claim that *simple, low cost schemes that are able to **concentrate demand in time and geography** have a higher likelihood of success*.
+@enoch2006demand analyze 72 different DRT projects, and identify 3 factors that determine success or failure: Internal Environment (operating characteristics), Micro-Environment (partnerships between operators and local authorities), and Macro-Environment (land-use patterns). For internal environment, they warn against unnecessarily flexible services, and claim that *simple, low cost schemes that are able to **concentrate demand in time and geography** have a higher likelihood of success*.
 
 ## Planning DRT systems {#sec-planning_drt}
 
@@ -177,23 +177,23 @@ Our routing analysis shows us the number of transfers required to travel between
 
 The clustering analysis shows a number of different clusters, some of which cut across the entire study area
 
-![Clustering OD pairs with poor PT supply (Scenario 2)](images/map_clusters_scenario_2_equal_bus_frac_grouped.png){#fig-cluster-scenario-2-equal-bus-frac}
+![Clustering OD pairs with poor PT supply (Scenario 2)](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped.png){#fig-cluster-scenario-2-equal-bus-frac}
 
 Looking at the combination of transport supply and potential travel demand, we can see that travel to / from outer MSOAs is particularly slow. OD pairs with low speed and low potential demand are most prominent in the North East section of or study area.
 
 ![](images/map_od_pairs_demand_busiest_route_speed.png){#fig-od-demand-scenario-3}
 
-![](images/map_clusters_scenario_3_equal_bus_frac_grouped.png){#fig-cluster-scenario-3-equal-bus-frac}
+![](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped.png){#fig-cluster-scenario-3-equal-bus-frac}
 
 ![](images/map_clusters_scenario_3_equal_length_10000_bus_frac_grouped.png){#fig-cluster-scenario-3-equal-bus-frac-length-1000}
 
 # Discussion
 
--   different clustering algorithms (optics, hdbscan ...)
+The paper proposes a method that can help identify concentrations of travel demand, an exercise that is vital for improving the chances of successful DRT schemes [@enoch2006demand]. The method can be further improved by adding a temporal element to the travel demand and carrying out spatiotemporal clustering [@yao2018stepwise; @yan2023spatiotemporal]. This would allow us to identify how DRT operating areas could differ throughout the day or on weekdays/weekends.
 
--   spatiotemporal clustering
+More spatially disaggregated flow data would also help handle the Modifiable Areal Unit Problem (MAUP), which is only partially mitigated in our case by jittering the aggregated flow data.
 
--   bivariate clusters based on disaggregated data
+Different density-based clustering algorithms such as HDBSCAN [@tao2017flowhdbscan] and OPTICS [@fang2021adaptive] can also be explored. Both of these algorithms require only one input parameter (DBSAN requires 2) and can identify cluster formation at different scales.
 
 \pagebreak
 
