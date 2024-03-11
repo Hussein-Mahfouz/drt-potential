@@ -173,11 +173,23 @@ In this section we look at the clustering output of the different scenarios. @se
 
 ### Scenario 2: Clustering based on transport supply {#sec-results-transport-supply}
 
-Our routing analysis shows us the number of transfers required to travel between each OD pair. The majority of OD pairs in our study area require at least 1 transfer, as shown in @fig-od-transfers
+Our routing analysis shows us the number of transfers required to travel between each OD pair. The majority of OD pairs in our study area require at least 1 transfer, as shown in @fig-od-transfers. A large number of OD within close proximity require 2 or more transfers (@fig-od-transfers-bar).
 
 <!--# average no of transfers (Incorrect!! - input data needs editing) -->
 
 ![Connectivity of OD pairs](images/map_desire_commuting_facet_transfers.png){#fig-od-transfers}
+
+![Connectivity of OD pairs (bar plot)](images/plot_bar_transfers_stacked_distance.png){#fig-od-transfers-bar width="300"}
+
+<!-- ::: {#fig-transfers layout-nrow="1"} -->
+
+<!-- ![Connectivity of OD pairs](images/map_desire_commuting_facet_transfers.png){#fig-od-transfers-1 width="502"} -->
+
+<!-- ![Connectivity of OD pairs (bar plot)](images/plot_bar_transfers_stacked_distance.png){#fig-od-transfers-2 width="300"} -->
+
+<!-- Transfers between OD pairs -->
+
+<!-- ::: -->
 
 The clustering analysis shows a number of different clusters, some of which cut across the entire study area
 
@@ -191,11 +203,15 @@ Looking at the combination of transport supply and potential travel demand, we c
 
 ![](images/map_od_pairs_demand_busiest_route_speed.png){#fig-od-demand-scenario-3}
 
-![](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped.png){#fig-cluster-scenario-3-equal-bus-frac}
-
 ![](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs.png)
 
-![](images/map_clusters_scenario_3_equal_length_10000_bus_frac_grouped_gtfs.png){#fig-cluster-scenario-3-equal-bus-frac-length-1000}
+The results are similar to Scenario 2, but we see that some clusters in the South-East disappear. This is an indicator that there may be enough demand in the South East to warrant a high frequency bus service
+
+### Distance threshold for clustering
+
+When we restrict the input to OD pairs that are less than 10km apart, our clustering results are much more spatially constrained (as expected).
+
+![](images/map_clusters_scenario_3_equal_length_10000_bus_frac_grouped_gtfs.png){#fig-cluster-scenario-3-equal-bus-frac-length-10000}
 
 # Discussion
 
