@@ -113,15 +113,15 @@ Following the new powers given to local transport authorities under the bus serv
 
 # Methods
 
-In this section we go over the data and methods used in our analysis. First, we introduce a clustering approach for determining how travel demand is concentrated geographically (@sec-method-clustering-flow-data). We propose to apply the algorithm on three different scenarios; 1) all flow data, 2) OD pairs with poor public transport supply, 3) OD pairs with poor public transport supply and low potential demand. In @sec-method-transport-supply we show how public transport supply is calculated and define poor public transport supply. In @sec-method-transport-demand, we explain potential demand and how it is calculated.
+In this section we go over the data and methods used in our analysis. First, we introduce a clustering approach for determining how travel demand is concentrated geographically (@sec-method-clustering-flow-data). We apply the algorithm on two different scenarios; 1) OD pairs with poor public transport supply, 2) OD pairs with poor public transport supply and low potential demand. In @sec-method-transport-supply we show how public transport supply is calculated and define poor public transport supply. In @sec-method-transport-demand, we explain potential demand and how it is calculated.
 
 ## Clustering flow data {#sec-method-clustering-flow-data}
 
 While experts agree that DRT service provision should be based on demand [@dft2020regulatory], there are no agreed upon methods for how demand gaps that suit DRT can be identified in a way that allows DRT to be integrated with public transport.
 
-We apply a spatial clustering approach to flow data to identify spatial concentrations in travel demand. For demand, we use Origin-Destination (OD) commuting (flow) data from the 2021 UK census. Spatial statistics methods for cluster detection - such as DBSCAN [@ester1996density] - have mainly been developed for point data. Recently custom distance metrics that account for the multilocation nature of line data have allowed these methods to extend to flow data [@tao2016spatial].
+We apply a spatial clustering approach to flow data to identify spatial concentrations in travel demand. For demand, we use Origin-Destination (OD) commuting (flow) data from the 2021 UK census. Spatial statistics methods for cluster detection - such as DBSCAN [@ester1996density] - have mainly been developed for point data. Recently custom distance metrics that account for the multi-location nature of line data have allowed these methods to extend to flow data [@tao2016spatial].
 
-We use the DBSCAN algorithm with the custom distance metric introduced by @tao2016spatial. Let the flow process $F_{i}$ with origin $O_{i} (x_{i}, y_{i})$ and $D_{i} (u_{i}, v_{i})$ be modeled as a vector point with 4 coordinates $F_{i}(x_{i}, y_{i}, u_{i}, v_{i})$. The calculation for flow dissimilarity between $F_{i}$ and $F_{j}$, $FDS_{ij}$ is shown in @eq-fds.
+We use the DBSCAN algorithm with the custom distance metric introduced by @tao2016spatial : let the flow process $F_{i}$ with origin $O_{i} (x_{i}, y_{i})$ and $D_{i} (u_{i}, v_{i})$ be modeled as a vector point with 4 coordinates $F_{i}(x_{i}, y_{i}, u_{i}, v_{i})$. The calculation for flow dissimilarity between $F_{i}$ and $F_{j}$, $FDS_{ij}$ is shown in @eq-fds.
 
 $$FDS_{ij} = \sqrt{\frac{\alpha[(x_{i} - x_{j})^2 + (y_{i} - y_{j})^2] + \beta [(u_{i} - u_{j})^2 + (v_{i} - v_{j})^2]}{L_{i}L_{j}}}$$ {#eq-fds}
 
@@ -169,7 +169,11 @@ OD pairs with high potential demand are not included in $OD_{3}$ as there is suf
 
 ## Results
 
-Our routing analysis shows us the number of transfers required to travel between each OD pair. The majority of OD pairs require at least 1 transfer (2 buses), as shown in @fig-od-transfers
+In this section we look at the clustering output of the different scenarios. @sec-results-transport-supply and @sec-method-transport-demand presents the results for Scenario 2 and Scenario 3 respectively.
+
+### Scenario 2: Clustering based on transport supply {#sec-results-transport-supply}
+
+Our routing analysis shows us the number of transfers required to travel between each OD pair. The majority of OD pairs in our study area require at least 1 transfer, as shown in @fig-od-transfers
 
 <!--# average no of transfers (Incorrect!! - input data needs editing) -->
 
@@ -180,6 +184,8 @@ The clustering analysis shows a number of different clusters, some of which cut 
 ![Clustering OD pairs with poor PT supply (Scenario 2)](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs.png){#fig-cluster-scenario-2-equal-bus-frac}
 
 ![](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly.png)
+
+### Scenario 3: Clustering based on transport supply and demand {#sec-results-transport-demand}
 
 Looking at the combination of transport supply and potential travel demand, we can see that travel to / from outer MSOAs is particularly slow. OD pairs with low speed and low potential demand are most prominent in the North East section of or study area.
 
