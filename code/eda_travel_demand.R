@@ -580,3 +580,60 @@ map_od_pairs_route_demand_speed
 tmap_save(tm = map_od_pairs_route_demand_speed, filename = paste0(plots_path, "map_od_pairs_demand_busiest_route_speed.png"), width = 10, dpi = 720, asp = 0)
 
 
+
+
+
+
+
+
+
+# ----- bar plot of transfers | length | commute_all
+
+
+
+
+ttd_matrix %>%
+  mutate(transfers = n_rides - 1) %>%
+  # length categories (km)
+  mutate(length_category = cut(distance_m / 1000, breaks = seq(0, max(distance_m, na.rm = TRUE), by = 10)),
+         commute_category = cut(commute_all, breaks = seq(0, max(commute_all, na.rm = TRUE), by = 150)),
+         transfers_category = as.factor(case_when(is.na(transfers) ~ "3+",
+                                                  transfers <= 2 ~ as.character(transfers),
+                                                  TRUE ~ "3+"))) %>%
+  #filter(commute_all >= 50) %>%
+  ggplot(aes(x = transfers_category, fill = factor(length_category))) +
+  geom_bar(position = position_stack(reverse = TRUE)) +  # Flip the order of stack +
+  scale_fill_brewer(palette = "Greys", direction = -1) +
+  #facet_wrap(~ commute_category, scales = "fixed", nrow = 2) +
+  labs(title = "Transfers required to commute \nbetween OD pairs",
+       x = "Transfers",
+       y = "No. of OD pairs",
+       fill = "Euclidian \nDistance (km)") +
+  theme_minimal() +
+  coord_flip()
+
+
+ggsave(filename = paste0(plots_path, "plot_bar_transfers_stacked_distance.png"), width = 4, height = 3)
+
+
+
+
+
+
+
+
+ttd_matrix %>%
+  mutate(transfers = n_rides - 1) %>%
+  mutate(transfers = replace_na(transfers, 5)) %>%
+  mutate(length_category = cut(distance_m / 1000, breaks = seq(0, max(distance_m, na.rm = TRUE), by = 5)),
+         commute_category = cut(commute_all, breaks = seq(0, max(commute_all, na.rm = TRUE), by = 100))) %>%
+  #filter(commute_all > 150) %>%
+  ggplot(aes(x = commute_category, fill = factor(length_category))) +
+  geom_bar() +
+  facet_wrap(~ transfers, scales = "fixed", nrow = 2) +
+  labs(title = "Stacked Histogram of Transfers by Commuters Category",
+       x = "Transfers",
+       y = "Frequency",
+       fill = "Length") +
+  theme_minimal()
+
