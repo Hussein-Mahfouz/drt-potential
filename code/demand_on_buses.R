@@ -22,6 +22,8 @@ source("R/filter_od_matrix.R")
 
 ########## ----------------------- Read in the data ----------------------- ##########
 
+# is the demand data disaggregated by mode?
+mode = FALSE
 
 # ----------- 1. Study area
 
@@ -63,16 +65,26 @@ gtfs_bus <- gtfs_bus %>%
 
 # Demand (census) + supply (travel time) data
 
-od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
+if(mode == TRUE){
+  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode_with_speed.parquet"))
 
-# columns to reference (they differ based on geography)
-from_id_col = paste0(geography, "21CD_home")
-to_id_col = paste0(geography, "21CD_work")
+} else{
+  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_with_speed.parquet"))
+}
+
+# od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
+
+# # columns to reference (they differ based on geography)
+# from_id_col = paste0(geography, "21CD_home")
+# to_id_col = paste0(geography, "21CD_work")
 
 # remove intrazone trips
 # TODO: do we need to do this?
+# od_demand <- od_demand %>%
+#   filter(.data[[from_id_col]] != .data[[to_id_col]])
+
 od_demand <- od_demand %>%
-  filter(.data[[from_id_col]] != .data[[to_id_col]])
+  filter("Origin" != "Destination")
 
 ########## ----------------------- Identify which OD demand pairs are served by each bus ----------------------- ##########
 
@@ -115,13 +127,22 @@ od_supply_filtered = filter_matrix_by_distance(zones = study_area,
 #   st_drop_geometry() %>%
 #   #left_join(od_demand,
 #   inner_join(od_demand,
-#              by = c("Origin" = from_id_col, "Destination" = to_id_col))
+#              by = c("Origin", #  = from_id_col,
+#                     "Destination", #  = to_id_col,
+#                     "start_time" = "departure_time"))
+#
+# od_sd <- od_sd %>%
+#   filter(combination == "pt_wkday_morning")
 
-od_sd <- od_supply_filtered %>%
-  st_drop_geometry() %>%
-  #left_join(od_demand,
-  inner_join(od_demand,
-             by = c("Origin" = from_id_col, "Destination" = to_id_col, "start_time" = "departure_time"))
+od_sd <- od_demand %>%
+  filter(combination == "pt_wkday_morning") %>%
+  left_join(od_supply_filtered %>%
+              select(-distance_m) %>%
+              st_drop_geometry(),
+  by = c("Origin", #  = from_id_col,
+                    "Destination", #  = to_id_col,
+                    "departure_time" = "start_time"))
+
 
 # # save output
 # arrow::write_parquet(od_sd, paste0("data/interim/travel_demand/", toupper(geography), "/od_pairs_demand_and_supply.parquet"))
@@ -131,28 +152,57 @@ od_sd <- od_supply_filtered %>%
 
 # Method 1: all_to_all
 trips_sd_1 <- od_sd %>%
-  group_by(trip_id, start_time, combination) %>%
+  group_by(trip_id, departure_time, combination) %>%
   summarise(potential_demand_all_to_all = sum(commute_all, na.rm = TRUE)) %>%
   ungroup()
 
 # Method 2: frequency-based
 trips_sd_2 <- od_sd %>%
-  group_by(start_time, combination, Origin, Destination) %>%
+  group_by(departure_time, combination, Origin, Destination) %>%
   # get number of passengers on each route for each OD pair
   mutate(group_id = cur_group_id(),
          frequency_min = 3600/headway_secs,
          commute_route = round((commute_all * frequency_min) / sum(frequency_min))) %>%
   ungroup() %>%
   # sum over the route
-  group_by(trip_id, start_time, combination) %>%
+  group_by(trip_id, departure_time, combination) %>%
   summarise(potential_demand_freq_based = sum(commute_route, na.rm = TRUE)) %>%
+  ungroup()
+
+# Method 3: split demand equally between all routes serving OD pair
+trips_sd_3 <- od_sd %>%
+  group_by(departure_time, combination, Origin, Destination) %>%
+  # get number of passengers on each route for each OD pair
+  mutate(commute_route = round((commute_all / n()))) %>%
+  ungroup() %>%
+  # sum over the route
+  group_by(trip_id, departure_time, combination) %>%
+  summarise(potential_demand_equal_split = sum(commute_route, na.rm = TRUE)) %>%
   ungroup()
 
 
 # add all to one df
 trips_sd <- trips_sd_1 %>%
-  left_join(trips_sd_2, by = c("trip_id", "start_time", "combination"))
+  left_join(trips_sd_2, by = c("trip_id", "departure_time", "combination")) %>%
+  left_join(trips_sd_3, by = c("trip_id", "departure_time", "combination"))
 
+
+# add potential demand to original od df
+od_trips_sd <- od_sd %>%
+  left_join(trips_sd, by = c("trip_id", "departure_time", "combination"))
+
+# keep one row per Origin-Destination - the trip with the highest potential demand
+od_trips_sd <- od_trips_sd %>%
+  group_by(Origin, Destination) %>%
+  dplyr::top_n(1, potential_demand_equal_split) %>%
+  ungroup()
+
+if(mode == TRUE){
+  arrow::write_parquet(od_trips_sd, paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode_with_speed_and_pd.parquet"))
+
+} else{
+  arrow::write_parquet(od_trips_sd, paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_with_speed_and_pd.parquet"))
+}
 
 # ----------- 4. Add geometry to plot results
 
@@ -181,6 +231,9 @@ trips_sd_sf_shape_sum <- trips_sd_sf %>%
   group_by(shape_id) %>%
   summarise(across(contains("potential_demand"), ~ sum(.x, na.rm = TRUE))) %>%
   ungroup()
+
+
+
 
 # ###########  ---------------------------  5. Plots  --------------------------- ##########
 #
