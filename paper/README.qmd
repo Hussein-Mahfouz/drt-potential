@@ -52,9 +52,7 @@ In this paper, the definition for DRT used by @davison2014survey is adopted: a s
 
 <!--# It can be distinguished from traditional fixed route services through: (a) network typology and operation, (b) boarding and alighting locations, (c) schedule, and (d) advanced notice requirement [@papanikolaou2017methodological] -->
 
-The concept of DRT goes back to the 1970s, and it has taken other names such as Dial-a-Bus, or more recently, micro-transit [@currie2020most]. It is seen as a compromise between the convenience (instant frequency and full coverage) of the automobile, and the cost-effectiveness of public transport [@currie2020most].
-
-![DRT in context - Source [@d1994demand]](images/deste-drt-1994.jpg){#fig-drt-in-context}
+The concept of DRT goes back to the 1970s, and it has taken other names such as Dial-a-Bus, or more recently, micro-transit [@currie2020most]. It is seen as a compromise between the convenience (instant frequency and full coverage) of the automobile, and the cost-effectiveness of public transport [@currie2020most]. Useful diagrams have been made to compare DRT to other travel modes in terms of trade-offs in service frequency - coverage [@d1994demand] and flexibility - sustainability [@inturri2019multi].
 
 While the term DRT has become an umbrella term for flexible public transport, services can be grouped under different DRT typologies [@enoch2004intermode] or scheduling and operational characteristics [@d1994demand]. For diagrammatic descriptions of the different operational characteristics, the reader is referred to [@mageean2003evaluation; @pavanini2023role].
 
@@ -111,8 +109,6 @@ Given these results, it has been suggested that DRT may only be useful[^1] in ar
 # Case Study
 
 The research will focus on the city of Leeds as a case study. Leeds is the biggest city in West Yorkshire, a ceremonial county with an economy that generates over £55 billion per year (more than 9 EU countries) [@wyca2021connectivity]. The West Yorkshire Combined Authority (WYCA) has declared a climate emergency, and has put a target to reach net-zero by 2030. It has estimated that a significant mode shift will be needed to achieve this target, and has set a target of 52% increase in bus mode share [@wyca2021connectivity]. This is an ambitious target seeing as the decade between 2009-2019 saw a decrease of 15% (from 170 million to 144 million) in annual bus trips in the region. [@wyca2021improvement].
-
-![Population Density in Leeds](images/pop_distribution.png){#fig-pop-density alt="Population Density in Leeds"}
 
 <!--# A recent report on bus services in Leeds highlighted that they were concentrated between two main operators, FirstBus (65.6%) and Arriva (26.1%), and that over 50% of routes in the city are likely to experience adverse effects of (a lack of) competition [@wyca2017bus]. The report highlights that bus operators are not a homogeneous group, and that there was no formal process for them to coordinate on plans and policies. In the Leeds Bradford area, 40% of population have access to only 1 bus per hour outside peak hours, and many areas have poor or non-existent access to rail [@wyca2021connectivity]. -->
 
