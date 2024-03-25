@@ -5,16 +5,16 @@ abstract: "Demand-Responsive Transport (DRT) has emerged as a mobility option fo
 date: "`r format(Sys.time(), '%d %m %y')`"
 format:
   #gfm: default
-  # html:
-  #   toc: true
+  html:
+    toc: true
   # docx:
   #   toc: true
   #   toc-depth: 2
   #   number-sections: true
-  pdf:
-    toc: true
-    number-sections: true
-    extra_dependencies: ["float"]
+  # pdf:
+  #   toc: true
+  #   number-sections: true
+  #   extra_dependencies: ["float"]
     #pdf-engine: pdflatex
 keep-tex: true
 bibliography: lit-review.bib
@@ -80,7 +80,9 @@ Whereas the latter is studied extensively, there remains a need to develop gener
 
 ### Importance of delineating DRT operating areas {#sec-lit-service-areas}
 
-There are various elements of DRT operating characteristics that effect its uptake and the wider system, including fares, fleet size and rebalancing, operating zones (as well as wider changes to the system such as car tolls and public transport service levels). While studies have looked at scenarios with different fleet sizes and fare structures, the choice of operating zones is generally simplified. Research has looked at (a) splitting the study area into inner and outer city [@kaddoura2020impact], restricting service to zones that (b) have a low public transport accessibility [@rath2023assessing], or (c) are within a certain buffer distance from rail (with the intention for DRT to act as a feeder) [@oke2020evaluating].
+There are various elements of DRT operating characteristics that effect its uptake and the wider system, including fares, fleet size and rebalancing, operating zones (as well as wider changes to the system such as car tolls and public transport service levels). While studies have looked at scenarios with different fleet sizes and fare structures, the choice of operating zones is generally simplified. Analytical models exist for deciding whether areas should be served by a FRT or DRT , but these models are based on idealized representations at the route level with pre-defined service areas [@quadrifoglio2009methodology; @li2010feeder; @sivakumaran2012cost]. For these models to be applied in a real case study, it is important to take a step back to identify potential service areas in an actual network. 
+
+Simulation-based approaches on real world networks have also been used to analyse potential DRT services. Research has looked at (a) splitting the study area into inner and outer city [@kaddoura2020impact], restricting service to zones that (b) have a low public transport accessibility [@rath2023assessing], or (c) are within a certain buffer distance from rail (with the intention for DRT to act as a feeder) [@oke2020evaluating].
 
 **Mitigating undesirable mode shift**
 
@@ -353,6 +355,8 @@ The paper proposes a method that can help identify concentrations of travel dema
 More spatially disaggregated flow data would also help handle the Modifiable Areal Unit Problem (MAUP), which is only partially mitigated in our case by jittering the aggregated flow data.
 
 Different density-based clustering algorithms such as HDBSCAN [@tao2017flowhdbscan] and OPTICS [@fang2021adaptive] can also be explored. Both of these algorithms require only one input parameter (DBSAN requires 2) and can identify cluster formation at different scales.
+
+The candidate zones identified by the method vary in size, and a follow up exercise would be necessary to validate them. Analytical models mentioned in @sec-planning_drt could be used to determine more precise service areas. They could identify whether the critical demand density for a DRT service is met [@quadrifoglio2009methodology], look at schedule coordination with FRT [@sivakumaran2012cost], and predict DRT performance based on the street network layout in the different zones [@chandra2013new].
 
 \pagebreak
 
