@@ -300,7 +300,7 @@ In this section we look at the clustering output of $OD_2$ and $OD_3$. @sec-resu
 
 Our routing analysis shows us the number of transfers required to travel between each OD pair. The majority of OD pairs in our study area require at least 1 transfer, as shown in @fig-od-transfers. A large number of OD within close proximity require 2 or more transfers (@fig-od-transfers-bar).
 
-![Connectivity of OD pairs](images/map_desire_commuting_facet_transfers.png){#fig-od-transfers}
+![Connectivity of OD pairs](images/map_desire_commuting_facet_transfers_crop.png){#fig-od-transfers width="750"}
 
 ![Connectivity of OD pairs (bar plot)](images/plot_bar_transfers_stacked_distance.png){#fig-od-transfers-bar width="300"}
 
@@ -316,9 +316,7 @@ Our routing analysis shows us the number of transfers required to travel between
 
 The clustering analysis shows a number of different clusters, some of which cut across the entire study area.
 
-![Clustering OD pairs with poor PT supply (OD2)](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs.png){#fig-cluster-scenario-2-equal-bus-frac}
-
-![Clustering OD pairs with poor PT supply (OD2) - POLYGONS](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly.png)
+![Clustering OD pairs with poor PT supply (OD2) - POLYGONS](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly_lines.png)
 
 ## Clustering based on transport supply and demand {#sec-results-transport-demand}
 
@@ -326,7 +324,7 @@ Looking at the combination of transport supply and potential travel demand, we c
 
 ![Travel speed between OD pairs](images/map_od_pairs_demand_busiest_route_speed.png){#fig-od-demand-scenario-3}
 
-![Clustering results (OD3)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs.png)
+![Clustering results (OD3)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_lines.png)
 
 The results are similar to those of $OD_2$, but we see that some clusters in the South-East disappear. This is an indicator that there may be enough demand in the South East to warrant a high frequency bus service
 
@@ -334,7 +332,7 @@ The results are similar to those of $OD_2$, but we see that some clusters in the
 
 When we restrict the input to OD pairs that are less than 10km apart, our clustering results are much more spatially constrained (as expected). The proportion of bus users in each clusters is also more representative of the individual OD pairs within it. The clusters with low bus ridership are on the periphery of the FRT network and extend to areas that are not served by the network.
 
-![Clustering results (Scenario 3, OD pairs \< 10km)](images/map_clusters_scenario_3_equal_length_10000_bus_frac_grouped_gtfs.png){#fig-cluster-scenario-3-equal-bus-frac-length-10000}
+![Clustering results (Scenario 3, OD pairs \< 10km)](images/map_clusters_scenario_3_equal_length_10000_bus_frac_grouped_gtfs_poly_lines.png){#fig-cluster-scenario-3-equal-bus-frac-length-10000}
 
 # Discussion
 
