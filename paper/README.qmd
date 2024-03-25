@@ -116,7 +116,7 @@ Following the new powers given to local transport authorities under the bus serv
 
 # Methods
 
-In this section we go over the data and methods used in our analysis. First, we introduce a clustering approach for determining how travel demand is concentrated geographically (@sec-method-clustering-flow-data). We apply the algorithm on two different scenarios; 1) OD pairs with poor public transport supply, 2) OD pairs with poor public transport supply and low potential demand. In @sec-method-transport-supply we show how public transport supply is calculated and define poor public transport supply. In @sec-method-transport-demand, we explain potential demand and how it is calculated.
+In this section we go over the data and methods used in our analysis. First, we introduce a clustering approach for determining how travel demand is concentrated geographically (@sec-method-clustering-flow-data). We apply the algorithm on two different datasets: 1) OD pairs with poor public transport supply, 2) OD pairs with poor public transport supply and low potential demand. In @sec-method-transport-supply we show how public transport supply is calculated and define poor public transport supply. In @sec-method-transport-demand, we explain potential demand and how it is calculated.
 
 ## Clustering flow data {#sec-method-clustering-flow-data}
 
@@ -132,9 +132,9 @@ where $\alpha$ and $\beta$ control the relative importance of the origins / dest
 
 Our analysis looks at commuting flows by mode. Taking inspiration from @shu2022density, we study the composition of each cluster and determine the ratio of car to public transport users. Clusters with a low ratio of public transport to car users are considered initial candidates for DRT.
 
-## Clustering scenarios
+## Accounting for transport supply and demand
 
-The cluster composition is heavily influenced by the input data. If we were to pass all OD pairs to the algorithm, then our clusters may include noise from OD pairs that are well served by public transport. We will also come up with DRT zones that serve all demand, whereas our objective is to come up with DRT zones that complement FRT and fill the gap in the network, as explained in @sec-lit-service-areas. We explore the results from 3 different scenarios in order to see which are better at identifying potential DRT operating zones. The difference between the scenarios is which OD pairs we pass into the clustering algorithm.
+The cluster composition is heavily influenced by the input data. If we were to pass all OD pairs to the algorithm, then our clusters may include noise from OD pairs that are well served by public transport. We will also come up with DRT zones that serve all demand, whereas our objective is to come up with DRT zones that complement FRT and fill the gaps in the network, as explained in @sec-lit-service-areas. We identify gaps by trying two different inputs: (1) OD pairs with poor public transport supply ($OD_2$) , and (2) OD pairs with poor public transport supply and low potential demand ($OD_3$).
 
 1.  $OD_{1}$ (all OD pairs)
 
@@ -142,9 +142,9 @@ The cluster composition is heavily influenced by the input data. If we were to p
 
 3.  $OD_{3}$ (OD pairs with poor public transport supply and low potential demand)
 
-Scenario 2 is meant to create DRT zones that complement FRT by only including the OD demand that is not well served by FRT, as explained in @sec-method-transport-supply. Scenario 3 is similar, but also excludes OD pairs that could be served by a better FRT service. This exclusion is based on criteria explained in @sec-method-transport-demand. The entire workflow is shown in @fig-flowchart-scenarios.
+$OD_2$ is meant to create DRT zones that complement FRT by only including the OD demand that is not well served by FRT, as explained in @sec-method-transport-supply. $OD_3$ is similar, but also excludes OD pairs that could be served by a better FRT service. This exclusion is based on criteria explained in @sec-method-transport-demand. The entire workflow is shown in @fig-flowchart-scenarios.
 
-![Flowchart for determining input of different scenarios](images/flowchart_od_potential_demand.png){#fig-flowchart-scenarios}
+![Flowchart for determining input to clustering algorithm](images/flowchart_od_potential_demand.png){#fig-flowchart-scenarios}
 
 ### Supply analysis {#sec-method-transport-supply}
 
@@ -154,7 +154,7 @@ A supply analysis is carried out to determine the OD pairs that are included in 
 
 [^3]: https://data.atoc.org/
 
-The OSM road network and timetable data are fed into a multimodal routing engine [@pereira2021r5r] to calculate travel time between zones. Euclidean distance between an OD pair is used to calculate travel speed $(v_{ij})$. OD pairs with speed in the bottom 50th percentile or that require more than 1 transfer to be reached by public transport are considered to have poor supply
+The OSM road network and timetable data are fed into a multimodal routing engine [@pereira2021r5r] to calculate travel time between zones. Euclidean distance between an OD pair is used to calculate travel speed $(v_{ij})$. OD pairs with speed in the bottom 50th percentile or that require more than one transfer to be reached by public transport are considered to have poor supply.
 
 ### Demand analysis {#sec-method-transport-demand}
 
@@ -178,13 +178,7 @@ To calculate potential demand on all routes, we do the following:
 
 We choose an *equal split assignment* of demand onto common lines. Frequency-based assignment better represent the status quo, but our goal is to represent what the demand could be if route frequencies were improved.
 
-To determine which OD pairs we want in our analysis ($OD_3$), we compare the potential demand on all routes
-
-1.  For each OD
-
-    1.  get potential demand on all routes directly serving it
-
-    2.  IF potential demand on busiest direct route serving OD \> 50th percentile of route demand, we don't include it in $OD_{3}$
+To determine which OD pairs we want in our analysis ($OD_3$), we compare the potential demand on all routes, For each OD, we (a) get potential demand on all routes directly serving it. If potential demand on busiest direct route serving OD \> 50th percentile of route demand, we don't include it in $OD_{3}$.
 
 OD pairs with high potential demand are not included in $OD_{3}$ as there is sufficient demand to justify a high frequency FRT, even if one does not currently exist. The heuristic for calculating potential demand allows us to avoid serving areas with DRT just because there is poor FRT supply; there must also be insufficient demand to warrant a high frequency FRT.
 
@@ -300,13 +294,11 @@ Setting the threshold at $p50$ implies that service on the top 50% of routes in 
 
 # Results
 
-In this section we look at the clustering output of the different scenarios. @sec-results-transport-supply and @sec-method-transport-demand presents the results for Scenario 2 and Scenario 3 respectively.
+In this section we look at the clustering output of $OD_2$ and $OD_3$. @sec-results-transport-supply and @sec-method-transport-demand presents the results for each respectively.
 
-## Scenario 2: Clustering based on transport supply {#sec-results-transport-supply}
+## Clustering based on transport supply {#sec-results-transport-supply}
 
 Our routing analysis shows us the number of transfers required to travel between each OD pair. The majority of OD pairs in our study area require at least 1 transfer, as shown in @fig-od-transfers. A large number of OD within close proximity require 2 or more transfers (@fig-od-transfers-bar).
-
-<!--# average no of transfers (Incorrect!! - input data needs editing) -->
 
 ![Connectivity of OD pairs](images/map_desire_commuting_facet_transfers.png){#fig-od-transfers}
 
@@ -324,19 +316,19 @@ Our routing analysis shows us the number of transfers required to travel between
 
 The clustering analysis shows a number of different clusters, some of which cut across the entire study area.
 
-![Clustering OD pairs with poor PT supply (Scenario 2)](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs.png){#fig-cluster-scenario-2-equal-bus-frac}
+![Clustering OD pairs with poor PT supply (OD2)](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs.png){#fig-cluster-scenario-2-equal-bus-frac}
 
-![Clustering OD pairs with poor PT supply (Scenario 2) - POLYGONS](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly.png)
+![Clustering OD pairs with poor PT supply (OD2) - POLYGONS](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly.png)
 
-## Scenario 3: Clustering based on transport supply and demand {#sec-results-transport-demand}
+## Clustering based on transport supply and demand {#sec-results-transport-demand}
 
 Looking at the combination of transport supply and potential travel demand, we can see that travel to / from outer MSOAs is particularly slow (@fig-od-demand-scenario-3) . OD pairs with low speed and low potential demand are most prominent in the North East section of the study area.
 
 ![Travel speed between OD pairs](images/map_od_pairs_demand_busiest_route_speed.png){#fig-od-demand-scenario-3}
 
-![Clustering results (Scenario 3)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs.png)
+![Clustering results (OD3)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs.png)
 
-The results are similar to Scenario 2, but we see that some clusters in the South-East disappear. This is an indicator that there may be enough demand in the South East to warrant a high frequency bus service
+The results are similar to those of $OD_2$, but we see that some clusters in the South-East disappear. This is an indicator that there may be enough demand in the South East to warrant a high frequency bus service
 
 ### Distance threshold for clustering
 
