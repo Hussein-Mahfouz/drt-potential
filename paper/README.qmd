@@ -114,6 +114,8 @@ The research will focus on the city of Leeds as a case study. Leeds is the bigge
 
 Following the new powers given to local transport authorities under the bus services act, the West Yorkshire Bus Service Improvement Plan [@wyca2021improvement] has set ambitious targets for bus mode share, patronage, service provision (bus miles), journey times, as well as accessibility. The plan acknowledges that changes will need to be made to the network, which currently fails to meet user needs (due to a reduction in services and to routes being based on historic travel patterns) and is heavily subsidized [@wyca2021improvement]. A big part of the ambition is better integrate buses as part of a multimodal public transport offer. Demand-Responsive Transport is also seen as a means of providing more efficient access than traditional public transport to low-density areas; WYCA is already piloting such a service (Flexibus) in East Leeds [@wyca2021improvement]. There is an ambition to roll out the service more widely, but that is contingent on understanding passenger response to the pilot, identifying which candidate areas it could be suitable for, and modeling the performance and uptake of such a service under different scenarios.
 
+![Urban Rural Classification - 1: most rural, 10: most urban](images/rural_urban.png){#fig-rural-urban}
+
 # Methods
 
 In this section we go over the data and methods used in our analysis. First, we introduce a clustering approach for determining how travel demand is concentrated geographically (@sec-method-clustering-flow-data). We apply the algorithm on two different datasets: 1) OD pairs with poor public transport supply, 2) OD pairs with poor public transport supply and low potential demand. In @sec-method-transport-supply we show how public transport supply is calculated and define poor public transport supply. In @sec-method-transport-demand, we explain potential demand and how it is calculated.
@@ -292,7 +294,7 @@ Setting the threshold at $p50$ implies that service on the top 50% of routes in 
 
 <!-- ``` -->
 
-# Results
+# Results and discussion
 
 In this section we look at the clustering output of $OD_2$ and $OD_3$. @sec-results-transport-supply and @sec-method-transport-demand presents the results for each respectively.
 
@@ -316,7 +318,11 @@ Our routing analysis shows us the number of transfers required to travel between
 
 The clustering analysis shows a number of different clusters, some of which cut across the entire study area.
 
-![Clustering OD pairs with poor PT supply (OD2) - POLYGONS](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly_lines.png)
+![Clustering OD pairs with poor PT supply (OD2) - POLYGONS](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly_lines.png){#fig-cluster-scenario-2}
+
+If we compare the clusters to the spatial distribution of urbanisation [@fig-rural-urban], we find that most of the clusters are connecting areas with different levels of urbanisation, and that an area with high levels of urbanisation is always involved. For example clusters 1, 5 and 8 connect north east cities and towns in sparse settings to the urban major conurbation[^5]. Clusters 7, 11 and 12 do the same in the South east. Other clusters, such as 3, 4, 6, 9, and 10 are entirely inside the most urbanised areas.
+
+[^5]: The classifications are explained in the [2011 Rural Urban Classification User Guide](https://www.gov.uk/government/statistics/2011-rural-urban-classification)
 
 ## Clustering based on transport supply and demand {#sec-results-transport-demand}
 
@@ -324,9 +330,11 @@ Looking at the combination of transport supply and potential travel demand, we c
 
 ![Travel speed between OD pairs](images/map_od_pairs_demand_busiest_route_speed.png){#fig-od-demand-scenario-3}
 
-![Clustering results (OD3)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_lines.png)
+![Clustering results (OD3)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_lines.png){#fig-cluster-scenario-3}
 
-The results are similar to those of $OD_2$, but we see that some clusters in the South-East disappear. This is an indicator that there may be enough demand in the South East to warrant a high frequency bus service
+The results are similar to those of $OD_2$, but we see that some clusters in the South-East disappear. This is an indicator that there may be enough demand in the South East to warrant a high frequency bus service. Similarly, we see that cluster 3 and 4 in @fig-cluster-scenario-2 have no equivalent in @fig-cluster-scenario-3. these clusters were located in a high density area which seemed to overlap with many bus routes, so it is not surprising that there is sufficient demand in the area to warrant improved FRT service.
+
+In most cases, the clusters partially overlap with the high frequency FRT services, but that is because the FRT service does not meet the demand at its endpoints. As mentioned previously, a DRT service in these cases would be more useful as a connector to the FRT service, not as a parallel service.
 
 ### Distance threshold for clustering
 
@@ -334,7 +342,7 @@ When we restrict the input to OD pairs that are less than 10km apart, our cluste
 
 ![Clustering results (Scenario 3, OD pairs \< 10km)](images/map_clusters_scenario_3_equal_length_10000_bus_frac_grouped_gtfs_poly_lines.png){#fig-cluster-scenario-3-equal-bus-frac-length-10000}
 
-# Discussion
+# Conclusion
 
 The paper proposes a method that can help identify concentrations of travel demand, an exercise that is important for improving the chances of successful DRT schemes [@enoch2006demand]. The method can be further improved by adding a temporal element to the travel demand and carrying out spatiotemporal clustering [@yao2018stepwise; @yan2023spatiotemporal]. This would allow us to identify how DRT operating areas could differ throughout the day or on weekdays/weekends.
 
