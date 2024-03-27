@@ -1,6 +1,7 @@
 library(tidyverse)
 library(sf)
 library(lwgeom)
+library(geos)
 # library(spatstat)
 library(dbscan)
 library(tmap)
@@ -823,9 +824,10 @@ tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines, filename = 
 
 
 
-# --- Map with clusters as polygons (convex_hull()) + lines in background - CROP TO AREAS NOT OVERLAPPING GTFS BUS
+# ------ Map with clusters as polygons (convex_hull()) + lines in background - CROP TO AREAS NOT OVERLAPPING GTFS BUS
 
 
+# GTFS: Approach 1 - st_union()
 # get high frequency buses
 gtfs_bus_freq <- gtfs_bus  %>%
   filter(scenario == "pt_wkday_morning") %>%
@@ -833,14 +835,12 @@ gtfs_bus_freq <- gtfs_bus  %>%
   filter(headway_secs < 3600)
 
 # convert to one geom in order to intersect by
-gtfs_bus_freq <- gtfs_bus_freq %>%
+gtfs_bus_freq1 <- gtfs_bus_freq %>%
   st_transform(3857) %>%
   st_buffer(1000) %>%
   st_union()
 
-# st_difference to get non overlapping geoms
-
-cluster_dbscan_res_mode_poly_filt <- st_difference(cluster_dbscan_res_mode_poly, gtfs_bus_freq)
+cluster_dbscan_res_mode_poly_filt <- st_difference(cluster_dbscan_res_mode_poly, gtfs_bus_freq1)
 
 
 
@@ -943,7 +943,10 @@ tm_shape(cluster_dbscan_res_mode_poly) +
             #legend.outside.position = "bottom",
             #legend.stack = "horizontal",
             # remove panel headers
-            panel.show = FALSE,
+            # panel.show = FALSE,
+            panel.label.size = 1,
+            panel.label.bg.color = NA,
+            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt_max$cluster)),
             frame = FALSE)  -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff
@@ -1013,7 +1016,10 @@ tm_shape(study_area) +
             #legend.outside.position = "bottom",
             #legend.stack = "horizontal",
             # remove panel headers
-            panel.show = FALSE,
+            # panel.show = FALSE,
+            panel.label.size = 1,
+            panel.label.bg.color = NA,
+            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt_max$cluster)),
             frame = FALSE)  -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff
@@ -1022,4 +1028,397 @@ tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff, filename
 
 
 
+
+
+# --- Map with clusters as polygons (convex_hull()) + lines in background - CROP TO AREAS NOT OVERLAPPING GTFS BUS
+
+
+# GTFS: APPROACH 2a: concave_hull() AFTER st_union()
+gtfs_bus_freq2 <- gtfs_bus_freq  %>%
+  st_transform(3857) %>%
+  #st_union() %>%
+  geos::geos_concave_hull(ratio = 0.5, allow_holes = FALSE) %>%
+  st_as_sf() %>%
+  st_union() %>%
+  st_set_crs(3857)
+
+
+# st_difference to get non overlapping geoms
+cluster_dbscan_res_mode_poly_filt <- st_difference(cluster_dbscan_res_mode_poly, gtfs_bus_freq2)
+
+
+
+# convert from MULTIPOLYGON to POLYGON and retain largest geom only for each multipolygon
+cluster_dbscan_res_mode_poly_filt <- cluster_dbscan_res_mode_poly_filt %>%
+  st_cast("MULTIPOLYGON") %>%
+  st_cast("POLYGON") %>%
+  st_make_valid()
+
+
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  # bus layer
+  tm_shape(gtfs_bus %>%
+             filter(scenario == "pt_wkday_morning") %>%
+             mutate(headway_inv = (1/headway_secs) * 3600) %>%
+             filter(headway_secs < 7200)) +
+  tm_lines(col = "grey70",
+           lwd = "headway_inv",
+           scale = 5,
+           palette = "-YlOrRd",
+           style = "pretty",
+           legend.col.show = FALSE,
+           alpha = 1,
+           title.lwd = "Buses/Hour",
+           #legend.lwd.is.portrait = FALSE
+  ) +
+  # ---- clusters
+  # lines
+  tm_shape(cluster_dbscan_res_mode %>%
+             filter(size > 7, size < 5000) %>%
+             filter(commuters_sum > 200) %>%
+             filter(cluster != 0) %>%
+             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster) %>%
+             mutate(cluster = as.factor(cluster)) %>%
+             arrange(commute_frac)) +
+  tm_lines(lwd = "commute_all",
+           col = "commute_frac",
+           scale = 5,
+           breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
+           palette = "RdYlGn", #Accent
+           alpha = 0.4,
+           title.col = "Fraction of Bus to Car users",
+           #title.lwd = "No. of commuters",
+           legend.col.show = FALSE,
+           legend.lwd.show = FALSE,
+           # remove "missing from legend
+           showNA = FALSE) +
+  tm_facets(by = "cluster",
+            #by = "commuters_sum",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  # poly border
+  tm_shape(cluster_dbscan_res_mode_poly  %>%
+             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster)) +
+  tm_borders(col = "black",
+             lwd = 2,
+             lty = "dashed") +
+  tm_facets(by = "cluster",
+            #by = "commuters_sum",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  # poly fill
+  tm_shape(cluster_dbscan_res_mode_poly_filt %>%
+             st_buffer(1000)) +
+  tm_polygons(col = "commute_frac_cluster",
+              palette = "RdYlGn", #Accent
+              breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
+              #style = "pretty",
+              alpha = 0.2,
+              title = "Fraction of Bus \nto Car users",
+              # remove "missing from legend
+              showNA = FALSE) +
+  tm_facets(by = "cluster",
+            #by = "commuters_sum",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = paste0("Clustered flows (OD", scenario, ")"),
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            #legend.outside = TRUE,
+            #legend.outside.position = "bottom",
+            #legend.stack = "horizontal",
+            # remove panel headers
+            # panel.show = FALSE,
+            panel.label.size = 1,
+            panel.label.bg.color = NA,
+            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
+            frame = FALSE)  -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave
+
+map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave
+
+tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave.png"), width = 12, dpi = 1080, asp = 0)
+
+
+
+
+# --- Map with clusters as polygons (convex_hull()) + WITHOUT lines in background - CROP TO AREAS NOT OVERLAPPING GTFS BUS  ----- CONCAVE HULL
+
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  # bus layer
+  tm_shape(gtfs_bus %>%
+             filter(scenario == "pt_wkday_morning") %>%
+             mutate(headway_inv = (1/headway_secs) * 3600) %>%
+             filter(headway_secs < 7200)) +
+  tm_lines(col = "grey70",
+           lwd = "headway_inv",
+           scale = 5,
+           palette = "-YlOrRd",
+           style = "pretty",
+           legend.col.show = FALSE,
+           alpha = 1,
+           title.lwd = "Buses/Hour",
+           #legend.lwd.is.portrait = FALSE
+  ) +
+  # ---- clusters
+  # poly border
+  tm_shape(cluster_dbscan_res_mode_poly) +
+  tm_borders(col = "black",
+             lwd = 2,
+             lty = "dashed") +
+  tm_facets(by = "cluster",
+            #by = "commuters_sum",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  # poly fill
+  tm_shape(cluster_dbscan_res_mode_poly_filt %>%
+             st_buffer(1000)) +
+  tm_polygons(col = "commute_frac_cluster",
+              palette = "RdYlGn", #Accent
+              breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
+              #style = "pretty",
+              alpha = 0.2,
+              title = "Fraction of Bus \nto Car users",
+              # remove "missing from legend
+              showNA = FALSE) +
+  tm_facets(by = "cluster",
+            #by = "commuters_sum",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = paste0("Clustered flows (OD", scenario, ")"),
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            #legend.outside = TRUE,
+            #legend.outside.position = "bottom",
+            #legend.stack = "horizontal",
+            # remove panel headers
+            # panel.show = FALSE,
+            panel.label.size = 1,
+            panel.label.bg.color = NA,
+            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
+            frame = FALSE)  -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave
+
+map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave
+
+tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave.png"), width = 12, dpi = 1080, asp = 0)
+
+
+
+
+
+
+
+
+
+# GTFS: APPROACH 2b: concave_hull() AFTER st_union()
+gtfs_bus_freq3 <- gtfs_bus_freq  %>%
+  st_transform(3857) %>%
+  st_buffer(250) %>%
+  st_union() %>%
+  geos::geos_concave_hull(ratio = 0.1, allow_holes = TRUE) %>%
+  st_as_sf() %>%
+  st_set_crs(3857) %>%
+  st_make_valid()
+
+
+# st_difference to get non overlapping geoms
+cluster_dbscan_res_mode_poly_filt <- st_difference(cluster_dbscan_res_mode_poly, gtfs_bus_freq3)
+
+
+
+# convert from MULTIPOLYGON to POLYGON and retain largest geom only for each multipolygon
+cluster_dbscan_res_mode_poly_filt <- cluster_dbscan_res_mode_poly_filt %>%
+  st_cast("MULTIPOLYGON") %>%
+  st_cast("POLYGON") %>%
+  st_make_valid()
+
+
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  # bus layer
+  tm_shape(gtfs_bus %>%
+             filter(scenario == "pt_wkday_morning") %>%
+             mutate(headway_inv = (1/headway_secs) * 3600) %>%
+             filter(headway_secs < 7200)) +
+  tm_lines(col = "grey70",
+           lwd = "headway_inv",
+           scale = 5,
+           palette = "-YlOrRd",
+           style = "pretty",
+           legend.col.show = FALSE,
+           alpha = 1,
+           title.lwd = "Buses/Hour",
+           #legend.lwd.is.portrait = FALSE
+  ) +
+  # ---- clusters
+  # lines
+  tm_shape(cluster_dbscan_res_mode %>%
+             filter(size > 7, size < 5000) %>%
+             filter(commuters_sum > 200) %>%
+             filter(cluster != 0) %>%
+             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster) %>%
+             mutate(cluster = as.factor(cluster)) %>%
+             arrange(commute_frac)) +
+  tm_lines(lwd = "commute_all",
+           col = "commute_frac",
+           scale = 5,
+           breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
+           palette = "RdYlGn", #Accent
+           alpha = 0.4,
+           title.col = "Fraction of Bus to Car users",
+           #title.lwd = "No. of commuters",
+           legend.col.show = FALSE,
+           legend.lwd.show = FALSE,
+           # remove "missing from legend
+           showNA = FALSE) +
+  tm_facets(by = "cluster",
+            #by = "commuters_sum",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  # poly border
+  tm_shape(cluster_dbscan_res_mode_poly  %>%
+             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster)) +
+  tm_borders(col = "black",
+             lwd = 2,
+             lty = "dashed") +
+  tm_facets(by = "cluster",
+            #by = "commuters_sum",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  # poly fill
+  tm_shape(cluster_dbscan_res_mode_poly_filt %>%
+             st_buffer(1000)) +
+  tm_polygons(col = "commute_frac_cluster",
+              palette = "RdYlGn", #Accent
+              breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
+              #style = "pretty",
+              alpha = 0.2,
+              title = "Fraction of Bus \nto Car users",
+              # remove "missing from legend
+              showNA = FALSE) +
+  tm_facets(by = "cluster",
+            #by = "commuters_sum",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = paste0("Clustered flows (OD", scenario, ")"),
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            #legend.outside = TRUE,
+            #legend.outside.position = "bottom",
+            #legend.stack = "horizontal",
+            # remove panel headers
+            # panel.show = FALSE,
+            panel.label.size = 1,
+            panel.label.bg.color = NA,
+            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
+            frame = FALSE)  -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2
+
+map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2
+
+tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png"), width = 12, dpi = 1080, asp = 0)
+
+
+
+
+# --- Map with clusters as polygons (convex_hull()) + WITHOUT lines in background - CROP TO AREAS NOT OVERLAPPING GTFS BUS  ----- CONCAVE HULL
+
+
+tm_shape(study_area) +
+  tm_borders(col = "grey60",
+             alpha = 0.5) +
+  tm_shape(study_area) +
+  tm_fill(col = "grey95",
+          alpha = 0.5) +
+  # bus layer
+  tm_shape(gtfs_bus %>%
+             filter(scenario == "pt_wkday_morning") %>%
+             mutate(headway_inv = (1/headway_secs) * 3600) %>%
+             filter(headway_secs < 7200)) +
+  tm_lines(col = "grey70",
+           lwd = "headway_inv",
+           scale = 5,
+           palette = "-YlOrRd",
+           style = "pretty",
+           legend.col.show = FALSE,
+           alpha = 1,
+           title.lwd = "Buses/Hour",
+           #legend.lwd.is.portrait = FALSE
+  ) +
+  # ---- clusters
+  # poly border
+  tm_shape(cluster_dbscan_res_mode_poly %>%
+             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster)) +
+  tm_borders(col = "black",
+             lwd = 2,
+             lty = "dashed") +
+  tm_facets(by = "cluster",
+            #by = "commuters_sum",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  # poly fill
+  tm_shape(cluster_dbscan_res_mode_poly_filt %>%
+             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster) %>%
+             st_buffer(1000)) +
+  tm_polygons(col = "commute_frac_cluster",
+              palette = "RdYlGn", #Accent
+              breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
+              #style = "pretty",
+              alpha = 0.2,
+              title = "Fraction of Bus \nto Car users",
+              # remove "missing from legend
+              showNA = FALSE) +
+  tm_facets(by = "cluster",
+            #by = "commuters_sum",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = paste0("Clustered flows (OD", scenario, ")"),
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            #legend.outside = TRUE,
+            #legend.outside.position = "bottom",
+            #legend.stack = "horizontal",
+            # remove panel headers
+            # panel.show = FALSE,
+            panel.label.size = 1,
+            panel.label.bg.color = NA,
+            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
+            frame = FALSE)  -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2
+
+map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2
+
+tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave2.png"), width = 12, dpi = 1080, asp = 0)
 
