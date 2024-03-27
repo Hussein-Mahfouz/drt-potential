@@ -1044,3 +1044,111 @@ map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2
 tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave2.png"), width = 12, dpi = 1080, asp = 0)
 
 
+
+
+
+########## - ADD RURAL URBAN AS BASE MAP
+
+# --- 2011 map and urban rural classification
+basemap <- st_read("data/external/oa_england_2011/OA_2011_EW_BGC_V2.shp") %>%
+  st_transform(st_crs(study_area)) %>%
+  st_make_valid()
+
+urban_rural_csv <- read_csv("data/external/census_2011_rural_urban.csv")
+
+
+# add numeric columns for coloring
+urban_rural_csv <- urban_rural_csv %>%
+  mutate(RUC11CD_NM = case_when(RUC11 == "Urban major conurbation" ~ 10,
+                                RUC11 == "Urban minor conurbation" ~ 9,
+                                RUC11 == "Urban city and town" ~ 8,
+                                RUC11 == "Urban city and town in a sparse setting" ~ 7,
+                                RUC11 == "Rural town and fringe"  ~ 6,
+                                RUC11 == "Rural town and fringe in a sparse setting" ~ 5,
+                                RUC11 == "Rural village" ~ 4,
+                                RUC11 == "Rural village in a sparse setting" ~ 3,
+                                RUC11 == "Rural hamlets and isolated dwellings" ~ 2,
+                                RUC11 == "Rural hamlets and isolated dwellings in a sparse setting" ~ 1)) %>%
+  arrange(RUC11CD_NM) %>%
+  # turn column to factor
+  mutate(RUC11CD_NM_FCT = as.factor(RUC11CD_NM))
+# join
+basemap_urban_rural <- basemap %>%
+  left_join(urban_rural_csv, by = "OA11CD")
+
+
+# --- filter to study area
+basemap_urban_rural <- basemap_urban_rural %>%
+  st_filter(st_union(study_area) %>%
+              st_make_valid(),
+            .predicate = st_intersects)
+
+
+
+
+
+
+tm_shape(basemap_urban_rural) +
+  tm_fill(col = "RUC11CD_NM",
+          palette = "Greys",
+          alpha = 0.5,
+          title = "Level of \nUrbanisation") +
+  # bus layer
+  tm_shape(gtfs_bus %>%
+             filter(scenario == "pt_wkday_morning") %>%
+             mutate(headway_inv = (1/headway_secs) * 3600) %>%
+             filter(headway_secs < 7200)) +
+  tm_lines(col = "darkred",
+           lwd = "headway_inv",
+           scale = 5,
+           palette = "-YlOrRd",
+           style = "pretty",
+           legend.col.show = FALSE,
+           alpha = 0.1,
+           title.lwd = "Buses/Hour",
+           #legend.lwd.is.portrait = FALSE
+  ) +
+  # ---- clusters
+  # poly border
+tm_shape(cluster_dbscan_res_mode_poly %>%
+             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster)) +
+  tm_borders(col = "black",
+             lwd = 3,
+             lty = "dashed") +
+  tm_facets(by = "cluster",
+            #by = "commuters_sum",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  # poly fill
+tm_shape(cluster_dbscan_res_mode_poly_filt_max %>%
+             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster) %>%
+             st_buffer(1000)) +
+  tm_borders(col = "darkgreen",
+             lwd = 2) +
+  tm_facets(by = "cluster",
+            #by = "commuters_sum",
+            free.coords = FALSE,
+            nrow = rows,
+            showNA = FALSE) +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = paste0("Clustered flows (OD", scenario, ")"),
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            #legend.outside = TRUE,
+            #legend.outside.position = "bottom",
+            #legend.stack = "horizontal",
+            # remove panel headers
+            # panel.show = FALSE,
+            panel.label.size = 1,
+            panel.label.bg.color = NA,
+            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
+            frame = FALSE) -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation
+
+map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation
+
+tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation.png"), width = 12, dpi = 1080, asp = 0)
+
+
+
