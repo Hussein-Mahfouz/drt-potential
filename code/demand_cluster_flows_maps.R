@@ -352,7 +352,10 @@ tm_shape(study_area) +
             #legend.outside.position = "bottom",
             #legend.stack = "horizontal",
             # remove panel headers
-            panel.show = FALSE,
+            #panel.show = FALSE,
+            panel.label.size = 1,
+            panel.label.bg.color = NA,
+            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly$cluster)),
             frame = FALSE) -> map_cluster_results_bus_frac_grouped_gtfs_poly
 
 map_cluster_results_bus_frac_grouped_gtfs_poly
@@ -436,7 +439,10 @@ tm_shape(study_area) +
             #legend.outside.position = "bottom",
             #legend.stack = "horizontal",
             # remove panel headers
-            panel.show = FALSE,
+            panel.label.size = 1,
+            panel.label.bg.color = NA,
+            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly$cluster)),
+            #panel.show = FALSE,
             frame = FALSE) -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines
@@ -510,6 +516,7 @@ tm_shape(study_area) +
              filter(size > 7, size < 5000) %>%
              filter(commuters_sum > 200) %>%
              filter(cluster != 0) %>%
+             filter(cluster %in% cluster_dbscan_res_mode_poly_filt_max$cluster) %>%
              mutate(cluster = as.factor(cluster)) %>%
              arrange(commute_frac)) +
   tm_lines(lwd = "commute_all",
@@ -530,7 +537,8 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   # poly border
-  tm_shape(cluster_dbscan_res_mode_poly) +
+  tm_shape(cluster_dbscan_res_mode_poly %>%
+             filter(cluster %in% cluster_dbscan_res_mode_poly_filt_max$cluster)) +
   tm_borders(col = "black",
              lwd = 2,
              lty = "dashed") +
@@ -547,7 +555,7 @@ tm_shape(study_area) +
               breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
               #style = "pretty",
               alpha = 0.2,
-              title = "Fraction of Bus \nto Car users",
+              title = "Fraction of Bus \nto Car users \n(in potential \nDRT zone)",
               # remove "missing from legend
               showNA = FALSE) +
   tm_facets(by = "cluster",
@@ -568,7 +576,9 @@ tm_shape(study_area) +
             panel.label.size = 1,
             panel.label.bg.color = NA,
             panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt_max$cluster)),
-            frame = FALSE)  -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff
+            frame = FALSE)  +
+  # add a couple of legends
+  tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed")-> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff
 
@@ -603,7 +613,8 @@ tm_shape(study_area) +
   ) +
   # ---- clusters
   # poly border
-  tm_shape(cluster_dbscan_res_mode_poly) +
+  tm_shape(cluster_dbscan_res_mode_poly %>%
+             filter(cluster %in% cluster_dbscan_res_mode_poly_filt_max$cluster)) +
   tm_borders(col = "black",
              lwd = 2,
              lty = "dashed") +
@@ -620,7 +631,7 @@ tm_shape(study_area) +
               breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
               #style = "pretty",
               alpha = 0.2,
-              title = "Fraction of Bus \nto Car users",
+              title = "Fraction of Bus \nto Car users \n(in potential \nDRT zone)",
               # remove "missing from legend
               showNA = FALSE) +
   tm_facets(by = "cluster",
@@ -641,7 +652,9 @@ tm_shape(study_area) +
             panel.label.size = 1,
             panel.label.bg.color = NA,
             panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt_max$cluster)),
-            frame = FALSE)  -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff
+            frame = FALSE)  +
+  # add a couple of legends
+  tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed")  -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff
 
@@ -661,7 +674,8 @@ gtfs_bus_freq2 <- gtfs_bus_freq  %>%
   geos::geos_concave_hull(ratio = 0.5, allow_holes = FALSE) %>%
   st_as_sf() %>%
   st_union() %>%
-  st_set_crs(3857)
+  st_set_crs(3857) %>%
+  st_buffer(250)
 
 
 # st_difference to get non overlapping geoms
@@ -674,6 +688,12 @@ cluster_dbscan_res_mode_poly_filt <- cluster_dbscan_res_mode_poly_filt %>%
   st_cast("MULTIPOLYGON") %>%
   st_cast("POLYGON") %>%
   st_make_valid()
+
+# union geoms per cluster
+cluster_dbscan_res_mode_poly_filt <- cluster_dbscan_res_mode_poly_filt %>%
+  group_by(cluster, commuters_sum, commute_frac_cluster) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  ungroup()
 
 
 
@@ -713,7 +733,7 @@ tm_shape(study_area) +
            breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
            palette = "RdYlGn", #Accent
            alpha = 0.4,
-           title.col = "Fraction of Bus to Car users",
+          # title.col = "Fraction of Bus to Car users",
            #title.lwd = "No. of commuters",
            legend.col.show = FALSE,
            legend.lwd.show = FALSE,
@@ -743,7 +763,7 @@ tm_shape(study_area) +
               breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
               #style = "pretty",
               alpha = 0.2,
-              title = "Fraction of Bus \nto Car users",
+              title = "Fraction of Bus \nto Car users \n(in potential \nDRT zone)",
               # remove "missing from legend
               showNA = FALSE) +
   tm_facets(by = "cluster",
@@ -764,7 +784,9 @@ tm_shape(study_area) +
             panel.label.size = 1,
             panel.label.bg.color = NA,
             panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
-            frame = FALSE)  -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave
+            frame = FALSE) +
+  # add a couple of legends
+  tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed") -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave
 
@@ -799,7 +821,8 @@ tm_shape(study_area) +
   ) +
   # ---- clusters
   # poly border
-  tm_shape(cluster_dbscan_res_mode_poly) +
+  tm_shape(cluster_dbscan_res_mode_poly  %>%
+             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster)) +
   tm_borders(col = "black",
              lwd = 2,
              lty = "dashed") +
@@ -816,7 +839,7 @@ tm_shape(study_area) +
               breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
               #style = "pretty",
               alpha = 0.2,
-              title = "Fraction of Bus \nto Car users",
+              title = "Fraction of Bus \nto Car users \n(in potential \nDRT zone)",
               # remove "missing from legend
               showNA = FALSE) +
   tm_facets(by = "cluster",
@@ -837,7 +860,9 @@ tm_shape(study_area) +
             panel.label.size = 1,
             panel.label.bg.color = NA,
             panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
-            frame = FALSE)  -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave
+            frame = FALSE)  +
+  # add a couple of legends
+  tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed") -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave
 
@@ -854,7 +879,7 @@ tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave, 
 # GTFS: APPROACH 2b: concave_hull() AFTER st_union()
 gtfs_bus_freq3 <- gtfs_bus_freq  %>%
   st_transform(3857) %>%
-  st_buffer(250) %>%
+  st_buffer(100) %>%
   st_union() %>%
   geos::geos_concave_hull(ratio = 0.1, allow_holes = TRUE) %>%
   st_as_sf() %>%
@@ -941,7 +966,7 @@ tm_shape(study_area) +
               breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
               #style = "pretty",
               alpha = 0.2,
-              title = "Fraction of Bus \nto Car users",
+              title = "Fraction of Bus \nto Car users \n(in potential \nDRT zone)",
               # remove "missing from legend
               showNA = FALSE) +
   tm_facets(by = "cluster",
@@ -962,7 +987,9 @@ tm_shape(study_area) +
             panel.label.size = 1,
             panel.label.bg.color = NA,
             panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
-            frame = FALSE)  -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2
+            frame = FALSE)  +
+  # add a couple of legends
+  tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed") -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2
 
@@ -1016,7 +1043,7 @@ tm_shape(study_area) +
               breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
               #style = "pretty",
               alpha = 0.2,
-              title = "Fraction of Bus \nto Car users",
+              title = "Fraction of Bus \nto Car users \n(in potential \nDRT zone)",
               # remove "missing from legend
               showNA = FALSE) +
   tm_facets(by = "cluster",
@@ -1037,7 +1064,9 @@ tm_shape(study_area) +
             panel.label.size = 1,
             panel.label.bg.color = NA,
             panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
-            frame = FALSE)  -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2
+            frame = FALSE) +
+  # add a couple of legends
+  tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed") -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2
 
@@ -1121,8 +1150,9 @@ tm_shape(cluster_dbscan_res_mode_poly %>%
             nrow = rows,
             showNA = FALSE) +
   # poly fill
-tm_shape(cluster_dbscan_res_mode_poly_filt_max %>%
-             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster) %>%
+# tm_shape(cluster_dbscan_res_mode_poly_filt_max %>%
+#              filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster) %>%
+tm_shape(cluster_dbscan_res_mode_poly_filt %>%
              st_buffer(1000)) +
   tm_borders(col = "darkgreen",
              lwd = 2) +
@@ -1144,7 +1174,10 @@ tm_shape(cluster_dbscan_res_mode_poly_filt_max %>%
             panel.label.size = 1,
             panel.label.bg.color = NA,
             panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
-            frame = FALSE) -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation
+            frame = FALSE)  +
+  # add a couple of legends
+  tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed") +
+  tm_add_legend(type = "line", labels = 'Potential DRT\nservice area', col = 'darkgreen', lwd = 2) -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation
 
