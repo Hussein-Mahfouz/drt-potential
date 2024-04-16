@@ -407,7 +407,7 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   # poly
-  tm_shape(cluster_dbscan_res_mode_poly) +
+  tm_shape(clusters_vis_mode_poly) +
   tm_polygons(col = "commute_frac_cluster",
               palette = "RdYlGn", #Accent
               breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
