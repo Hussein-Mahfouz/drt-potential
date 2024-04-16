@@ -54,8 +54,20 @@ cluster_dbscan_res %>%
   filter(commuters_sum > 200) %>%
   filter(cluster != 0) -> clusters_vis
 
+
+# add alternative cluster labels
+clusters_vis <- clusters_vis %>%
+  rename(cluster_orig = cluster) %>%
+  arrange(commuters_sum) %>%
+  group_by(cluster_orig) %>%
+  mutate(cluster = cur_group_id()) %>%
+  ungroup()
+
 # we want maximum 4 maps per row
-rows <- round(length(unique(clusters_vis$cluster)) / 4)
+rows <- round(length(unique(clusters_vis$cluster)) / 3)
+
+
+##### ---------- MAPS ---------- #####
 
 ### ---------- Plot 1: Top n Clusters (Facet Plot) ---------- ###
 
@@ -65,11 +77,7 @@ tm_shape(study_area) +
   tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
-  tm_shape(cluster_dbscan_res %>%
-             filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
-             filter(cluster != 0) %>%
-             mutate(cluster = as.factor(cluster))) +
+  tm_shape(clusters_vis) +
   tm_lines(lwd = "commute_all",
            col = "cluster",
            #col = "darkgreen",
@@ -110,9 +118,10 @@ tmap_save(tm = map_cluster_results, filename = paste0(plots_path, "map_clusters_
 
 
 # get bus ridership as a fraction of car ridership
-cluster_dbscan_res_mode <- cluster_dbscan_res %>%
+# cluster_dbscan_res_mode <- cluster_dbscan_res %>%
+#   mutate(commute_frac = commute_bus / commute_car)
+clusters_vis_mode <- clusters_vis %>%
   mutate(commute_frac = commute_bus / commute_car)
-
 
 
 tm_shape(study_area) +
@@ -121,12 +130,7 @@ tm_shape(study_area) +
   tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
-  tm_shape(cluster_dbscan_res_mode %>%
-             filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
-             filter(cluster != 0) %>%
-             mutate(cluster = as.factor(cluster)) %>%
-             arrange(commute_frac)) +
+  tm_shape(clusters_vis_mode) +
   tm_lines(lwd = "commute_all",
            col = "commute_frac",
            scale = 10,
@@ -162,7 +166,7 @@ tmap_save(tm = map_cluster_results_bus_frac, filename = paste0(plots_path, "map_
 
 # Get mode composition of entire cluster
 
-cluster_dbscan_res_mode_summary <- cluster_dbscan_res_mode %>%
+clusters_vis_mode_summary <- clusters_vis_mode %>%
   st_drop_geometry() %>%
   group_by(cluster, size) %>%
   summarise(across(starts_with("commute_"), sum)) %>%
@@ -170,8 +174,8 @@ cluster_dbscan_res_mode_summary <- cluster_dbscan_res_mode %>%
   mutate(commute_frac_cluster = round(commute_bus / commute_car, 2))
 
 # add commuting fraction
-cluster_dbscan_res_mode <- cluster_dbscan_res_mode %>%
-  inner_join(cluster_dbscan_res_mode_summary %>% select(cluster, commute_frac_cluster), by = "cluster")
+clusters_vis_mode <- clusters_vis_mode %>%
+  inner_join(clusters_vis_mode_summary %>% select(cluster, commute_frac_cluster), by = "cluster")
 
 
 tm_shape(study_area) +
@@ -180,11 +184,7 @@ tm_shape(study_area) +
   tm_shape(study_area) +
   tm_fill(col = "grey95",
           alpha = 0.5) +
-  tm_shape(cluster_dbscan_res_mode %>%
-             filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
-             filter(cluster != 0) %>%
-             mutate(cluster = as.factor(cluster))) +
+  tm_shape(clusters_vis_mode) +
   tm_lines(lwd = "commute_all",
            col = "commute_frac_cluster",
            scale = 10,
@@ -248,11 +248,7 @@ tm_shape(study_area) +
            #legend.lwd.is.portrait = FALSE
   ) +
   # clusters
-  tm_shape(cluster_dbscan_res_mode %>%
-             filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
-             filter(cluster != 0) %>%
-             mutate(cluster = as.factor(cluster))) +
+  tm_shape(clusters_vis_mode) +
   tm_lines(lwd = "commute_all",
            col = "commute_frac_cluster",
            scale = 10,
@@ -292,7 +288,7 @@ tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs, filename = paste0(plot
 
 # turn clusters into polygons using convex hull
 
-cluster_dbscan_res_mode_poly <- cluster_dbscan_res_mode %>%
+clusters_vis_mode_poly <- clusters_vis_mode %>%
   filter(size > 7, size < 5000) %>%
   filter(commuters_sum > 200) %>%
   filter(cluster != 0) %>%
@@ -329,7 +325,7 @@ tm_shape(study_area) +
            #legend.lwd.is.portrait = FALSE
   ) +
   # clusters
-  tm_shape(cluster_dbscan_res_mode_poly) +
+  tm_shape(clusters_vis_mode_poly) +
   tm_polygons(col = "commute_frac_cluster",
               palette = "RdYlGn", #Accent
               #style = "pretty",
@@ -344,7 +340,7 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = paste0("Clustered flows (OD", scenario, ")"),
+            main.title = paste0("Clustered flows"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
@@ -355,7 +351,7 @@ tm_shape(study_area) +
             #panel.show = FALSE,
             panel.label.size = 1,
             panel.label.bg.color = NA,
-            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly$cluster)),
+           # panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly$cluster)),
             frame = FALSE) -> map_cluster_results_bus_frac_grouped_gtfs_poly
 
 map_cluster_results_bus_frac_grouped_gtfs_poly
@@ -392,12 +388,7 @@ tm_shape(study_area) +
   ) +
   # ---- clusters
   # lines
-  tm_shape(cluster_dbscan_res_mode %>%
-             filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
-             filter(cluster != 0) %>%
-             mutate(cluster = as.factor(cluster)) %>%
-             arrange(commute_frac)) +
+  tm_shape(clusters_vis_mode) +
   tm_lines(lwd = "commute_all",
            col = "commute_frac",
            scale = 5,
@@ -431,7 +422,7 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = paste0("Clustered flows (OD", scenario, ")"),
+            main.title = paste0("Clustered flows"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
@@ -441,7 +432,7 @@ tm_shape(study_area) +
             # remove panel headers
             panel.label.size = 1,
             panel.label.bg.color = NA,
-            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly$cluster)),
+            #panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly$cluster)),
             #panel.show = FALSE,
             frame = FALSE) -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines
 
@@ -467,24 +458,24 @@ gtfs_bus_freq1 <- gtfs_bus_freq %>%
   st_buffer(1000) %>%
   st_union()
 
-cluster_dbscan_res_mode_poly_filt <- st_difference(cluster_dbscan_res_mode_poly, gtfs_bus_freq1)
+clusters_vis_mode_poly_filt <- st_difference(clusters_vis_mode_poly, gtfs_bus_freq1)
 
 
 
 # convert from MULTIPOLYGON to POLYGON and retain largest geom only for each multipolygon
-cluster_dbscan_res_mode_poly_filt <- cluster_dbscan_res_mode_poly_filt %>%
+clusters_vis_mode_poly_filt <- clusters_vis_mode_poly_filt %>%
   st_cast("MULTIPOLYGON") %>%
   st_cast("POLYGON") %>%
   st_make_valid()
 
 # retain largest poly in each cluster
-cluster_dbscan_res_mode_poly_filt_max <- cluster_dbscan_res_mode_poly_filt %>%
+clusters_vis_mode_poly_filt_max <- clusters_vis_mode_poly_filt %>%
   mutate(area = st_area(.)) %>%
   group_by(cluster) %>%
   filter(area == max(area))
 
 # convex hull for aesthetic
-cluster_dbscan_res_mode_poly_filt_max <- st_convex_hull(cluster_dbscan_res_mode_poly_filt_max)
+clusters_vis_mode_poly_filt_max <- st_convex_hull(clusters_vis_mode_poly_filt_max)
 
 
 
@@ -512,13 +503,8 @@ tm_shape(study_area) +
   ) +
   # ---- clusters
   # lines
-  tm_shape(cluster_dbscan_res_mode %>%
-             filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
-             filter(cluster != 0) %>%
-             filter(cluster %in% cluster_dbscan_res_mode_poly_filt_max$cluster) %>%
-             mutate(cluster = as.factor(cluster)) %>%
-             arrange(commute_frac)) +
+  tm_shape(clusters_vis_mode %>%
+             filter(cluster %in% clusters_vis_mode_poly_filt_max$cluster)) +
   tm_lines(lwd = "commute_all",
            col = "commute_frac",
            scale = 5,
@@ -537,8 +523,8 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   # poly border
-  tm_shape(cluster_dbscan_res_mode_poly %>%
-             filter(cluster %in% cluster_dbscan_res_mode_poly_filt_max$cluster)) +
+  tm_shape(clusters_vis_mode_poly %>%
+             filter(cluster %in% clusters_vis_mode_poly_filt_max$cluster)) +
   tm_borders(col = "black",
              lwd = 2,
              lty = "dashed") +
@@ -548,7 +534,7 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   # poly fill
-  tm_shape(cluster_dbscan_res_mode_poly_filt_max %>%
+  tm_shape(clusters_vis_mode_poly_filt_max %>%
              st_buffer(1000)) +
   tm_polygons(col = "commute_frac_cluster",
               palette = "RdYlGn", #Accent
@@ -564,7 +550,7 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = paste0("Clustered flows (OD", scenario, ")"),
+            main.title = paste0("Clustered flows"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
@@ -575,7 +561,7 @@ tm_shape(study_area) +
             # panel.show = FALSE,
             panel.label.size = 1,
             panel.label.bg.color = NA,
-            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt_max$cluster)),
+            #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt_max$cluster)),
             frame = FALSE)  +
   # add a couple of legends
   tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed")-> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff
@@ -613,8 +599,8 @@ tm_shape(study_area) +
   ) +
   # ---- clusters
   # poly border
-  tm_shape(cluster_dbscan_res_mode_poly %>%
-             filter(cluster %in% cluster_dbscan_res_mode_poly_filt_max$cluster)) +
+  tm_shape(clusters_vis_mode_poly %>%
+             filter(cluster %in% clusters_vis_mode_poly_filt_max$cluster)) +
   tm_borders(col = "black",
              lwd = 2,
              lty = "dashed") +
@@ -624,7 +610,7 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   # poly fill
-  tm_shape(cluster_dbscan_res_mode_poly_filt_max %>%
+  tm_shape(clusters_vis_mode_poly_filt_max %>%
              st_buffer(1000)) +
   tm_polygons(col = "commute_frac_cluster",
               palette = "RdYlGn", #Accent
@@ -640,7 +626,7 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = paste0("Clustered flows (OD", scenario, ")"),
+            main.title = paste0("Clustered flows"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
@@ -651,7 +637,7 @@ tm_shape(study_area) +
             # panel.show = FALSE,
             panel.label.size = 1,
             panel.label.bg.color = NA,
-            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt_max$cluster)),
+            #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt_max$cluster)),
             frame = FALSE)  +
   # add a couple of legends
   tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed")  -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff
@@ -679,18 +665,18 @@ gtfs_bus_freq2 <- gtfs_bus_freq  %>%
 
 
 # st_difference to get non overlapping geoms
-cluster_dbscan_res_mode_poly_filt <- st_difference(cluster_dbscan_res_mode_poly, gtfs_bus_freq2)
+clusters_vis_mode_poly_filt <- st_difference(clusters_vis_mode_poly, gtfs_bus_freq2)
 
 
 
 # convert from MULTIPOLYGON to POLYGON and retain largest geom only for each multipolygon
-cluster_dbscan_res_mode_poly_filt <- cluster_dbscan_res_mode_poly_filt %>%
+clusters_vis_mode_poly_filt <- clusters_vis_mode_poly_filt %>%
   st_cast("MULTIPOLYGON") %>%
   st_cast("POLYGON") %>%
   st_make_valid()
 
 # union geoms per cluster
-cluster_dbscan_res_mode_poly_filt <- cluster_dbscan_res_mode_poly_filt %>%
+clusters_vis_mode_poly_filt <- clusters_vis_mode_poly_filt %>%
   group_by(cluster, commuters_sum, commute_frac_cluster) %>%
   summarise(geometry = st_union(geometry)) %>%
   ungroup()
@@ -720,11 +706,8 @@ tm_shape(study_area) +
   ) +
   # ---- clusters
   # lines
-  tm_shape(cluster_dbscan_res_mode %>%
-             filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
-             filter(cluster != 0) %>%
-             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster) %>%
+  tm_shape(clusters_vis_mode %>%
+             filter(cluster %in% clusters_vis_mode_poly_filt$cluster) %>%
              mutate(cluster = as.factor(cluster)) %>%
              arrange(commute_frac)) +
   tm_lines(lwd = "commute_all",
@@ -745,8 +728,8 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   # poly border
-  tm_shape(cluster_dbscan_res_mode_poly  %>%
-             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster)) +
+  tm_shape(clusters_vis_mode_poly  %>%
+             filter(cluster %in% clusters_vis_mode_poly_filt$cluster)) +
   tm_borders(col = "black",
              lwd = 2,
              lty = "dashed") +
@@ -756,7 +739,7 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   # poly fill
-  tm_shape(cluster_dbscan_res_mode_poly_filt %>%
+  tm_shape(clusters_vis_mode_poly_filt %>%
              st_buffer(1000)) +
   tm_polygons(col = "commute_frac_cluster",
               palette = "RdYlGn", #Accent
@@ -783,7 +766,7 @@ tm_shape(study_area) +
             # panel.show = FALSE,
             panel.label.size = 1,
             panel.label.bg.color = NA,
-            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
+            #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt$cluster)),
             frame = FALSE) +
   # add a couple of legends
   tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed") -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave
@@ -821,8 +804,8 @@ tm_shape(study_area) +
   ) +
   # ---- clusters
   # poly border
-  tm_shape(cluster_dbscan_res_mode_poly  %>%
-             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster)) +
+  tm_shape(clusters_vis_mode_poly  %>%
+             filter(cluster %in% clusters_vis_mode_poly_filt$cluster)) +
   tm_borders(col = "black",
              lwd = 2,
              lty = "dashed") +
@@ -832,7 +815,7 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   # poly fill
-  tm_shape(cluster_dbscan_res_mode_poly_filt %>%
+  tm_shape(clusters_vis_mode_poly_filt %>%
              st_buffer(1000)) +
   tm_polygons(col = "commute_frac_cluster",
               palette = "RdYlGn", #Accent
@@ -848,7 +831,7 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = paste0("Clustered flows (OD", scenario, ")"),
+            main.title = paste0("Clustered flows"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
@@ -859,7 +842,7 @@ tm_shape(study_area) +
             # panel.show = FALSE,
             panel.label.size = 1,
             panel.label.bg.color = NA,
-            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
+            #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt$cluster)),
             frame = FALSE)  +
   # add a couple of legends
   tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed") -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave
@@ -888,12 +871,12 @@ gtfs_bus_freq3 <- gtfs_bus_freq  %>%
 
 
 # st_difference to get non overlapping geoms
-cluster_dbscan_res_mode_poly_filt <- st_difference(cluster_dbscan_res_mode_poly, gtfs_bus_freq3)
+clusters_vis_mode_poly_filt <- st_difference(clusters_vis_mode_poly, gtfs_bus_freq3)
 
 
 
 # convert from MULTIPOLYGON to POLYGON and retain largest geom only for each multipolygon
-cluster_dbscan_res_mode_poly_filt <- cluster_dbscan_res_mode_poly_filt %>%
+clusters_vis_mode_poly_filt <- clusters_vis_mode_poly_filt %>%
   st_cast("MULTIPOLYGON") %>%
   st_cast("POLYGON") %>%
   st_make_valid()
@@ -923,11 +906,11 @@ tm_shape(study_area) +
   ) +
   # ---- clusters
   # lines
-  tm_shape(cluster_dbscan_res_mode %>%
+  tm_shape(clusters_vis_mode %>%
              filter(size > 7, size < 5000) %>%
              filter(commuters_sum > 200) %>%
              filter(cluster != 0) %>%
-             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster) %>%
+             filter(cluster %in% clusters_vis_mode_poly_filt$cluster) %>%
              mutate(cluster = as.factor(cluster)) %>%
              arrange(commute_frac)) +
   tm_lines(lwd = "commute_all",
@@ -948,8 +931,8 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   # poly border
-  tm_shape(cluster_dbscan_res_mode_poly  %>%
-             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster)) +
+  tm_shape(clusters_vis_mode_poly %>%
+             filter(cluster %in% clusters_vis_mode_poly_filt$cluster)) +
   tm_borders(col = "black",
              lwd = 2,
              lty = "dashed") +
@@ -959,7 +942,7 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   # poly fill
-  tm_shape(cluster_dbscan_res_mode_poly_filt %>%
+  tm_shape(clusters_vis_mode_poly_filt %>%
              st_buffer(1000)) +
   tm_polygons(col = "commute_frac_cluster",
               palette = "RdYlGn", #Accent
@@ -975,7 +958,7 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = paste0("Clustered flows (OD", scenario, ")"),
+            main.title = paste0("Clustered flows"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
@@ -986,7 +969,7 @@ tm_shape(study_area) +
             # panel.show = FALSE,
             panel.label.size = 1,
             panel.label.bg.color = NA,
-            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
+            #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt$cluster)),
             frame = FALSE)  +
   # add a couple of legends
   tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed") -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2
@@ -1024,8 +1007,8 @@ tm_shape(study_area) +
   ) +
   # ---- clusters
   # poly border
-  tm_shape(cluster_dbscan_res_mode_poly %>%
-             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster)) +
+  tm_shape(clusters_vis_mode_poly %>%
+             filter(cluster %in% clusters_vis_mode_poly_filt$cluster)) +
   tm_borders(col = "black",
              lwd = 2,
              lty = "dashed") +
@@ -1035,8 +1018,8 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   # poly fill
-  tm_shape(cluster_dbscan_res_mode_poly_filt %>%
-             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster) %>%
+  tm_shape(clusters_vis_mode_poly_filt %>%
+             filter(cluster %in% clusters_vis_mode_poly_filt$cluster) %>%
              st_buffer(1000)) +
   tm_polygons(col = "commute_frac_cluster",
               palette = "RdYlGn", #Accent
@@ -1052,7 +1035,7 @@ tm_shape(study_area) +
             nrow = rows,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = paste0("Clustered flows (OD", scenario, ")"),
+            main.title = paste0("Clustered flows"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
@@ -1063,7 +1046,7 @@ tm_shape(study_area) +
             # panel.show = FALSE,
             panel.label.size = 1,
             panel.label.bg.color = NA,
-            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
+            #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt$cluster)),
             frame = FALSE) +
   # add a couple of legends
   tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed") -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2
@@ -1139,8 +1122,8 @@ tm_shape(basemap_urban_rural) +
   ) +
   # ---- clusters
   # poly border
-tm_shape(cluster_dbscan_res_mode_poly %>%
-             filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster)) +
+tm_shape(clusters_vis_mode_poly %>%
+             filter(cluster %in% clusters_vis_mode_poly_filt$cluster)) +
   tm_borders(col = "black",
              lwd = 3,
              lty = "dashed") +
@@ -1152,7 +1135,7 @@ tm_shape(cluster_dbscan_res_mode_poly %>%
   # poly fill
 # tm_shape(cluster_dbscan_res_mode_poly_filt_max %>%
 #              filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster) %>%
-tm_shape(cluster_dbscan_res_mode_poly_filt %>%
+tm_shape(clusters_vis_mode_poly_filt %>%
              st_buffer(1000)) +
   tm_borders(col = "darkgreen",
              lwd = 2) +
@@ -1162,7 +1145,7 @@ tm_shape(cluster_dbscan_res_mode_poly_filt %>%
             nrow = rows,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
-            main.title = paste0("Clustered flows (OD", scenario, ")"),
+            main.title = paste0("Clustered flows"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
@@ -1173,7 +1156,7 @@ tm_shape(cluster_dbscan_res_mode_poly_filt %>%
             # panel.show = FALSE,
             panel.label.size = 1,
             panel.label.bg.color = NA,
-            panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly_filt$cluster)),
+            #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt$cluster)),
             frame = FALSE)  +
   # add a couple of legends
   tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed") +
@@ -1184,4 +1167,195 @@ map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation
 tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation.png"), width = 12, dpi = 1080, asp = 0)
 
 
+
+
+
+##### ---------- FIGURES ---------- #####
+
+### ---------- 1. Get unjittered OD data (code from code/demand_cluster_flows_prep.R) - travel times haven't been affected by jittering
+
+# is the data disaggregated by mode?
+mode <- TRUE
+#mode <- FALSE
+
+# Demand (census) + supply (travel time) data
+
+if(mode == FALSE){
+  # data with "commute_all" only
+  #od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
+  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_with_speed_and_pd.parquet"))
+} else{
+  # data with modes
+  #od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode.parquet"))
+  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode_with_speed_and_pd.parquet"))
+}
+
+# filter to specific combination
+# TODO: get seperate flows for car and pt, and keep two combinations
+od_demand <- od_demand %>%
+  filter(combination == "pt_wkday_morning")
+
+od_demand <- od_demand %>%
+  select(-distance_m)
+
+# --- create desire lines and remove od pairs with very short distance
+
+# TODO: edit this to avoid clusters of very short flows
+# "Density-based clustering for bivariate-flow data" (section 5.2): preprocessing step to avoid
+# clusters of very short flows. this involves splitting the data into 3 chunks
+# based on length (
+od_demand_filtered = filter_matrix_by_distance(zones = study_area,
+                                               od_matrix = od_demand,
+                                               dist_threshold = 1000)
+
+# add unique id for each row
+od_demand_filtered <- od_demand_filtered %>%
+  mutate(od_id = paste0(Origin, "-", Destination, "-", combination))
+
+
+
+
+# ----- add the clustering results to the unjittered demand
+od_demand_figures <- cluster_dbscan_res %>%
+  select(Origin, Destination, starts_with("commute_"), od_id, flow_ID, cluster, size, commuters_sum) %>%
+  left_join(od_demand_filtered %>%
+              st_drop_geometry() %>%
+              distinct(od_id, .keep_all = TRUE) %>%
+              # travel times before being ruined by od_jitter()
+              select(od_id, ends_with("_time"), n_rides, starts_with("speed_"), starts_with("ride_time_")),
+            by = "od_id")
+
+# match existing clusters
+# od_demand_figures_filt <- od_demand_figures %>%
+#   filter(size > 7, size < 5000) %>%
+#   filter(commuters_sum > 200) %>%
+#   filter(cluster != 0)
+
+od_demand_figures_filt <- od_demand_figures %>%
+  rename(cluster_orig = cluster) %>%
+  inner_join(clusters_vis %>%
+               st_drop_geometry() %>%
+               select(flow_ID, cluster),
+             by = "flow_ID")
+
+
+
+
+# ----- plots
+
+# scatter plots with x: commute_all, y: fraction of bus commuters
+ggplot(od_demand_figures_filt %>% st_drop_geometry(), aes(x = commute_all, y = commute_bus / commute_car, color = commute_bus)) +
+  geom_point(data = transform(od_demand_figures, cluster = NULL), colour = "grey85") +
+  geom_point() +
+  scale_color_distiller(palette= "RdYlGn", direction = 1) +
+  labs(x = "total no. of commuters",
+       y = "Bus / Car commuters (fraction)",
+       title = "Composition of clusters: no. of commuters",
+       color = "Commuters (bus)") +
+  facet_wrap(facets = vars(cluster)) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggsave(paste0(plots_path, "figure_scatter_commuters_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
+
+# paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation.png"), width = 12, dpi = 1080, asp = 0)
+
+
+ggplot(od_demand_figures_filt %>% st_drop_geometry(), aes(x = commute_all, y = commute_bus / commute_car, color = speed_kph)) +
+  geom_point(data = transform(od_demand_figures, cluster = NULL), colour = "grey85") +
+  geom_point() +
+  scale_color_distiller(palette= "RdYlGn", direction = 1) +
+  labs(x = "total no. of commuters",
+       y = "Bus / Car commuters (fraction)",
+       color = "Speed (kph)",
+       title = "Composition of clusters: no. of commuters") +
+  facet_wrap(facets = vars(cluster)) +
+  theme_minimal()
+
+ggsave(paste0(plots_path, "figure_scatter_commuters_color_speed_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
+
+# ----- Get the spatial coverage of each cluster (what portion is in urban / rural etc?)
+
+# get intersection
+clusters_vis_mode_poly %>%
+  st_intersection(basemap_urban_rural %>%
+                    st_transform(st_crs(clusters_vis_mode_poly))) %>%
+  # get area
+  mutate(area_km = as.numeric(st_area(.) / 1000000))  %>%
+  # area by cluster
+  st_drop_geometry() %>%
+  group_by(cluster, RUC11) %>%
+  summarise(area_km = sum(area_km)) -> clusters_ur_poly
+
+
+ggplot(clusters_ur_poly, aes(x = RUC11, y = area_km, fill = RUC11)) +
+  geom_col() +
+  labs(x = "",
+       y = "Area covered by cluster (km2)",
+       color = "Rural / Urban Classification",
+       title = "Composition of clusters: Rural / Urban") +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank(),
+        legend.position = "bottom") +
+  facet_wrap(facets = vars(cluster))
+
+ggsave(paste0(plots_path, "figure_bar_urban_rural_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
+
+
+# Same but for filtered polygon
+
+clusters_vis_mode_poly_filt %>%
+  st_intersection(basemap_urban_rural %>%
+                    st_transform(st_crs(clusters_vis_mode_poly))) %>%
+  # get area
+  mutate(area_km = as.numeric(st_area(.) / 1000000))  %>%
+  # area by cluster
+  st_drop_geometry() %>%
+  group_by(cluster, RUC11) %>%
+  summarise(area_km = sum(area_km)) -> clusters_ur_poly_filt
+
+
+ggplot(clusters_ur_poly_filt, aes(x = RUC11, y = area_km, fill = RUC11)) +
+  geom_col() +
+  labs(x = "",
+       y = "Area covered by cluster (km2)",
+       color = "Rural / Urban Classification",
+       title = "Composition of clusters: Rural / Urban") +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank(),
+        legend.position = "bottom") +
+  facet_wrap(facets = vars(cluster))
+
+ggsave(paste0(plots_path, "figure_bar_urban_rural_filtered_by_gtfs_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
+
+
+
+
+### ---- join the data to plot together
+clusters_ur_poly %>%
+  left_join(clusters_ur_poly_filt %>%
+              rename(area_km_filt = area_km),
+            by = c("cluster", "RUC11")) -> clusters_ur_poly_combined
+
+
+
+# --- plot both together
+ggplot(clusters_ur_poly_combined) +
+  geom_col(aes(x = RUC11, y = area_km, color = RUC11, alpha = 0.01)) +
+  geom_col(aes(x = RUC11, y = area_km_filt, fill = RUC11)) +
+  labs(x = "",
+       y = "Area covered by cluster (km2)",
+       fill = "Rural / Urban Classification",
+       title = "Composition of clusters before and after intersecting with bus network",
+       caption = "border: area covered by entire cluster | fill: area covered by cluster after intersection with bus network ") +
+  guides(color = "none", alpha = "none") +
+  scale_alpha_identity() +  # Maintain alpha value
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank(),
+        legend.position = "bottom") +
+  # remove one of the legends
+  facet_wrap(facets = vars(cluster))
+
+ggsave(paste0(plots_path, "figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
 
