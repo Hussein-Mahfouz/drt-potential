@@ -1247,6 +1247,7 @@ od_demand_figures_filt <- od_demand_figures %>%
 ggplot(od_demand_figures_filt %>% st_drop_geometry(), aes(x = commute_all, y = commute_bus / commute_car, color = commute_bus)) +
   geom_point(data = transform(od_demand_figures, cluster = NULL), colour = "grey85") +
   geom_point() +
+  ylim(0, 5) +
   scale_color_distiller(palette= "RdYlGn", direction = 1) +
   labs(x = "total no. of commuters",
        y = "Bus / Car commuters (fraction)",
@@ -1264,15 +1265,36 @@ ggsave(paste0(plots_path, "figure_scatter_commuters_facet_cluster_scenario_", sc
 ggplot(od_demand_figures_filt %>% st_drop_geometry(), aes(x = commute_all, y = commute_bus / commute_car, color = speed_kph)) +
   geom_point(data = transform(od_demand_figures, cluster = NULL), colour = "grey85") +
   geom_point() +
+  ylim(0, 5) +
   scale_color_distiller(palette= "RdYlGn", direction = 1) +
   labs(x = "total no. of commuters",
        y = "Bus / Car commuters (fraction)",
-       color = "Speed (kph)",
-       title = "Composition of clusters: no. of commuters") +
+       color = "Average speed of \nbus commute (kph)",
+       title = "Composition of clusters: \nNo. of commuters in each OD pair") +
   facet_wrap(facets = vars(cluster)) +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "bottom")
 
 ggsave(paste0(plots_path, "figure_scatter_commuters_color_speed_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
+
+# same but replacing NA speed for min speed
+ggplot(od_demand_figures_filt %>%
+         st_drop_geometry() %>%
+         mutate(speed_kph = replace_na(speed_kph, min(speed_kph, na.rm = TRUE))),
+       aes(x = commute_all, y = commute_bus / commute_car, color = speed_kph)) +
+  geom_point(data = transform(od_demand_figures, cluster = NULL), colour = "grey85") +
+  geom_point() +
+  ylim(0, 5) +
+  scale_color_distiller(palette= "RdYlGn", direction = 1) +
+  labs(x = "total no. of commuters",
+       y = "Bus / Car commuters (fraction)",
+       color = "Average speed of \nbus commute (kph)",
+       title = "Composition of clusters: \nNo. of commuters in each OD pair") +
+  facet_wrap(facets = vars(cluster)) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggsave(paste0(plots_path, "figure_scatter_commuters_color_speed_facet_cluster_scenario_", scenario, "_length_", distance_threshold, "_no_NA.png"))
 
 # ----- Get the spatial coverage of each cluster (what portion is in urban / rural etc?)
 
@@ -1284,19 +1306,28 @@ clusters_vis_mode_poly %>%
   mutate(area_km = as.numeric(st_area(.) / 1000000))  %>%
   # area by cluster
   st_drop_geometry() %>%
-  group_by(cluster, RUC11) %>%
+  group_by(cluster, RUC11, RUC11CD_NM_FCT) %>%
   summarise(area_km = sum(area_km)) -> clusters_ur_poly
 
+# define custom color paletter
+colors_urban_rural <- (c("#01665E", "#35978F", "#80CDC1", "#DFC27D", "#8C510A"))
+# order column based on the RUC11CD_NM_FCT column (degree of urbanisation)
+clusters_ur_poly$RUC11 <- factor(clusters_ur_poly$RUC11, levels = unique(clusters_ur_poly$RUC11)[order(clusters_ur_poly$RUC11CD_NM_FCT)])
 
 ggplot(clusters_ur_poly, aes(x = RUC11, y = area_km, fill = RUC11)) +
-  geom_col() +
+  geom_col(color = "grey60") +
+  scale_fill_manual(values = colors_urban_rural,
+                    labels = function(x) str_wrap(x, width = 25)) +
   labs(x = "",
        y = "Area covered by cluster (km2)",
        color = "Rural / Urban Classification",
        title = "Composition of clusters: Rural / Urban") +
+  theme_minimal() +
   theme(axis.text.x = element_blank(),
         axis.ticks.x=element_blank(),
-        legend.position = "bottom") +
+        legend.position = "bottom",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 3)) +
   facet_wrap(facets = vars(cluster))
 
 ggsave(paste0(plots_path, "figure_bar_urban_rural_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
@@ -1311,19 +1342,27 @@ clusters_vis_mode_poly_filt %>%
   mutate(area_km = as.numeric(st_area(.) / 1000000))  %>%
   # area by cluster
   st_drop_geometry() %>%
-  group_by(cluster, RUC11) %>%
+  group_by(cluster, RUC11, RUC11CD_NM_FCT) %>%
   summarise(area_km = sum(area_km)) -> clusters_ur_poly_filt
+
+clusters_ur_poly_filt$RUC11 <- factor(clusters_ur_poly_filt$RUC11, levels = unique(clusters_ur_poly_filt$RUC11)[order(clusters_ur_poly_filt$RUC11CD_NM_FCT)])
 
 
 ggplot(clusters_ur_poly_filt, aes(x = RUC11, y = area_km, fill = RUC11)) +
-  geom_col() +
+  geom_col(color = "grey60") +
+  scale_fill_manual(values = colors_urban_rural,
+                    #direction = -1,
+                    labels = function(x) str_wrap(x, width = 25)) +
   labs(x = "",
        y = "Area covered by cluster (km2)",
        color = "Rural / Urban Classification",
        title = "Composition of clusters: Rural / Urban") +
+  theme_minimal() +
   theme(axis.text.x = element_blank(),
         axis.ticks.x=element_blank(),
-        legend.position = "bottom") +
+        legend.position = "bottom",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 3)) +
   facet_wrap(facets = vars(cluster))
 
 ggsave(paste0(plots_path, "figure_bar_urban_rural_filtered_by_gtfs_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
@@ -1343,18 +1382,27 @@ clusters_ur_poly %>%
 ggplot(clusters_ur_poly_combined) +
   geom_col(aes(x = RUC11, y = area_km, color = RUC11, alpha = 0.01)) +
   geom_col(aes(x = RUC11, y = area_km_filt, fill = RUC11)) +
+  scale_fill_manual(values = colors_urban_rural,
+                    #direction = -1,
+                    labels = function(x) str_wrap(x, width = 25)) +
+  scale_color_manual(values = colors_urban_rural,
+                    #direction = -1,
+                    labels = function(x) str_wrap(x, width = 25)) +
   labs(x = "",
        y = "Area covered by cluster (km2)",
        fill = "Rural / Urban Classification",
-       title = "Composition of clusters before and after intersecting with bus network",
-       caption = "border: area covered by entire cluster | fill: area covered by cluster after intersection with bus network ") +
+       title = "Composition of clusters: Rural / Urban",
+       subtitle = "Before and after intersecting with bus network",
+       caption = "border: area covered by entire cluster \nfill: area covered by cluster after intersection with bus network ") +
   guides(color = "none", alpha = "none") +
   scale_alpha_identity() +  # Maintain alpha value
   theme_minimal() +
   theme(axis.text.x = element_blank(),
         axis.ticks.x=element_blank(),
-        legend.position = "bottom") +
-  # remove one of the legends
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        plot.caption = element_text(hjust = 0)) +
+  guides(fill = guide_legend(nrow = 3)) +
   facet_wrap(facets = vars(cluster))
 
 ggsave(paste0(plots_path, "figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
