@@ -854,11 +854,6 @@ tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave, 
 
 
 
-
-
-
-
-
 # GTFS: APPROACH 2b: concave_hull() AFTER st_union()
 gtfs_bus_freq3 <- gtfs_bus_freq  %>%
   st_transform(3857) %>%
@@ -1236,7 +1231,9 @@ od_demand_figures_filt <- od_demand_figures %>%
   inner_join(clusters_vis %>%
                st_drop_geometry() %>%
                select(flow_ID, cluster),
-             by = "flow_ID")
+             by = "flow_ID") %>%
+  # keep only the clusters after intersection with gtfs
+  filter(cluster %in% clusters_vis_mode_poly_filt$cluster)
 
 
 
@@ -1307,7 +1304,9 @@ clusters_vis_mode_poly %>%
   # area by cluster
   st_drop_geometry() %>%
   group_by(cluster, RUC11, RUC11CD_NM_FCT) %>%
-  summarise(area_km = sum(area_km)) -> clusters_ur_poly
+  summarise(area_km = sum(area_km)) %>%
+  # keep only the clusters after intersection with gtfs
+  filter(cluster %in% clusters_vis_mode_poly_filt$cluster) -> clusters_ur_poly
 
 # define custom color paletter
 colors_urban_rural <- (c("#01665E", "#35978F", "#80CDC1", "#DFC27D", "#8C510A"))
@@ -1343,7 +1342,9 @@ clusters_vis_mode_poly_filt %>%
   # area by cluster
   st_drop_geometry() %>%
   group_by(cluster, RUC11, RUC11CD_NM_FCT) %>%
-  summarise(area_km = sum(area_km)) -> clusters_ur_poly_filt
+  summarise(area_km = sum(area_km))  %>%
+  # keep only the clusters after intersection with gtfs
+  filter(cluster %in% clusters_vis_mode_poly_filt$cluster) -> clusters_ur_poly_filt
 
 clusters_ur_poly_filt$RUC11 <- factor(clusters_ur_poly_filt$RUC11, levels = unique(clusters_ur_poly_filt$RUC11)[order(clusters_ur_poly_filt$RUC11CD_NM_FCT)])
 
