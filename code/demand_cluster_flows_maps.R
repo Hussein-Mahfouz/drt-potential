@@ -1248,13 +1248,14 @@ ggplot(od_demand_figures_filt %>% st_drop_geometry(), aes(x = commute_all, y = c
   scale_color_distiller(palette= "RdYlGn", direction = 1) +
   labs(x = "total no. of commuters",
        y = "Bus / Car commuters (fraction)",
-       title = "Composition of clusters: no. of commuters",
+       title = "Composition of clusters",
+       subtitle = "No. of commuters",
        color = "Commuters (bus)") +
   facet_wrap(facets = vars(cluster)) +
   theme_minimal() +
   theme(legend.position = "bottom")
 
-ggsave(paste0(plots_path, "figure_scatter_commuters_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
+ggsave(paste0(plots_path, "figure_scatter_commuters_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
 
 # paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation.png"), width = 12, dpi = 1080, asp = 0)
 
@@ -1272,7 +1273,7 @@ ggplot(od_demand_figures_filt %>% st_drop_geometry(), aes(x = commute_all, y = c
   theme_minimal() +
   theme(legend.position = "bottom")
 
-ggsave(paste0(plots_path, "figure_scatter_commuters_color_speed_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
+ggsave(paste0(plots_path, "figure_scatter_commuters_color_speed_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
 
 # same but replacing NA speed for min speed
 ggplot(od_demand_figures_filt %>%
@@ -1291,7 +1292,7 @@ ggplot(od_demand_figures_filt %>%
   theme_minimal() +
   theme(legend.position = "bottom")
 
-ggsave(paste0(plots_path, "figure_scatter_commuters_color_speed_facet_cluster_scenario_", scenario, "_length_", distance_threshold, "_no_NA.png"))
+ggsave(paste0(plots_path, "figure_scatter_commuters_color_speed_facet_cluster_scenario_", scenario, "_length_", distance_threshold, "_no_NA.png"), height = 8, width = 6)
 
 # ----- Get the spatial coverage of each cluster (what portion is in urban / rural etc?)
 
@@ -1329,7 +1330,7 @@ ggplot(clusters_ur_poly, aes(x = RUC11, y = area_km, fill = RUC11)) +
   guides(fill = guide_legend(nrow = 3)) +
   facet_wrap(facets = vars(cluster))
 
-ggsave(paste0(plots_path, "figure_bar_urban_rural_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
+ggsave(paste0(plots_path, "figure_bar_urban_rural_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
 
 
 # Same but for filtered polygon
@@ -1366,7 +1367,7 @@ ggplot(clusters_ur_poly_filt, aes(x = RUC11, y = area_km, fill = RUC11)) +
   guides(fill = guide_legend(nrow = 3)) +
   facet_wrap(facets = vars(cluster))
 
-ggsave(paste0(plots_path, "figure_bar_urban_rural_filtered_by_gtfs_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
+ggsave(paste0(plots_path, "figure_bar_urban_rural_filtered_by_gtfs_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
 
 
 
@@ -1406,5 +1407,5 @@ ggplot(clusters_ur_poly_combined) +
   guides(fill = guide_legend(nrow = 3)) +
   facet_wrap(facets = vars(cluster))
 
-ggsave(paste0(plots_path, "figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"))
+ggsave(paste0(plots_path, "figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
 
