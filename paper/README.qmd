@@ -78,19 +78,27 @@ Whereas the latter is studied extensively, there remains a need to develop gener
 
 There are various elements of DRT operating characteristics that effect its uptake and the wider system, including fares, fleet size and rebalancing, operating zones (as well as wider changes to the system such as car tolls and public transport service levels). While studies have looked at scenarios with different fleet sizes and fare structures, the choice of operating zones is generally simplified. Analytical models exist for deciding whether areas should be served by a FRT or DRT, but these models are based on idealized representations at the route level with pre-defined service areas [@quadrifoglio2009methodology; @li2010feeder; @sivakumaran2012cost]. For these models to be applied in a real case study, it is important to take a step back to identify potential service areas in an actual network. 
 
-Simulation-based approaches on real world networks have also been used to analyse potential DRT services. Research has looked at (a) splitting the study area into inner and outer city [@kaddoura2020impact], restricting service to zones that (b) have a low public transport accessibility [@rath2023assessing], or (c) are within a certain buffer distance from rail (with the intention for DRT to act as a feeder) [@oke2020evaluating].
+Simulation-based approaches on real world networks have also been used to analyse potential DRT service areas. Research has looked at (a) splitting the study area into inner and outer city [@kaddoura2020impact], restricting service to zones that (b) have a low public transport accessibility [@rath2023assessing], or (c) are within a certain buffer distance from rail (with the intention for DRT to act as a feeder) [@oke2020evaluating].
 
-**Mitigating undesirable mode shift**
+These simulations have shown that, when allowed to operate across an entire city or region, the % of DRT users that are shifting from public transport can vary significantly (between 2% [@kagho2021demand] and 65% [@kaddoura2020impact]). A shift away from active travel is also seen when DRT is allowed to operate in dense urban cores [@kaddoura2020impact; @kagho2021demand; @rath2023assessing]. These shifts can be mitigated by excluding areas with high PT accessibility (which normally includes the urban core) from the service area of DRT [@rath2023assessing]. The high variance in mode share results shows that generic rules based on accessibility levels cannot be applied to all cities, but that specific characteristics of travel demand need to be accounted for when defining operating zones
 
-When allowed to operate across an entire city or region, the % of DRT users that are shifting from public transport can vary significantly (between 2% [@kagho2021demand] and 65% [@kaddoura2020impact]). A shift away from active travel is also seen when DRT is allowed to operate in dense urban cores [@kaddoura2020impact; @kagho2021demand; @rath2023assessing]. These shifts can be mitigated by excluding areas with high PT accessibility (which normally includes the urban core) from the service area of DRT [@rath2023assessing]. The high variance in mode share results shows that generic rules cannot be applied to all cities, but that specific characteristics need to be accounted for. <!--# mention the paper " a novel global urban typology framework for sustainable mobility futures, or just [@oke2020evaluating] -->
+<!--# mention the paper " a novel global urban typology framework for sustainable mobility futures, or just [@oke2020evaluating] -->
 
-**Effect of DRT on total vehicle-km and congestion**
+<!--# Effect of DRT on total vehicle-km and congestion -->
 
 Mode shift on it's own is not an indicator of more sustainable travel. A high DRT mode share could be the result of a large fleet size with high dead mileage or low-occupancy trips. Simulation results show that increases in congestion and system-wide total vehicle km are likely [@oke2020evaluating; @kagho2021demand; @rath2023assessing], even under scenarios which constrain operating areas [@rath2023assessing] or offer DRT as a feeder to mass transit [@oke2020evaluating].
 
 Given these results, it has been suggested that DRT may only be useful[^1] in areas with poor PT level of service [@rath2023assessing]. Even so, in order to move towards the desired mode shift and reduce VKT, the service area needs to be informed by spatial and temporal demand in the region [@kagho2021demand].
 
 [^1]: useful as in leads to more sustainable travel. Should I / how do I add equity here?
+
+## Identifying spatial concentrations in travel demand
+
+-   intro on spatial flows for extracting patterns in OD data. Other methods: geovisualization, graph theory, ...
+
+Density-based clustering is a popular technique for discovering precise clusters in space. DB-Scan @ester1996density is one of the most popular density-based clustering algorithms, but variations such as Hierarchical density-based clustering and OPTICS are also commonly used. These algorithms rely on distances between observations, a metric that is easy to calculate for point data, but less intuitive for other geometries such as lines due to the multilocation nature of each geometry. @tao2016spatial devise measures to calculate distance between lines, and this has paved the way for these algorithms to be applied to flow data [@tao2016dbscan; @tao2017flowhdbscan; @fang2021adaptive]. Different approaches have also been proposed for adding a temporal dimension to the cluster detection @yao2018stepwise.
+
+-   The ability to cluster flow data allows us to understanding travel patterns across
 
 <!--##### CONGESTION AND VKT  -->
 
