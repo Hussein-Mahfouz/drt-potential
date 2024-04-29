@@ -3,23 +3,23 @@
 ###    combination. r5r is used for the calculations                                            ###
 ###################################################################################################
 
+source("code/routing_prep.R")
 source("R/study_area_geographies.R")
 source("R/r5r_routing_wrappers.R")
-source("code/routing_prep.R")
 
 library(tidyverse)
 library(sf)
 library(r5r)
 
 # increase the memory available to Java. Needs to be done at the beginning of the script
-options(java.parameters = "-Xmx35G")  # 3 gegabytes
+options(java.parameters = "-Xmx40G")  # 3 gegabytes
 
 # define path where graph will be built (path with osm and pbf data)
 graph_path <- paste0("data/interim/routing_graph/")
 # define path where routing results will be saved
 travel_time_path <- paste0("data/processed/travel_times/")
 
-geography <- "LSOA"
+geography <- "OA"
 
 # what number do we want to give to OD pairs that cannot be reached within our travel time threshold
 na_time_replace <- 150  # 2.5 hours
@@ -74,6 +74,10 @@ scenarios <- tribble(
   "pt_wkend_evening", c("WALK", "TRANSIT"), "13-08-2023 18:30:00",
   # car (travel time is the same regardless of day / time) - unless we add congestion
   "car", c("CAR"), "14-08-2023 07:30:00",
+  #walking
+  "walk", c("WALK"), "14-08-2023 07:30:00",
+  # cycle
+  "cycle", c("BICYCLE"),  "14-08-2023 07:30:00"
 )
 
 
@@ -98,7 +102,7 @@ print("Graph built...")
 
 # apply the routing function
 tt_results <- tt_matrix(#scenarios = scenarios,
-                        scenarios = scenarios[scenarios$scenario != "car", ],
+                        scenarios = scenarios, #[scenarios$scenario != "car", ],
                         zone_layer = study_area_r5,
                         time_window = 20,
                         percentiles = c(25, 50, 75))
@@ -109,7 +113,8 @@ tt_results <- tt_results %>%
 
 
 # save the results
-arrow::write_parquet(tt_results, paste0(travel_time_path, geography, "/travel_time_matrix.parquet"))
+#arrow::write_parquet(tt_results, paste0(travel_time_path, geography, "/travel_time_matrix.parquet"))
+arrow::write_parquet(tt_results, paste0(travel_time_path, geography, "/travel_time_matrix_acbm.parquet"))
 
 #tt_results <- arrow::read_parquet(paste0(travel_time_path, geography, "/travel_time_matrix.parquet"))
 
@@ -133,12 +138,12 @@ tt_matrix_expanded(scenarios = scenarios,
   time_window = 10,
   storage_option = "save",
   save_format = "parquet",
-  folder_path = paste0(travel_time_path, geography, "/travel_time_matrix_expanded"))
+  folder_path = paste0(travel_time_path, geography, "/travel_time_matrix_expanded_acbm"))
 
 
 # --- read in the parquet files
 # read in all the files using purrr::map
-files <- dir(paste0(travel_time_path, geography, "/travel_time_matrix_expanded"), full.names = TRUE)
+files <- dir(paste0(travel_time_path, geography, "/travel_time_matrix_expanded_acbm"), full.names = TRUE)
 tt_results_expanded <- map(files, arrow::read_parquet)
 tt_results_expanded <- bind_rows(tt_results_expanded)
 
