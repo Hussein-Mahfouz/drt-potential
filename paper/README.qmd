@@ -1,7 +1,7 @@
 ---
 title: "Exploring the Potential for Integrating Demand Responsive Transport with Public Transport"
 #author: "Hussein Mahfouz"
-abstract: "Demand-Responsive Transport (DRT) has emerged as a mobility option for areas that are traditionally hard to serve by high frequency public transport. The integration of DRT with public transport could help reducing car mode share, but planning DRT remains challenging; many studies show that DRT can cannibalise public transport demand while also increasing overall congestion and vehicle-km traveled (VKT).  More research is needed on how to constrain operating areas of DRT based on the unique demand patterns of an area. This work looks at delineating service areas of DRT using spatial clustering of spatial flow data. A density-based clustering method for bivariate flows is used study commuting patterns by car and public transport in the city of Leeds. We consider clusters based on (a) OD with poor public transport supply, and (b) OD pairs with poor public transport supply and low potential demand. The method identifies clusters of OD flows where demand is concentrated, and calculates the modal split of these clusters. Identifying concentrated demand clusters could help address one of the main reasons for high DRT failure rates - unnecessarily flexible ‘many-to-many’ services – by constraining the service to clusters with high car use. The areas identified provide a useful input into additional simulations that aim to further refine the operating characteristics of DRT. The method provides a foundation for agent-based models of DRT and future research into and practical applications of DRT integration with PT."
+abstract: "Demand-Responsive Transport (DRT) has emerged as a mobility option for areas that are traditionally hard to serve by high frequency public transport. The integration of DRT with public transport could help reducing car mode share, but planning DRT remains challenging; many studies show that DRT can inadvertantly reduce public transport demand while also increasing overall congestion and vehicle-km traveled (VKT).  More research is needed on how to constrain operating areas of DRT based on the unique demand patterns of an area. This work looks at delineating service areas of DRT using spatial clustering of spatial flow data. A density-based clustering method for bivariate flows is used study commuting patterns by car and public transport in the city of Leeds. We consider clusters based on (a) OD with poor public transport supply, and (b) OD pairs with poor public transport supply and low potential demand. The method identifies clusters of OD flows where demand is concentrated, and calculates the modal split of these clusters. Identifying concentrated demand clusters could help address one of the main reasons for high DRT failure rates - unnecessarily flexible ‘many-to-many’ services – by constraining the service to clusters with high car use. The areas identified provide a useful input into additional simulations that aim to further refine the operating characteristics of DRT. The method provides a foundation for agent-based models of DRT and future research into and practical applications of DRT integration with PT."
 date: "`r format(Sys.time(), '%d %m %y')`"
 format:
   #gfm: default
@@ -86,7 +86,7 @@ These simulations have shown that, when allowed to operate across an entire city
 
 <!--# Effect of DRT on total vehicle-km and congestion -->
 
-Mode shift on it's own is not an indicator of more sustainable travel. A high DRT mode share could be the result of a large fleet size with high dead mileage or low-occupancy trips. Simulation results show that increases in congestion and system-wide total vehicle km are likely [@oke2020evaluating; @kagho2021demand; @rath2023assessing], even under scenarios which constrain operating areas [@rath2023assessing] or offer DRT as a feeder to mass transit [@oke2020evaluating].
+In addition, mode shift on it's own is not an indicator of more sustainable travel. A high DRT mode share could be the result of a large fleet size with high dead mileage or low-occupancy trips. Simulation results show that increases in congestion and system-wide total vehicle km are likely [@oke2020evaluating; @kagho2021demand; @rath2023assessing], even under scenarios which constrain operating areas [@rath2023assessing] or offer DRT as a feeder to mass transit [@oke2020evaluating].
 
 Given these results, it has been suggested that DRT may only be useful[^1] in areas with poor PT level of service [@rath2023assessing]. Even so, in order to move towards the desired mode shift and reduce VKT, the service area needs to be informed by spatial and temporal demand in the region [@kagho2021demand].
 
@@ -94,7 +94,25 @@ Given these results, it has been suggested that DRT may only be useful[^1] in ar
 
 ## Identifying spatial concentrations in travel demand
 
--   intro on spatial flows for extracting patterns in OD data. Other methods: geovisualization, graph theory, ...
+-   Methods for visualising OD flow data (based on geovizualization, grapph theory):
+
+    -   "The visualization methods of OD flow data mainly include the flow map \[16--21\], the OD matrix, and the OD map \[22--25\]. Among them, the flow map better reflects the spatial characteristics of OD data.
+
+-   Limitations of these methods:
+
+    -   But there are also some problems in that method, such as the visual cluttering problem, the modifiable area unit problem, the normalization problem, the salience bias, and so on \[1,8,11\].
+
+-   Methods to overcome limitations, but they lead to loss of spatial information, and difficulty in perceiving relationships between OD flows
+
+    -   "In order to solve these problems, scholars have proposed edge rerouting \[26\], edge bundling \[27,28\], matrices of multiple maps \[24,29\] and other means to reduce clutter, but it does lead to the loss of spatial information of OD points, and the relationship between OD flows is difficult to be perceived."
+
+<!--# from: Detecting arbitrarily shaped clusters in origin-destinatin flows using ant colony optimisation -->
+
+-   Clustering has emerged as a method for spatial pattern identification in OD data. Clustering methods can be grouped into two groups:
+
+    -   spatial statisitcs-based methods: these extend traditional spatial statistics (such as Moran's I, Getis-Ord G statistic, and Ripley's K) which aim to use significance tests of spatial homogeniety to identify anomalies in OD flows and the different scales at which clustering could exist. These methods however do not group the data into clusters
+
+    -   heirarchical and density-based clustering methods to produce clusters.
 
 Density-based clustering is a popular technique for discovering precise clusters in space. DB-Scan @ester1996density is one of the most popular density-based clustering algorithms, but variations such as Hierarchical density-based clustering and OPTICS are also commonly used. These algorithms rely on distances between observations, a metric that is easy to calculate for point data, but less intuitive for other geometries such as lines due to the multilocation nature of each geometry. @tao2016spatial devise measures to calculate distance between lines, and this has paved the way for these algorithms to be applied to flow data [@tao2016dbscan; @tao2017flowhdbscan; @fang2021adaptive]. Different approaches have also been proposed for adding a temporal dimension to the cluster detection @yao2018stepwise.
 
@@ -341,6 +359,10 @@ Comparing the original clusters to the extracted DRT operating zones, we see how
 The clusters vary in their composition, as shown in @fig-scatter-commuters-speed. Some clusters are made up of many OD pairs each of which has a relatively small number of commuters (e.g cluster 6) whereas others are have a few OD pairs with a large number of commuters (e.g cluster ...). The composition of the clusters (along with it's spatial extent) can inform the type of DRT services [@d1994demand] to offer in each zone; a small number of high demand OD pairs could be served by a more direct service, whereas a cluster with many different, low demand, OD pairs would be better served by a more flexible, many-to-many service. Clusters with a mix of high and low demand OD pairs may be better served by multiple DRT fleets with different operational characteristics.
 
 ![Characteristics of OD pairs in each cluster (light grey are all OD pairs and dark grey are all OD pairs in the cluster with no viable public transport option)](images/figure_scatter_commuters_color_speed_facet_cluster_scenario_3_length_50000.png){#fig-scatter-commuters-speed}
+
+Point on limitations from Song 2019
+
+-   "Many studies have made contributions to the OD flow clustering problem, although two defects remain in existing work. First, few studies can handle arbitrarily shaped OD flow clusters because most algorithms use regularly shaped regions to search for adjacent flows (Nanni and Pedreschi 2006, Zhu et al. 2013, Zhu and Guo 2014). Although certain density-based clustering methods can work on arbitrarily shaped clusters of point process data (Pei et al. 2008), managing OD flow data is still difficult because shapes in OD flow space are arbitrary. Second, the statistical significance of OD flow clusters is rarely considered in the clustering process, although it is a useful indicator for describing the intensity of OD flow clustering."
 
 # Conclusion
 
