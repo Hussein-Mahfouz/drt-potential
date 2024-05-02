@@ -1,0 +1,381 @@
+---
+title: "Exploring the Potential for Integrating Demand Responsive Transport with Public Transport"
+#author: "Hussein Mahfouz"
+abstract: "Demand-Responsive Transport (DRT) has emerged as a mobility option for areas that are traditionally hard to serve by high frequency public transport. The integration of DRT with public transport could help reducing car mode share, but planning DRT remains challenging; many studies show that DRT can inadvertantly reduce public transport demand while also increasing overall congestion and vehicle-km traveled (VKT).  More research is needed on how to constrain operating areas of DRT based on the unique demand patterns of an area. This work looks at delineating service areas of DRT using spatial clustering of spatial flow data. A density-based clustering method for bivariate flows is used study commuting patterns by car and public transport in the city of Leeds. We consider clusters based on (a) OD with poor public transport supply, and (b) OD pairs with poor public transport supply and low potential demand. The method identifies clusters of OD flows where demand is concentrated, and calculates the modal split of these clusters. Identifying concentrated demand clusters could help address one of the main reasons for high DRT failure rates - unnecessarily flexible ‘many-to-many’ services – by constraining the service to clusters with high car use. The areas identified provide a useful input into additional simulations that aim to further refine the operating characteristics of DRT. The method provides a foundation for agent-based models of DRT and future research into and practical applications of DRT integration with PT."
+date: "`r format(Sys.time(), '%d %m %y')`"
+format:
+  #gfm: default
+  html:
+    toc: true
+  # docx:
+  #   toc: true
+  #   toc-depth: 2
+  #   number-sections: true
+  # pdf:
+  #   toc: true
+  #   number-sections: true
+  #   extra_dependencies: ["float"]
+    #pdf-engine: pdflatex
+keep-tex: true
+bibliography: lit-review.bib
+# elsevier style for referencing (from https://github.com/citation-style-language/styles)
+csl: elsevier-harvard.csl
+# so that figures don't float around
+# include-in-header:
+#  \usepackage{float}
+#  \floatplacement{figure}{H}
+ # to add acronyms (only works for pdf output)
+filters:
+  - pseudocode
+---
+
+```{r, include = FALSE}
+#library(tidyverse)
+knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
+```
+
+# Introduction
+
+Bus networks form the backbone of many transit systems across the world. They can ensure equitable access to all, an aspect that is important for social inclusion, as well as mitigate against congestion and emissions resulting from increased car dependence.
+
+In many cities, bus services have grown organically to meet increasing demand from the expanding urban core and peripheries, but the quality of service can suffer from issues such as poor access between neighborhoods, inconvenient geometric structures and poor route synchronization [@ruiz2017improving]. A body of research has been carried out on strategic and tactical redesign of bus networks to increase their attractiveness [@kepaptsoglou2009transit; @ibarra2015planning; @liu2021review]. However, advanced optimisation approaches cannot make up for the fact that traditional bus services are most suited to dense areas with consistently high demand [@errico2013survey] and are inefficient for suburban areas, villages, and low demand interurban areas [@papanikolaou2017methodological]. Flexible mobility services, such as Demand Responsive Transport (DRT), have been proposed to serve these areas. While DRT systems have a higher fixed cost per passenger than FRT [@currie2020most], they aim to compensate for this by reducing operating costs through higher passenger load factors with minimal increase to service distance due to route circuitry [@ryley2014investigating]. This balance is difficult to achieve, and even in the the modern era where technology has driven a re-emergence of DRT, failure rates are high and strongly correlated with operating costs [@currie2020most].
+
+Extensive research has been done on DRT planning, but the focus is more on the tactical and operational level and less on the strategic level [@papanikolaou2017methodological]. Strategic level methods that help identify potential DRT operating zones are important given that one of the main determinants of success for a DRT scheme is its ability to concentrate demand in time and geography [@enoch2006demand]. Previous work has used accessibility scores to identify potential DRT service areas [@giuffrida2021addressing; @rath2023assessing], but this approach assumes that there is no room for improvements in the existing FRT service.
+
+This study aims to contribute to strategic level planning of DRT services by leveraging a spatial statistical approach that is able to identify clusters in spatial flow data [@tao2016spatial]. This approach is combined with an analysis of transport supply and demand in order to identify concentrated areas of travel demand that could be served by DRT. Transport demand is included so as not propose DRT when there is potential for an improved FRT. To our knowledge, this is the first attempt at using spatial clustering of flow data in strategic DRT planning. We aim to answer questions such as: Can we identify spatial clustering patterns in commuting flows? What would these clusters look like if we exclude flows that can be served by a high frequency FRT? Do the clusters differ in the land use they cover, and in the number of flows they contain? Can these difference be used to inform the type of DRT service that could serve each cluster?
+
+<!--# The rest of this paper is structured as follows. In @sec-lit-review, we provide a formal definition of DRT, give an overview of DRT planning and the importance of complementing the existing FRT network, and introduce methods for spatial clustering of flow data that we propose to use in identifying potential DRT service areas. In @sec-methods, we explain how to we identify poorly served origin-destination (OD) pairs using transport supply and demand analysis, and then go into the details of the spatial clustering approach and how it is used on these OD pairs. -->
+
+<!--# For DRT to be successful, it should be part of an integrated public transport offering that provides a competitive alternative to private car use. The aims of this research are to (a) develop methods to identify demand gaps in public transport provision that can be filled by DRT, and to (b) understand the potential benefits and issues of integrating DRT with existing public transport systems through simulation-based approaches. -->
+
+# Literature Review {#sec-lit-review}
+
+## Overview of Demand Responsive Transport (DRT) {#sec-drt-overview}
+
+In this paper, the definition for DRT used by @davison2014survey is adopted: a service that is (a) available to the general public (without restrictions), (b) provided by low capacity vehicles, (c) responsive to changes in demand, and (d) has a fare that is charged per passenger, not per vehicle.
+
+<!--# It can be distinguished from traditional fixed route services through: (a) network typology and operation, (b) boarding and alighting locations, (c) schedule, and (d) advanced notice requirement [@papanikolaou2017methodological] -->
+
+The concept of DRT goes back to the 1970s, and it has taken other names such as Dial-a-Bus, or more recently, micro-transit [@currie2020most]. It is seen as a compromise between the convenience (instant frequency and full coverage) of the automobile, and the cost-effectiveness of public transport [@currie2020most]. Useful diagrams have been made to compare DRT to other travel modes in terms of trade-offs in service frequency - coverage [@d1994demand] and flexibility - sustainability [@inturri2019multi].
+
+While the term DRT has become an umbrella term for flexible public transport, services can be grouped under different DRT typologies [@enoch2004intermode] or scheduling and operational characteristics [@d1994demand]. For diagrammatic descriptions of the different operational characteristics, the reader is referred to [@mageean2003evaluation; @pavanini2023role].
+
+These different service offerings highlight the complexity of DRT planning. On the one hand, this flexibility allows DRT services to be tailored to the specific demand patterns of an area. Conversely, the overly complex services, or services that don't match the needs of the local community, are prone to failure [@enoch2006demand]. Choosing the wrong service could lead to bad user experience and unnecessarily expensive operating costs.
+
+## Planning DRT systems {#sec-planning_drt}
+
+The planning of public transport systems with conventional bus services is well established and follows a sequential approach [@ceder1986bus; @ibarra2015planning] that includes *strategic*, *tactical*, and *operational* planning. The high failure rate of DRT systems is related to the lack of a similar robust methodological planning framework for its appraisal [@papanikolaou2017methodological].
+
+In trying to map DRT research onto these planning pillars, @papanikolaou2017methodological find that DRT research can be split into:
+
+1.  Strategic level (economic and econometric studies) studies on DRT area selection and investment evaluations. This includes (a) Research outlining the potential market and operating model of DRT systems [@mulley2009flexible], and (b) Research that compares cost functions of DRT and public transport using analytical methods [@nourbakhsh2012structured].
+
+2.  Tactical and and operational level (operations research) studies on system typology definition and operational characteristics (@vansteenwegen2022survey provide a review of this sub-field of the literature).
+
+Whereas the latter is studied extensively, there remains a need to develop general approaches on identifying potential areas for DRT services [@papanikolaou2017methodological]. This has become more necessary as DRT systems evolve from being targeted at special groups (in parallel to conventional public transport), to being integrated with public transport with the aim of improving accessibility for entire communities [@nelson2010recent]. <!--# this should be grounded in accessibility, not something else … cite Tools of the Trade -->
+
+### Importance of delineating DRT operating areas {#sec-lit-service-areas}
+
+There are various elements of DRT operating characteristics that effect its uptake and the wider system, including fares, fleet size and rebalancing, operating zones (as well as wider changes to the system such as car tolls and public transport service levels). While studies have looked at scenarios with different fleet sizes and fare structures, the choice of operating zones is generally simplified. Analytical models exist for deciding whether areas should be served by a FRT or DRT, but these models are based on idealized representations at the route level with pre-defined service areas [@quadrifoglio2009methodology; @li2010feeder; @sivakumaran2012cost]. For these models to be applied in a real case study, it is important to take a step back to identify potential service areas in an actual network. 
+
+Simulation-based approaches on real world networks have also been used to analyse potential DRT service areas. Research has looked at (a) splitting the study area into inner and outer city [@kaddoura2020impact], restricting service to zones that (b) have a low public transport accessibility [@rath2023assessing], or (c) are within a certain buffer distance from rail (with the intention for DRT to act as a feeder) [@oke2020evaluating].
+
+These simulations have shown that, when allowed to operate across an entire city or region, the % of DRT users that are shifting from public transport can vary significantly (between 2% [@kagho2021demand] and 65% [@kaddoura2020impact]). A shift away from active travel is also seen when DRT is allowed to operate in dense urban cores [@kaddoura2020impact; @kagho2021demand; @rath2023assessing]. These shifts can be mitigated by excluding areas with high PT accessibility (which normally includes the urban core) from the service area of DRT [@rath2023assessing]. The high variance in mode share results shows that generic rules based on accessibility levels cannot be applied to all cities, but that specific characteristics of travel demand need to be accounted for when defining operating zones
+
+<!--# mention the paper " a novel global urban typology framework for sustainable mobility futures, or just [@oke2020evaluating] -->
+
+<!--# Effect of DRT on total vehicle-km and congestion -->
+
+In addition, mode shift on it's own is not an indicator of more sustainable travel. A high DRT mode share could be the result of a large fleet size with high dead mileage or low-occupancy trips. Simulation results show that increases in congestion and system-wide total vehicle km are likely [@oke2020evaluating; @kagho2021demand; @rath2023assessing], even under scenarios which constrain operating areas [@rath2023assessing] or offer DRT as a feeder to mass transit [@oke2020evaluating].
+
+Given these results, it has been suggested that DRT may only be useful[^1] in areas with poor PT level of service [@rath2023assessing]. Even so, in order to move towards the desired mode shift and reduce VKT, the service area needs to be informed by spatial and temporal demand in the region [@kagho2021demand].
+
+[^1]: useful as in leads to more sustainable travel. Should I / how do I add equity here?
+
+## Identifying spatial concentrations in travel demand
+
+-   Methods for visualising OD flow data (based on geovizualization, grapph theory):
+
+    -   "The visualization methods of OD flow data mainly include the flow map \[16--21\], the OD matrix, and the OD map \[22--25\]. Among them, the flow map better reflects the spatial characteristics of OD data.
+
+-   Limitations of these methods:
+
+    -   But there are also some problems in that method, such as the visual cluttering problem, the modifiable area unit problem, the normalization problem, the salience bias, and so on \[1,8,11\].
+
+-   Methods to overcome limitations, but they lead to loss of spatial information, and difficulty in perceiving relationships between OD flows
+
+    -   "In order to solve these problems, scholars have proposed edge rerouting \[26\], edge bundling \[27,28\], matrices of multiple maps \[24,29\] and other means to reduce clutter, but it does lead to the loss of spatial information of OD points, and the relationship between OD flows is difficult to be perceived."
+
+<!--# from: Detecting arbitrarily shaped clusters in origin-destinatin flows using ant colony optimisation -->
+
+-   Clustering has emerged as a method for spatial pattern identification in OD data. Clustering methods can be grouped into two groups:
+
+    -   spatial statisitcs-based methods: these extend traditional spatial statistics (such as Moran's I, Getis-Ord G statistic, and Ripley's K) which aim to use significance tests of spatial homogeniety to identify anomalies in OD flows and the different scales at which clustering could exist. These methods however do not group the data into clusters
+
+    -   heirarchical and density-based clustering methods to produce clusters.
+
+Density-based clustering is a popular technique for discovering precise clusters in space. DB-Scan @ester1996density is one of the most popular density-based clustering algorithms, but variations such as Hierarchical density-based clustering and OPTICS are also commonly used. These algorithms rely on distances between observations, a metric that is easy to calculate for point data, but less intuitive for other geometries such as lines due to the multilocation nature of each geometry. @tao2016spatial devise measures to calculate distance between lines, and this has paved the way for these algorithms to be applied to flow data [@tao2016dbscan; @tao2017flowhdbscan; @fang2021adaptive]. Different approaches have also been proposed for adding a temporal dimension to the cluster detection @yao2018stepwise.
+
+-   The ability to cluster flow data allows us to understanding travel patterns across
+
+<!--##### CONGESTION AND VKT  -->
+
+<!--# Simulation results show that DRT increases total Vehicle km and congestion (even if it decreases car use) -> "In summary, we find that AMoD under any strategy will increase VKT and congestion in either city type." - [@oke2020evaluating]  —— study looks at wide-scale rollout. Scenarios (AmoD intro, AMoD no transit, and AMoD transit integration) analyse DRT roll-out across a city.  —— Last scenario restricts to short trips. 7.5 mile short trips and 7.5 mile radius/ around rail stops -> quite a large catchment. ADD A HISTOGRAM WITH TRIP DISTANCE TRAVELLED BY MODE in study area; lets see what % of car/pt trips by mode we are capturing with this constraint  -->
+
+<!--# Increased VKT in specific areas. Change is not homogeneous across the network [@kagho2021demand] -->
+
+<!--# VKT goes up in all scenarios (scenarios are combinations of fleet size and fare) -->
+
+<!--# "The DRT service in this paper covers the whole study region. Therefore, it is hard to meet pick-up constraints, as the service is spread thin within the region. Idle vehicles are unable to service requests that are too far away from where the vehicle is currently waiting. Using the spatial and temporal information on the demand in the whole region, it would be possible to optimize the service area to increase the share of pooled rides, and potentially to create a service that is able to reduce VKT in the region." [@kagho2021demand] -->
+
+<!--# [@rath2023assessing] "For a city, it is questionable if AToD is a suitable addition to the existing modes. Especially for cities where car travel is increasingly discouraged by the government, as is the case for Zurich (NZZ, Neue Zürcher Zeitung, 2017), AToD does not seem a suitable alternative. Rather it is a service that can be attractive for rural municipalities where PT is offered at a low level of service and operates inefficiently, as regulated in Scenarios 3 and 6." ———> but if we serve rural areas, we need to be targeted so that the service is not spread too thin [@kagho2021demand] -->
+
+# Case Study
+
+The research will focus on the city of Leeds, UK as a case study. Leeds is the biggest city in West Yorkshire, and the largest European city without rapid transit. The West Yorkshire Combined Authority (WYCA) has declared a climate emergency, and has put a target to reach net-zero by 2030. It has estimated that a significant mode shift will be needed to achieve this target, and has set a target of 52% increase in bus mode share [@wyca2021connectivity]. This is an ambitious target seeing as the decade between 2009-2019 saw a decrease of 15% (from 170 million to 144 million) in annual bus trips in the region. [@wyca2021improvement].
+
+<!--# A recent report on bus services in Leeds highlighted that they were concentrated between two main operators, FirstBus (65.6%) and Arriva (26.1%), and that over 50% of routes in the city are likely to experience adverse effects of (a lack of) competition [@wyca2017bus]. The report highlights that bus operators are not a homogeneous group, and that there was no formal process for them to coordinate on plans and policies. In the Leeds Bradford area, 40% of population have access to only 1 bus per hour outside peak hours, and many areas have poor or non-existent access to rail [@wyca2021connectivity]. -->
+
+Following the new powers given to local transport authorities under the bus services act, the West Yorkshire Bus Service Improvement Plan [@wyca2021improvement] has set ambitious targets for bus mode share, patronage, service provision (bus miles), journey times, as well as accessibility. The plan acknowledges that changes will need to be made to the network, which currently fails to meet user needs (due to a reduction in services and to routes being based on historic travel patterns) and is heavily subsidized [@wyca2021improvement]. A big part of the ambition is better integrate buses as part of a multimodal public transport offer. Demand-Responsive Transport is also seen as a means of providing more efficient access than traditional public transport to low-density areas; WYCA has already piloted such a service (Flexibus) in East Leeds [@wyca2021improvement], but during the 18 month pilot phase, the service was struggling to attract ridership and was only covering 5% of it's operating costs [@wyca2022drtflexibusreview]. An average number of customers per trip of 1.38 was in large part due to an inflexible service that only pooled people doing almost exactly the same route. More flexiblle services, along with an identification of spatial concentrations in travel demand, can help improve viability of DRT services.
+
+![Urban Rural Classification - 1: most rural, 10: most urban](images/rural_urban.png){#fig-rural-urban}
+
+# Methods {#sec-methods}
+
+In this section we go over the data and methods used in our analysis. First, we introduce a clustering approach for determining how travel demand is concentrated geographically (@sec-method-clustering-flow-data). We apply the algorithm on two different datasets: 1) OD pairs with poor public transport supply, 2) OD pairs with poor public transport supply and low potential demand. In @sec-method-transport-supply we show how public transport supply is calculated and define poor public transport supply. In @sec-method-transport-demand, we explain potential demand and how it is calculated.
+
+## Clustering flow data {#sec-method-clustering-flow-data}
+
+While experts agree that DRT service provision should be based on demand [@dft2020regulatory], there are no agreed upon methods for how demand gaps that suit DRT can be identified in a way that allows DRT to be integrated with public transport.
+
+We apply a spatial clustering approach to flow data to identify spatial concentrations in travel demand. For demand, we use Origin-Destination (OD) commuting (flow) data from the 2021 UK census. Spatial statistics methods for cluster detection - such as DBSCAN [@ester1996density] - have mainly been developed for point data. Recently custom distance metrics that account for the multi-location nature of line data have allowed these methods to extend to flow data [@tao2016spatial].
+
+We use the DBSCAN algorithm with the custom distance metric introduced by @tao2016spatial: let the flow process $F_{i}$ with origin $O_{i} (x_{i}, y_{i})$ and $D_{i} (u_{i}, v_{i})$ be modeled as a vector point with 4 coordinates $F_{i}(x_{i}, y_{i}, u_{i}, v_{i})$. The calculation for flow dissimilarity ($FDS_{ij}$) between $F_{i}$ and $F_{j}$ is shown in @eq-fds.
+
+$$FDS_{ij} = \sqrt{\frac{\alpha[(x_{i} - x_{j})^2 + (y_{i} - y_{j})^2] + \beta [(u_{i} - u_{j})^2 + (v_{i} - v_{j})^2]}{L_{i}L_{j}}}$$ {#eq-fds}
+
+where $\alpha$ and $\beta$ control the relative importance of the origins / destinations: higher $\alpha$ means we focus more on origins and vice-versa ($\alpha > 0$; $\beta > 0$; $\alpha + \beta = 2$). Dividing by the geometric mean of the flow lengths ($L_{i}$ and $L_{j}$ ) implies that, all else being equal, flow pairs of longer length are considered closer than shorter ones.
+
+Our analysis looks at commuting flows by mode. Taking inspiration from @shu2022density, we study the composition of each cluster and determine the ratio of car to public transport users. Clusters with a low ratio of public transport to car users are considered initial candidates for DRT.
+
+## Accounting for transport supply and demand
+
+The cluster composition is heavily influenced by the input data. If we were to pass all OD pairs to the algorithm, then our clusters may include noise from OD pairs that are well served by public transport. We will also come up with DRT zones that serve all demand, whereas our objective is to come up with DRT zones that complement FRT and fill the gaps in the network, as explained in @sec-lit-service-areas. We identify gaps by trying two different inputs: (1) OD pairs with poor public transport supply ($OD_2$) , and (2) OD pairs with poor public transport supply and low potential demand ($OD_3$).
+
+$OD_2$ is meant to suggest DRT zones that complement FRT by only including the OD demand that is not well served by FRT, as explained in @sec-method-transport-supply. $OD_3$ is similar, but also excludes OD pairs that could be served by a better FRT service. This exclusion is based on criteria explained in @sec-method-transport-demand. The entire workflow is shown in @fig-flowchart-scenarios.
+
+![Flowchart for determining input to clustering algorithm](images/flowchart_od_potential_demand.png){#fig-flowchart-scenarios}
+
+### Supply analysis {#sec-method-transport-supply}
+
+A supply analysis is carried out to determine the OD pairs that are included in $OD_{2}$. The main components of transport supply are the road network, and the public transport timetables for buses and rail. We get the updated road network from OSM. Bus timetable data is obtained in GTFS format from the Bus Open Data Service (BODS)[^2] and rail data is obtained from the Rail Delivery Group[^3].
+
+[^2]: https://data.bus-data.dft.gov.uk/
+
+[^3]: https://data.atoc.org/
+
+The OSM road network and timetable data are fed into a multimodal routing engine [@pereira2021r5r] to calculate travel time between zones. Euclidean distance between an OD pair is used to calculate travel speed $(v_{ij})$. OD pairs with speed in the bottom 50th percentile or that require more than one transfer to be reached by public transport are considered to have poor supply.
+
+### Demand analysis {#sec-method-transport-demand}
+
+Our transport demand analysis is meant to identify FRT routes that warrant an increase in route frequency. We calculate potential demand on all routes, and identify routes that have sufficient potential demand to warrant said increase in frequency. Potential demand is defined here as the demand along a bus route that could theoretically be served by the route. We only look at existing travel patterns and do not consider induced demand that could results from a better bus service.
+
+To calculate potential demand on all routes, we do the following:
+
+1.  *Determine which public transport routes directly serve each OD pair*: A route that directly serves an OD pair is a route that passes through both the origin and the destination zones associated with the OD pair. There can be multiple routes (common lines) serving each OD pair
+
+2.  *Assign demand from OD pairs onto the bus routes*: Our flow data has commuting flows by mode for all MSOA pairs.
+
+    1.  Distribute demand from each OD pair onto its common lines (see @de2024modelling10 for overview of methods). We can do this using:
+
+        1.  *Frequency-based assignment*[^4]: Demand is distributed between the common lines in proportion to the frequency of each route
+
+        2.  *Equal split assignment*: Split the OD demand equally between common lines
+
+    2.  Get total potential demand on each route by summing the demand assigned from each OD pair
+
+[^4]: I can cite modelling transport, or one of the papers it mentions, see screenshot [here](https://github.com/Hussein-Mahfouz/drt-potential/issues/17#issuecomment-1855581567)
+
+We choose an *equal split assignment* of demand onto common lines. Frequency-based assignment better represent the status quo, but our goal is to represent what the demand could be if route frequencies were improved.
+
+To determine which OD pairs we want in our analysis ($OD_3$), we compare the potential demand on all routes. For each OD, we (a) get potential demand on all routes directly serving it. If potential demand on the busiest direct route serving OD \> 50th percentile of route demand, we don't include it in $OD_{3}$ (see @fig-flowchart-scenarios).
+
+OD pairs with high potential demand are not included in $OD_{3}$ as there is sufficient demand to justify a high frequency FRT, even if one does not currently exist. The heuristic for calculating potential demand allows us to avoid serving areas with DRT just because there is poor FRT supply; there must also be insufficient demand to warrant a high frequency FRT.
+
+Setting the threshold at $p50$ implies that service on the top 50% of routes in terms of potential demand will be improved so that they are all high-frequency routes. In reality, this % could be edited based on the budget available for additional buses.
+
+<!--# TODO: add pseudocode https://github.com/leovan/quarto-pseudocode -->
+
+<!-- ``` {#pseudocode-demand-analysis .pseudocode} -->
+
+<!-- #| label: alg-test-text-style -->
+
+<!-- #| html-indent-size: "1.2em" -->
+
+<!-- #| html-comment-delimiter: "//" -->
+
+<!-- #| html-line-number: true -->
+
+<!-- #| html-line-number-punc: ":" -->
+
+<!-- #| html-no-end: false -->
+
+<!-- #| pdf-placement: "htb!" -->
+
+<!-- #| pdf-line-number: true -->
+
+<!-- \begin{algorithm} -->
+
+<!-- \caption{Identify OD Pairs with LOW Potential Demand} -->
+
+<!-- \begin{algorithmic}[1] -->
+
+<!-- \STATE \textbf{Input:}  -->
+
+<!-- \STATE $OD = \{OD_1, OD_2, ..., OD_i, OD_m\}$: All OD pairs -->
+
+<!-- \STATE $R = \{R_1, R_2, ..., R_j, R_n\}$: Public transport routes:  -->
+
+<!-- \STATE \textbf{Output:} -->
+
+<!-- \STATE $OD_{low}$: OD pairs with low potential demand -->
+
+<!-- \STATE // Step 1: Determine direct routes serving each OD pair -->
+
+<!-- \FOR{each OD pair $OD_i \in OD$} -->
+
+<!--     \STATE // Determine which public transport routes directly serve it -->
+
+<!--     \STATE $R^i$: list of PT routes serving $OD_i$ -->
+
+<!-- \ENDFOR -->
+
+<!-- \STATE // Step 2: Assign demand from OD pairs onto the bus routes -->
+
+<!-- \FOR{each OD pair $OD_i \in OD$} -->
+
+<!--     \STATE // Method 1: All to All (Assigning all OD demand to all routes)  -->
+
+<!--     \IF{method = All-to-All} -->
+
+<!--         \FOR{each $R^{i}_{j} \in R^{i}$} -->
+
+<!--             \STATE Demand $R^{i}_{j}$ = Demand $OD_i$ -->
+
+<!--         \ENDFOR -->
+
+<!--     \STATE // Method 2: Assigning demand to routes based on their frequency -->
+
+<!--     \ELSIF{method = Frequency-Based} -->
+
+<!--         \FOR{each $R^{i}_{j} \in R^{i}$} -->
+
+<!--             \STATE Demand $R^{i}_{j} = \frac{\text{Demand } OD_i \times \text{Freq}(R^{i}_{j})}{\sum_{j} \text{Freq}(R^{i}_{j})}$ -->
+
+<!--         \ENDFOR -->
+
+<!--     \STATE // Method 3: Assigning demand equally between routes -->
+
+<!--     \ELSIF{method = Equal Split} -->
+
+<!--         \FOR{each $R^{i}_{j} \in R^{i}$} -->
+
+<!--             \STATE Demand $R^{i}_{j} = \frac{\text{Demand } OD_i}{\lvert R^i \rvert}$ -->
+
+<!--         \ENDFOR -->
+
+<!--     \ENDIF -->
+
+<!-- \ENDFOR -->
+
+<!-- \STATE // Calculate total demand on each route -->
+
+<!-- \State $\text{Demand } R_j = \sum_{i} \text{Demand } R^{i}_{j}$ -->
+
+<!-- \STATE // Step 3: Identify OD pairs with potential demand -->
+
+<!-- \FOR{each OD pair $OD_i \in OD$} -->
+
+<!--     \IF{Demand on busiest route in $R^{i} > p_{50} \text{ Demand in } R$} -->
+
+<!--         \STATE // Remove $OD_i$ from OD -->
+
+<!--         \State $OD_{low} = OD - \{OD_{i}\}$ -->
+
+<!--     \ENDIF -->
+
+<!-- \ENDFOR -->
+
+<!-- \end{algorithmic} -->
+
+<!-- \end{algorithm} -->
+
+<!-- ``` -->
+
+# Results and discussion
+
+In this section we look at the clustering output of $OD_2$ and $OD_3$. @sec-results-transport-supply and @sec-results-transport-demand presents the results for each respectively.
+
+## Clustering based on transport supply {#sec-results-transport-supply}
+
+Our routing analysis shows us the number of transfers required to travel between each OD pair. The majority of OD pairs in our study area require at least 1 transfer, as shown in @fig-od-transfers. A large number of OD within close proximity require 2 or more transfers (@fig-od-transfers-bar).
+
+![Connectivity of OD pairs](images/map_desire_commuting_facet_transfers_crop.png){#fig-od-transfers width="750"}
+
+![Connectivity of OD pairs (bar plot)](images/plot_bar_transfers_stacked_distance.png){#fig-od-transfers-bar width="300"}
+
+<!-- ::: {#fig-transfers layout-nrow="1"} -->
+
+<!-- ![Connectivity of OD pairs](images/map_desire_commuting_facet_transfers.png){#fig-od-transfers-1 width="502"} -->
+
+<!-- ![Connectivity of OD pairs (bar plot)](images/plot_bar_transfers_stacked_distance.png){#fig-od-transfers-2 width="300"} -->
+
+<!-- Transfers between OD pairs -->
+
+<!-- ::: -->
+
+The clustering analysis shows a number of different clusters, some of which cut across the entire study area. The clustering results are visualised using a dashed border, and the colored polygons are used to show potential DRT service areas that could cover parts of each cluster. They are obtained by getting the spatial difference between each cluster and the high frequency bus network.
+
+![Clustering OD pairs with poor PT supply (OD2) - POLYGONS](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png){#fig-cluster-scenario-2}
+
+If we compare the clusters to the spatial distribution of urbanisation (@fig-rural-urban), we find that most of the clusters are connecting areas with different levels of urbanisation, and that an area with high levels of urbanisation is always involved. For example clusters 1, 4 and 6 connect north east cities and towns in sparse settings to the urban major conurbation[^5]. Clusters 5, 9 and 10 do the same in the South east. Other clusters, such as 3, 7, and 8 are mainly inside the most urbanised areas.
+
+[^5]: The classifications are explained in the [2011 Rural Urban Classification User Guide](https://www.gov.uk/government/statistics/2011-rural-urban-classification)
+
+## Clustering based on transport supply and demand {#sec-results-transport-demand}
+
+The results are similar to those of $OD_2$, but we see that some clusters in the South-East disappear. This is an indicator that there may be enough demand in the South East to warrant a high frequency bus service. Similarly, we see that cluster 3 in @fig-cluster-scenario-2 has no equivalent in @fig-cluster-scenario-3. The cluster were located in a high density area which seemed to overlap with many bus routes, so it is not surprising that there is sufficient demand in the area to warrant improved FRT service.
+
+In most cases, the clusters partially overlap with the high frequency FRT services, but that is because the FRT service does not meet the demand at its endpoints. As mentioned previously, a DRT service in these cases would be more useful as a connector to the FRT service, not as a parallel service.
+
+![Clustering results (OD3)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png){#fig-cluster-scenario-3}
+
+Overall, we see that many of the clusters join up the urban core with its rural periphery. This is in line with research showing that DRT services can be used to efficiently compliment FRT systems that extend to rural areas [@sorensen2021much; @schluter2021impact]. As mentioned in @sec-lit-drt-failure, the ability of DRT schemes to concentrate demand in time and geography improves their likelihood of success.
+
+Comparing the original clusters to the extracted DRT operating zones, we see how the latter cover much less urban areas than the former [@fig-bar-urban-rural-compare]. The operating zones are meant to connect to the high frequency FRT network, and limiting the DRT service to the urban periphery is important for limiting unnecessary mode shift (as mentioned earlier).
+
+![Classification of areas covered by each cluster](images/figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_3_length_50000.png){#fig-bar-urban-rural-compare alt="Classification of areas covered by each cluster"}
+
+The clusters vary in their composition, as shown in @fig-scatter-commuters-speed. Some clusters are made up of many OD pairs each of which has a relatively small number of commuters (e.g cluster 6) whereas others are have a few OD pairs with a large number of commuters (e.g cluster ...). The composition of the clusters (along with it's spatial extent) can inform the type of DRT services [@d1994demand] to offer in each zone; a small number of high demand OD pairs could be served by a more direct service, whereas a cluster with many different, low demand, OD pairs would be better served by a more flexible, many-to-many service. Clusters with a mix of high and low demand OD pairs may be better served by multiple DRT fleets with different operational characteristics.
+
+![Characteristics of OD pairs in each cluster (light grey are all OD pairs and dark grey are all OD pairs in the cluster with no viable public transport option)](images/figure_scatter_commuters_color_speed_facet_cluster_scenario_3_length_50000.png){#fig-scatter-commuters-speed}
+
+Point on limitations from Song 2019
+
+-   "Many studies have made contributions to the OD flow clustering problem, although two defects remain in existing work. First, few studies can handle arbitrarily shaped OD flow clusters because most algorithms use regularly shaped regions to search for adjacent flows (Nanni and Pedreschi 2006, Zhu et al. 2013, Zhu and Guo 2014). Although certain density-based clustering methods can work on arbitrarily shaped clusters of point process data (Pei et al. 2008), managing OD flow data is still difficult because shapes in OD flow space are arbitrary. Second, the statistical significance of OD flow clusters is rarely considered in the clustering process, although it is a useful indicator for describing the intensity of OD flow clustering."
+
+# Conclusion
+
+The need to decarbonise the transport sector and improvements in real-time routing technology and the proliferation of app-based services have contributed to a surge in DRT services. However DRT services continue to suffer from the lack of robust strategic level planning, and many fail to capture sufficient passenger demand to make them economically viable.
+
+The paper proposes a method that can help identify concentrations of travel demand, an exercise that is important for improving the chances of successful DRT schemes [@enoch2006demand]. The method can be further improved by adding a temporal element to the travel demand and carrying out spatiotemporal clustering [@yao2018stepwise; @yan2023spatiotemporal]. This would allow us to identify how DRT operating areas could differ throughout the day or on weekdays/weekends.
+
+More spatially disaggregated flow data would also help handle the Modifiable Areal Unit Problem (MAUP), which is only partially mitigated in our case by jittering the aggregated flow data.
+
+Different density-based clustering algorithms such as HDBSCAN [@tao2017flowhdbscan] and OPTICS [@fang2021adaptive] can also be explored. Both of these algorithms require only one input parameter (DBSAN requires 2) and can identify cluster formation at different scales.
+
+The candidate zones identified by the method vary in size, and a follow up exercise would be necessary to validate them. Analytical models mentioned in @sec-planning_drt could be used to determine more precise service areas. They could identify whether the critical demand density for a DRT service is met [@quadrifoglio2009methodology], look at schedule coordination with FRT [@sivakumaran2012cost], and predict DRT performance based on the street network layout in the different zones [@chandra2013new].
+
+\pagebreak
+
+# References
