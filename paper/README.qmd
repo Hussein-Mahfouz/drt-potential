@@ -88,35 +88,23 @@ These simulations have shown that, when allowed to operate across an entire city
 
 In addition, mode shift on it's own is not an indicator of more sustainable travel. A high DRT mode share could be the result of a large fleet size with high dead mileage or low-occupancy trips. Simulation results show that increases in congestion and system-wide total vehicle km are likely [@oke2020evaluating; @kagho2021demand; @rath2023assessing], even under scenarios which constrain operating areas [@rath2023assessing] or offer DRT as a feeder to mass transit [@oke2020evaluating].
 
-Given these results, it has been suggested that DRT may only be useful[^1] in areas with poor PT level of service [@rath2023assessing]. Even so, in order to move towards the desired mode shift and reduce VKT, the service area needs to be informed by spatial and temporal demand in the region [@kagho2021demand].
+Given these results, it has been suggested that DRT may only be useful[^1] in areas with poor PT level of service [@rath2023assessing]. Even so, in order to move towards the desired mode shift and reduce VKT, the service area needs to be informed by spatial and temporal demand in the region [@kagho2021demand]. In the following section, we explore methods for capturing these concentrations in demand from OD data
 
 [^1]: useful as in leads to more sustainable travel. Should I / how do I add equity here?
 
 ## Identifying spatial concentrations in travel demand
 
--   Methods for visualising OD flow data (based on geovizualization, grapph theory):
+Methods for visualising OD data do not necessarily capture spatial and temporal demand, and it can be hard to discern patterns due to the vast amount of data being represented [@guo2009flow]. Community detection [@guo2009flow] and edge bundling methods [@selassie2011divided] have been proposed to mitigate against visual clutter and salience bias, but the reduction of clutter comes at the expense of spatial information; in the former we lose spatial granularity, and in the latter we can no longer distinguish OD patterns. These two factors are important for our use case, so we choose to rely on methods that identify patterns in the raw OD data without altering it.
 
-    -   "The visualization methods of OD flow data mainly include the flow map \[16--21\], the OD matrix, and the OD map \[22--25\]. Among them, the flow map better reflects the spatial characteristics of OD data.
-
--   Limitations of these methods:
-
-    -   But there are also some problems in that method, such as the visual cluttering problem, the modifiable area unit problem, the normalization problem, the salience bias, and so on \[1,8,11\].
-
--   Methods to overcome limitations, but they lead to loss of spatial information, and difficulty in perceiving relationships between OD flows
-
-    -   "In order to solve these problems, scholars have proposed edge rerouting \[26\], edge bundling \[27,28\], matrices of multiple maps \[24,29\] and other means to reduce clutter, but it does lead to the loss of spatial information of OD points, and the relationship between OD flows is difficult to be perceived."
+<!--# check "An OD clustering method based on vector constraints:  2.1: Visuaising OD flow-->
 
 <!--# from: Detecting arbitrarily shaped clusters in origin-destinatin flows using ant colony optimisation -->
 
--   Clustering has emerged as a method for spatial pattern identification in OD data. Clustering methods can be grouped into two groups:
-
-    -   spatial statisitcs-based methods: these extend traditional spatial statistics (such as Moran's I, Getis-Ord G statistic, and Ripley's K) which aim to use significance tests of spatial homogeniety to identify anomalies in OD flows and the different scales at which clustering could exist. These methods however do not group the data into clusters
-
-    -   heirarchical and density-based clustering methods to produce clusters.
+Clustering has emerged as a method for spatial pattern identification in OD data. Clustering methods can be divided into two groups [@song2019detecting]: (1) spatial statistics-based methods, and (2) hierarchical and density based clustering methods. The former use methods for anomaly detection based on tests of spatial homogeneity (such as Moran's I, Getis-Ord G statistic, and Ripley's K) and extends these methods from point data to OD data. While they can detect the presence of clusters at different spatial scales, they do not actually group the data into clusters. The latter are able to group the data based on distance measures between the OD flows.
 
 Density-based clustering is a popular technique for discovering precise clusters in space. DB-Scan @ester1996density is one of the most popular density-based clustering algorithms, but variations such as Hierarchical density-based clustering and OPTICS are also commonly used. These algorithms rely on distances between observations, a metric that is easy to calculate for point data, but less intuitive for other geometries such as lines due to the multilocation nature of each geometry. @tao2016spatial devise measures to calculate distance between lines, and this has paved the way for these algorithms to be applied to flow data [@tao2016dbscan; @tao2017flowhdbscan; @fang2021adaptive]. Different approaches have also been proposed for adding a temporal dimension to the cluster detection @yao2018stepwise.
 
--   The ability to cluster flow data allows us to understanding travel patterns across
+The ability of these algorithms to cluster flow data without loss of spatial information (as is the case with edge bundling) is invaluable for understanding the spatial concentrations of demand that exist in a network. This research will make use of density-based clustering as part of a larger approach to identify concentrations in travel demand that could be served by DRT.
 
 <!--##### CONGESTION AND VKT  -->
 
