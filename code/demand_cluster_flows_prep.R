@@ -6,6 +6,9 @@ library(sf)
 #library(lwgeom)
 # jittering
 library(odjitter)
+# plots at the bottom
+library(ggridges)
+
 
 
 source("R/study_area_geographies.R")
@@ -231,4 +234,135 @@ if(mode == FALSE){
   # data with modes
   st_write(od_demand_jittered_scenarios, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_mode.geojson"), delete_dsn = TRUE)
   }
+
+
+
+
+
+
+
+
+
+# ---------------------- plot distributions
+
+plots_path <- "data/processed/plots/eda/speed_demand_cutoffs/"
+
+# ---------- SPEED
+
+# histogram
+
+od_demand_filtered %>%
+  #mutate(speed_kph = replace_na(speed_kph, 0)) %>%
+  ggplot(aes(x = speed_kph)) +
+  geom_histogram(binwidth = 1, alpha = 0.8) +
+  labs(title = "Average speeds between ODs using PT",
+       subtitle = "All reachable OD pairs",
+       x = "Speed (kph)",
+       y = "No. of OD pairs")
+
+ggsave(filename = paste0(plots_path, "plot_hist_speeds_reachable_od.png"))
+
+
+
+# histogram: Keep speed_kph = NA (replace with 0)
+
+od_demand_filtered %>%
+  mutate(speed_kph = replace_na(speed_kph, 0)) %>%
+  ggplot(aes(x = speed_kph)) +
+  geom_histogram(binwidth = 1, alpha = 0.8) +
+  labs(title = "Average speeds between ODs using PT",
+       subtitle = "All OD pairs",
+       x = "Speed (kph)",
+       y = "No. of OD pairs")
+
+ggsave(filename = paste0(plots_path, "plot_hist_speeds_all_od.png"))
+
+# density plot: facet by demand percentile
+
+od_demand_filtered %>%
+  ggplot(aes(x=speed_kph, y=demand_percentile_fct, fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient", calc_ecdf = TRUE,
+    quantiles = 4, quantile_lines = TRUE
+  ) +
+  scale_fill_brewer(name = "Quartiles") +
+  labs(title = "Average speeds between ODs using PT",
+       subtitle = "All reachable OD pairs",
+       x = "Speed (kph)",
+       y = "Travel demand on busiest route\nserving OD pair (percentiles)")
+
+ggsave(filename = paste0(plots_path, "plot_dens_speeds_facet_demand_all_od.png"))
+
+# density plot: facet by demand percentile: Keep speed_kph = NA (replace with 0)
+
+od_demand_filtered %>%
+  mutate(speed_kph = replace_na(speed_kph, 0)) %>%
+  ggplot(aes(x=speed_kph, y=demand_percentile_fct, fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient", calc_ecdf = TRUE,
+    quantiles = 4, quantile_lines = TRUE
+  ) +
+  scale_fill_brewer(name = "Quartiles") +
+  labs(title = "Average speeds between ODs using PT",
+       subtitle = "All OD pairs",
+       x = "Speed (kph)",
+       y = "Potential demand on busiest route\nserving OD pair (percentiles)")
+
+ggsave(filename = paste0(plots_path, "plot_dens_speeds_facet_demand_reachable_od.png"))
+
+
+# ---------- DEMAND (potential_demand_equal_split)
+
+# histogram
+
+od_demand_filtered %>%
+  #mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0)) %>%
+  ggplot(aes(x = potential_demand_equal_split)) +
+  geom_histogram(bins = 25, alpha = 0.8) +
+  labs(title = "Potential demand on busiest\nPT route serving OD pair",
+       subtitle = "All reachable OD pairs",
+       x = "Potential demand (no. of passengers)",
+       y = "No. of OD pairs")
+
+ggsave(filename = paste0(plots_path, "plot_hist_demand_reachable_od.png"))
+
+
+# histogram: facet by demand percentile
+od_demand_filtered %>%
+  #mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0)) %>%
+  filter(!is.na(speed_percentile_fct)) %>%
+  ggplot(aes(x = potential_demand_equal_split)) +
+  geom_histogram(binwidth = 1000, alpha = 0.8) +
+  labs(title = "Potential demand on busiest\nPT route serving OD pair",
+       subtitle= "Facet = speed percentiles",
+       x = "Potential demand (no. of passengers)",
+       y = "No. of OD pairs") +
+  facet_wrap(vars(speed_percentile_fct), nrow = 2)
+
+ggsave(filename = paste0(plots_path, "plot_hist_demand_facet_speed_reachable_od.png"))
+
+# density plot: facet by demand percentile
+
+od_demand_filtered %>%
+  mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0)) %>%
+  filter(!is.na(speed_percentile_fct)) %>%
+         ggplot(aes(x=potential_demand_equal_split, y=speed_percentile_fct, fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient", calc_ecdf = TRUE,
+    quantiles = 4, quantile_lines = TRUE
+  ) +
+  scale_fill_brewer(name = "Quartiles") +
+  labs(title = "Potential demand on busiest\nPT route serving OD pair",
+       x = "Potential demand (no. of passengers)",
+       y = "Speed percentiles")
+
+ggsave(filename = paste0(plots_path, "plot_dens_demand_facet_speeds_all_od.png"))
+
+
+# density plot: facet by demand percentile: Keep potential_demand_equal_split = NA (replace with 0)
+
+
+
+
+
 
