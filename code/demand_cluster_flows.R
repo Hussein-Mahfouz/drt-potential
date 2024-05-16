@@ -55,9 +55,9 @@ study_area <- study_area %>%
 # distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
 
 # # 3) Flows with poor PT supply and low potential demand + and equal weight to origins and destinations (for flow distance)
-scenario <- 3
-clustering <- "equal"
-distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
+# scenario <- 3
+# clustering <- "equal"
+# distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
 #
 # # 2) Focusing on shorter distances
 # scenario <- 3
@@ -70,9 +70,9 @@ distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
 # distance_threshold <- 7500
 
 # # 2) Focusing on shorter distances
-# scenario <- 3
-# clustering <- "equal"
-# distance_threshold <- 10000
+scenario <- 3
+clustering <- "equal"
+distance_threshold <- 10000
 #
 # # 3) Changing alpha and beta
 # scenario <- 3
@@ -387,5 +387,31 @@ cluster_dbscan = dbscan::dbscan(dist_mat,
 
 
 unique(cluster_dbscan$cluster)
+
+
+###  --------------------  STEP 4: Save results  -------------------- ###
+
+
+# get results
+cluster_dbscan_res <- dist_mat %>%
+  mutate(cluster = cluster_dbscan$cluster)
+
+# prepare data for joining
+cluster_dbscan_res <- cluster_dbscan_res %>%
+  rownames_to_column(var = "flow_ID") %>%
+  select(flow_ID, cluster)
+
+
+# add geometry back
+cluster_dbscan_res <- od_demand_jittered %>%
+  inner_join(cluster_dbscan_res, by = "flow_ID")
+
+
+# save
+st_write(cluster_dbscan_res, paste0("data/processed/clustering/scenario_", scenario, "_distance_", distance_threshold, "_", clustering, ".geojson"), delete_dsn = TRUE)
+
+
+
+
 
 

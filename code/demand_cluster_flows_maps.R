@@ -9,25 +9,51 @@ library(geos)
 # library(spatstat)
 library(tmap)
 
+source("R/study_area_geographies.R")
+
+
+# ------------------------- Define the scenario ------------------------- #
+
+scenario <- 3 # 2
+clustering <- "equal"
+distance_threshold <- 50000   # 10000
+
+#  ------------------------ Load in the data  -------------------------- #
+
+
+# ----- Clustering results
+
+cluster_dbscan_res <- st_read(paste0("data/processed/clustering/scenario_", scenario, "_distance_", distance_threshold, "_", clustering, ".geojson"))
+
+# ----- Study area
+
+# ----------- 1. Study area
+
+# --- administrative boundaries
+study_area <- st_read("data/interim/study_area_boundary.geojson")
+
+# convert to desired resolution
+geography = "MSOA"
+study_area = study_area_geographies(study_area = study_area,
+                                    geography = geography)
+
+study_area <- study_area %>%
+  st_cast("MULTIPOLYGON")
+
+# move the geographic ID to the first column. od::points_to_od() only keeps the first column as ID
+
+geoid_col = paste0(geography, "21CD")
+
+study_area <- study_area %>%
+  relocate(all_of(geoid_col), .before = everything())
+
+
+plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/")
 
 
 # ------------------------- VISUALISE RESULTS ------------------------- #
 
 
-# get results
-cluster_dbscan_res <- dist_mat %>%
-  mutate(cluster = cluster_dbscan$cluster)
-
-# prepare data for joining
-cluster_dbscan_res <- cluster_dbscan_res %>%
-  rownames_to_column(var = "flow_ID") %>%
-  select(flow_ID, cluster)
-
-
-# add geometry back
-
-cluster_dbscan_res <- od_demand_jittered %>%
-  inner_join(cluster_dbscan_res, by = "flow_ID")
 
 # check size per cluster and total commuters per cluster
 cluster_dbscan_res %>%
@@ -1160,6 +1186,79 @@ tm_shape(clusters_vis_mode_poly_filt %>%
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation
 
 tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation.png"), width = 12, dpi = 1080, asp = 0)
+
+
+
+
+
+# ---------------------- ONE BIG MAP
+
+
+
+tm_shape(basemap_urban_rural) +
+  tm_fill(col = "RUC11CD_NM",
+          palette = "Greys",
+          alpha = 0.5,
+          title = "Level of \nUrbanisation") +
+  # bus layer
+  tm_shape(gtfs_bus %>%
+             filter(scenario == "pt_wkday_morning") %>%
+             mutate(headway_inv = (1/headway_secs) * 3600) %>%
+             filter(headway_secs < 7200)) +
+  tm_lines(col = "darkred",
+           lwd = "headway_inv",
+           scale = 5,
+           palette = "-YlOrRd",
+           style = "pretty",
+           legend.col.show = FALSE,
+           alpha = 0.1,
+           title.lwd = "Buses/Hour",
+           #legend.lwd.is.portrait = FALSE
+  ) +
+  # ---- clusters
+  # poly fill
+  #tm_shape(st_union(clusters_vis_mode_poly_filt)) +
+  tm_shape(st_union(clusters_vis_mode_poly_filt %>%
+                      mutate(area = st_area(.)) %>%
+                      filter(area > 0.2 * mean(area)))) +
+    tm_borders(col = "darkgreen",
+               lwd = 2.5,
+               lty = "dashed") +
+  tm_layout(fontfamily = 'Georgia',
+            main.title = paste0("Potential DRT Service Areas"),
+            main.title.size = 1.1,
+            main.title.color = "azure4",
+            main.title.position = "left",
+            frame = FALSE)  +
+  # add a couple of legends
+  tm_add_legend(type = "line", labels = 'Potential DRT\nservice area', col = 'darkgreen', lwd = 2.5, lty = "dashed") -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP
+
+map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP
+
+tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_one_map.png"), width = 12, dpi = 1080, asp = 0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
