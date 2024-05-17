@@ -130,7 +130,9 @@ Following the new powers given to local transport authorities under the bus serv
 
 # Methods {#sec-methods}
 
-In this section we go over the data and methods used in our analysis. First, we introduce a clustering approach for determining how travel demand is concentrated geographically (@sec-method-clustering-flow-data). We apply the algorithm on two different datasets: 1) OD pairs with poor public transport supply, 2) OD pairs with poor public transport supply and low potential demand. In @sec-method-transport-supply we show how public transport supply is calculated and define poor public transport supply. In @sec-method-transport-demand, we explain potential demand and how it is calculated.
+In this section we go over the data and methods used in our analysis. First, we introduce a clustering approach for determining how travel demand is concentrated geographically (@sec-method-clustering-flow-data). We apply the algorithm on two different datasets: 1) OD pairs with poor public transport supply, 2) OD pairs with poor public transport supply and low potential demand. In @sec-method-transport-supply we show how public transport supply is calculated and define poor public transport supply. In @sec-method-transport-demand, we explain potential demand and how it is calculated. The entire workflow is presented in @fig-workflow.
+
+![Workflow for generating potential DRT zones](images/figure_entire_workflow.png){#fig-workflow}
 
 ## Clustering flow data {#sec-method-clustering-flow-data}
 
@@ -347,6 +349,8 @@ Comparing the original clusters to the extracted DRT operating zones, we see how
 The clusters vary in their composition, as shown in @fig-scatter-commuters-speed. Some clusters are made up of many OD pairs each of which has a relatively small number of commuters (e.g cluster 6) whereas others are have a few OD pairs with a large number of commuters (e.g cluster ...). The composition of the clusters (along with it's spatial extent) can inform the type of DRT services [@d1994demand] to offer in each zone; a small number of high demand OD pairs could be served by a more direct service, whereas a cluster with many different, low demand, OD pairs would be better served by a more flexible, many-to-many service. Clusters with a mix of high and low demand OD pairs may be better served by multiple DRT fleets with different operational characteristics.
 
 ![Characteristics of OD pairs in each cluster (light grey are all OD pairs and dark grey are all OD pairs in the cluster with no viable public transport option)](images/figure_scatter_commuters_color_speed_facet_cluster_scenario_3_length_50000.png){#fig-scatter-commuters-speed}
+
+![Potential DRT zones](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_one_map.png){#fig-zones-one-map}
 
 Point on limitations from Song 2019
 
