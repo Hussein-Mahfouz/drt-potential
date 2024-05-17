@@ -1222,7 +1222,7 @@ tm_shape(basemap_urban_rural) +
                       mutate(area = st_area(.)) %>%
                       filter(area > 0.2 * mean(area)))) +
     tm_borders(col = "darkgreen",
-               lwd = 2.5,
+               lwd = 3.5,
                lty = "dashed") +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Potential DRT Service Areas"),
@@ -1231,7 +1231,7 @@ tm_shape(basemap_urban_rural) +
             main.title.position = "left",
             frame = FALSE)  +
   # add a couple of legends
-  tm_add_legend(type = "line", labels = 'Potential DRT\nservice area', col = 'darkgreen', lwd = 2.5, lty = "dashed") -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP
+  tm_add_legend(type = "line", labels = 'Potential DRT service area', col = 'darkgreen', lwd = 2.5, lty = "dashed") -> map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP
 
