@@ -55,9 +55,9 @@ study_area <- study_area %>%
 # distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
 
 # # 3) Flows with poor PT supply and low potential demand + and equal weight to origins and destinations (for flow distance)
-# scenario <- 3
-# clustering <- "equal"
-# distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
+scenario <- 3
+clustering <- "equal"
+distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
 #
 # # 2) Focusing on shorter distances
 # scenario <- 3
@@ -70,9 +70,9 @@ study_area <- study_area %>%
 # distance_threshold <- 7500
 
 # # 2) Focusing on shorter distances
-scenario <- 3
-clustering <- "equal"
-distance_threshold <- 10000
+# scenario <- 3
+# clustering <- "equal"
+# distance_threshold <- 10000
 #
 # # 3) Changing alpha and beta
 # scenario <- 3
