@@ -150,15 +150,15 @@ Our analysis looks at commuting flows by mode. Taking inspiration from @shu2022d
 
 ## Accounting for transport supply and demand
 
-The cluster composition is heavily influenced by the input data. If we were to pass all OD pairs to the algorithm, then our clusters may include noise from OD pairs that are well served by public transport. We will also come up with DRT zones that serve all demand, whereas our objective is to come up with DRT zones that complement FRT and fill the gaps in the network, as explained in @sec-lit-service-areas. We identify gaps by trying two different inputs: (1) OD pairs with poor public transport supply ($OD_2$) , and (2) OD pairs with poor public transport supply and low potential demand ($OD_3$).
+The cluster composition is heavily influenced by the input data. If we were to pass all OD pairs to the algorithm, then our clusters may include noise from OD pairs that are well served by public transport. We will also come up with DRT zones that serve all demand, whereas our objective is to come up with DRT zones that complement FRT and fill the gaps in the network, as explained in @sec-lit-service-areas. We identify gaps by trying two different inputs: (1) OD pairs with poor public transport supply ($OD_s$) , and (2) OD pairs with poor public transport supply and low potential demand ($OD_{sd}$).
 
-$OD_2$ is meant to suggest DRT zones that complement FRT by only including the OD demand that is not well served by FRT, as explained in @sec-method-transport-supply. $OD_3$ is similar, but also excludes OD pairs that could be served by a better FRT service. This exclusion is based on criteria explained in @sec-method-transport-demand. The entire workflow is shown in @fig-flowchart-scenarios.
+$OD_s$ is meant to suggest DRT zones that complement FRT by only including the OD demand that is not well served by FRT, as explained in @sec-method-transport-supply. $OD_{sd}$ is similar, but also excludes OD pairs that could be served by a better FRT service. This exclusion is based on criteria explained in @sec-method-transport-demand. The entire workflow is shown in @fig-flowchart-scenarios.
 
 ![Flowchart for determining input to clustering algorithm](images/flowchart_od_potential_demand.png){#fig-flowchart-scenarios}
 
 ### Supply analysis {#sec-method-transport-supply}
 
-A supply analysis is carried out to determine the OD pairs that are included in $OD_{2}$. The main components of transport supply are the road network, and the public transport timetables for buses and rail. We get the updated road network from OSM. Bus timetable data is obtained in GTFS format from the Bus Open Data Service (BODS)[^2] and rail data is obtained from the Rail Delivery Group[^3].
+A supply analysis is carried out to determine the OD pairs that are included in $OD_{s}$. The main components of transport supply are the road network, and the public transport timetables for buses and rail. We get the updated road network from OSM. Bus timetable data is obtained in GTFS format from the Bus Open Data Service (BODS)[^2] and rail data is obtained from the Rail Delivery Group[^3].
 
 [^2]: https://data.bus-data.dft.gov.uk/
 
@@ -188,9 +188,9 @@ To calculate potential demand on all routes, we do the following:
 
 We choose an *equal split assignment* of demand onto common lines. Frequency-based assignment better represent the status quo, but our goal is to represent what the demand could be if route frequencies were improved.
 
-To determine which OD pairs we want in our analysis ($OD_3$), we compare the potential demand on all routes. For each OD, we (a) get potential demand on all routes directly serving it. If potential demand on the busiest direct route serving OD \> 50th percentile of route demand, we don't include it in $OD_{3}$ (see @fig-flowchart-scenarios).
+To determine which OD pairs we want in our analysis ($OD_{sd}$), we compare the potential demand on all routes. For each OD, we (a) get potential demand on all routes directly serving it. If potential demand on the busiest direct route serving OD \> 50th percentile of route demand, we don't include it in $OD_{sd}$ (see @fig-flowchart-scenarios).
 
-OD pairs with high potential demand are not included in $OD_{3}$ as there is sufficient demand to justify a high frequency FRT, even if one does not currently exist. The heuristic for calculating potential demand allows us to avoid serving areas with DRT just because there is poor FRT supply; there must also be insufficient demand to warrant a high frequency FRT.
+OD pairs with high potential demand are not included in $OD_{sd}$ as there is sufficient demand to justify a high frequency FRT, even if one does not currently exist. The heuristic for calculating potential demand allows us to avoid serving areas with DRT just because there is poor FRT supply; there must also be insufficient demand to warrant a high frequency FRT.
 
 Setting the threshold at $p50$ implies that service on the top 50% of routes in terms of potential demand will be improved so that they are all high-frequency routes. In reality, this % could be edited based on the budget available for additional buses.
 
@@ -304,7 +304,7 @@ Setting the threshold at $p50$ implies that service on the top 50% of routes in 
 
 # Results and discussion
 
-In this section we look at the clustering output of $OD_2$ and $OD_3$. @sec-results-transport-supply and @sec-results-transport-demand presents the results for each respectively.
+In this section we look at the clustering output of $OD_s$ and $OD_{sd}$. @sec-results-transport-supply and @sec-results-transport-demand presents the results for each respectively.
 
 ## Clustering based on transport supply {#sec-results-transport-supply}
 
