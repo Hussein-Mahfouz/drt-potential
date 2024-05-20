@@ -174,19 +174,11 @@ To calculate potential demand on all routes, we do the following:
 
 1.  *Determine which public transport routes directly serve each OD pair*: A route that directly serves an OD pair is a route that passes through both the origin and the destination zones associated with the OD pair. There can be multiple routes (common lines) serving each OD pair
 
-2.  *Assign demand from OD pairs onto the bus routes*: Our flow data has commuting flows by mode for all MSOA pairs.
+2.  *Assign demand from OD pairs onto the bus routes*: Our flow data has commuting flows by mode for all MSOA pairs. We distribute demand from each OD pair onto its common lines (see @de2024modelling10 for overview of methods). We split the demand equally between common lines. Frequency-based assignment[^4] may better represent the status quo, but we chose to split the demand equally as our goal is to represent what the demand could be if route frequencies were improved.
 
-    1.  Distribute demand from each OD pair onto its common lines (see @de2024modelling10 for overview of methods). We can do this using:
+3.  Get total potential demand on each route by summing the demand assigned from each OD pair
 
-        1.  *Frequency-based assignment*[^4]: Demand is distributed between the common lines in proportion to the frequency of each route
-
-        2.  *Equal split assignment*: Split the OD demand equally between common lines
-
-    2.  Get total potential demand on each route by summing the demand assigned from each OD pair
-
-[^4]: I can cite modelling transport, or one of the papers it mentions, see screenshot [here](https://github.com/Hussein-Mahfouz/drt-potential/issues/17#issuecomment-1855581567)
-
-We choose an *equal split assignment* of demand onto common lines. Frequency-based assignment better represent the status quo, but our goal is to represent what the demand could be if route frequencies were improved.
+[^4]: Demand is distributed between the common lines (routes) in proportion to the frequency of each route
 
 To determine which OD pairs we want in our analysis ($OD_{sd}$), we compare the potential demand on all routes. For each OD, we (a) get potential demand on all routes directly serving it. If potential demand on the busiest direct route serving OD \> 50th percentile of route demand, we don't include it in $OD_{sd}$ (see @fig-flowchart-scenarios).
 
