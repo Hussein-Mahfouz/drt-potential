@@ -34,7 +34,7 @@ filters:
 knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
 ```
 
-# Introduction
+# Introduction {#sec-intro}
 
 Bus networks form the backbone of many transit systems across the world. They can ensure equitable access to all, an aspect that is important for social inclusion, as well as mitigate against congestion and emissions resulting from increased car dependence.
 
@@ -152,7 +152,7 @@ Our analysis looks at commuting flows by mode. Taking inspiration from @shu2022d
 
 The cluster composition is heavily influenced by the input data. If we were to pass all OD pairs to the algorithm, then our clusters may include noise from OD pairs that are well served by public transport. We will also come up with DRT zones that serve all demand, whereas our objective is to come up with DRT zones that complement FRT and fill the gaps in the network, as explained in @sec-lit-service-areas. We identify gaps by trying two different inputs: (1) OD pairs with poor public transport supply ($OD_s$) , and (2) OD pairs with poor public transport supply and low potential demand ($OD_{sd}$).
 
-$OD_s$ is meant to suggest DRT zones that complement FRT by only including the OD demand that is not well served by FRT, as explained in @sec-method-transport-supply. $OD_{sd}$ is similar, but also excludes OD pairs that could be served by a better FRT service. This exclusion is based on criteria explained in @sec-method-transport-demand. The entire workflow is shown in @fig-flowchart-scenarios.
+$OD_s$ is meant to suggest DRT zones that complement FRT by only including the OD demand that is not well served by FRT, as explained in @sec-method-transport-supply. $OD_{sd}$ is similar, but also excludes OD pairs that could be served by a better FRT service. This exclusion is based on criteria explained in @sec-method-transport-demand. The workflow for the supply and demand analysis is shown in @fig-flowchart-scenarios.
 
 ![Flowchart for determining input to clustering algorithm](images/flowchart_od_potential_demand.png){#fig-flowchart-scenarios}
 
@@ -330,15 +330,19 @@ In most cases, the clusters partially overlap with the high frequency FRT servic
 
 ![Clustering results ($OD_{sd}$)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png){#fig-cluster-scenario-3}
 
-Overall, we see that many of the clusters join up the urban core with its rural periphery. This is in line with research showing that DRT services can be used to efficiently compliment FRT systems that extend to rural areas [@sorensen2021much; @schluter2021impact]. As mentioned in @sec-lit-drt-failure, the ability of DRT schemes to concentrate demand in time and geography improves their likelihood of success.
+Overall, we see that many of the clusters join up the urban core with its rural periphery. This is in line with research showing that DRT services can be used to efficiently compliment FRT systems that extend to rural areas [@sorensen2021much; @schluter2021impact]. As mentioned in @sec-intro, the ability of DRT schemes to concentrate demand in time and geography improves their likelihood of success.
 
-Comparing the original clusters to the extracted DRT operating zones, we see how the latter cover much less urban areas than the former [@fig-bar-urban-rural-compare]. The operating zones are meant to connect to the high frequency FRT network, and limiting the DRT service to the urban periphery is important for limiting unnecessary mode shift (as mentioned earlier).
+Comparing the original clusters to the extracted DRT operating zones, we see how the latter cover much less urban areas than the former [@fig-cluster-stats]. The operating zones are meant to connect to the high frequency FRT network, and limiting the DRT service to the urban periphery is important for limiting unnecessary mode shift (as mentioned earlier).
 
-![Classification of areas covered by each cluster](images/figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_3_length_50000.png){#fig-bar-urban-rural-compare alt="Classification of areas covered by each cluster"}
+The clusters vary in their composition, as shown in @fig-cluster-stats. Some clusters are made up of many OD pairs each of which has a relatively small number of commuters (e.g cluster 6) whereas others are have a few OD pairs with a large number of commuters (e.g cluster ...). The composition of the clusters (along with it's spatial extent) can inform the type of DRT services [@d1994demand] to offer in each zone; a small number of high demand OD pairs could be served by a more direct service, whereas a cluster with many different, low demand, OD pairs would be better served by a more flexible, many-to-many service. Clusters with a mix of high and low demand OD pairs may be better served by multiple DRT fleets with different operational characteristics.
 
-The clusters vary in their composition, as shown in @fig-scatter-commuters-speed. Some clusters are made up of many OD pairs each of which has a relatively small number of commuters (e.g cluster 6) whereas others are have a few OD pairs with a large number of commuters (e.g cluster ...). The composition of the clusters (along with it's spatial extent) can inform the type of DRT services [@d1994demand] to offer in each zone; a small number of high demand OD pairs could be served by a more direct service, whereas a cluster with many different, low demand, OD pairs would be better served by a more flexible, many-to-many service. Clusters with a mix of high and low demand OD pairs may be better served by multiple DRT fleets with different operational characteristics.
+::: {#fig-cluster-stats layout-ncol="2"}
+![](images/figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_3_length_50000.png){width="310"}
 
-![Characteristics of OD pairs in each cluster (light grey are all OD pairs and dark grey are all OD pairs in the cluster with no viable public transport option)](images/figure_scatter_commuters_color_speed_facet_cluster_scenario_3_length_50000.png){#fig-scatter-commuters-speed}
+![](images/figure_scatter_commuters_color_speed_facet_cluster_scenario_3_length_50000.png){width="310"}
+
+Left: Classification of areas covered by each \| Right: Characteristics of OD pairs in each cluster (light grey are all OD pairs and dark grey are all OD pairs in the cluster with no viable public transport option)
+:::
 
 @fig-zones-one-map gives an overview of how the zones could be merged based on the needs of the different clusters. It becomes more clear that the zones are predominantly in rhe outskirts and in rural areas. Zones in urban area, such as that in the South West covers an area with no public transport. Future work could explore where bus services could be added instead of taking the bus network as a fixed constraint [@pinto2020joint].
 
