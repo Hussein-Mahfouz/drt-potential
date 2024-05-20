@@ -419,6 +419,38 @@ ggsave(filename = paste0(plots_path, "plot_hist_potential_demand_od_all_methods.
 # --- Density plots with quantile vertical lines
 
 
+# --- Trip level
+
+percentiles_trip <- data.frame(
+  percentiles = c(0.1, 0.25, 0.5, 0.75, 0.9),
+  potential_demand = quantile(trips_sd$potential_demand_equal_split,  c(0.1, 0.25, 0.5, 0.75, 0.9)),
+  labels = c("10", "25", "50", "75", "90")
+)
+
+
+trips_sd %>%
+  #mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0)) %>%
+  ggplot(aes(x = potential_demand_equal_split)) +
+  geom_density()+
+  #scale_y_log10() +
+  geom_vline(data = percentiles_trip, aes(xintercept = potential_demand, color = labels))+
+  labs(title = "Potential demand on PT routes",
+       subtitle = "Equal split of demand from each OD\nonto routes that serve it",
+       x = "Potential demand (no. of passengers)",
+       color = "Percentile") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8),
+    legend.position = "bottom"
+  )
+
+ggsave(filename = paste0(plots_path, "plot_dens_potential_demand_trips_equal_split.png"))
+
+
+
+# --- OD level
+
 percentiles_df <- data.frame(
   percentiles = c(0.1, 0.25, 0.5, 0.75, 0.9),
   potential_demand = quantile(od_trips_sd$potential_demand_equal_split / 1000,  c(0.1, 0.25, 0.5, 0.75, 0.9)),
