@@ -164,7 +164,7 @@ A supply analysis is carried out to determine the OD pairs that are included in 
 
 [^3]: https://data.atoc.org/
 
-The OSM road network and timetable data are fed into a multimodal routing engine [@pereira2021r5r] to calculate travel time between zones. Euclidean distance between an OD pair is used to calculate travel speed $(v_{ij})$. OD pairs with speed in the bottom 50th percentile or that require more than one transfer to be reached by public transport are considered to have poor supply.
+The OSM road network and timetable data are fed into a multimodal routing engine [@pereira2021r5r] to calculate travel time between zones. Euclidean distance between an OD pair is used to calculate travel speed $(v_{ij})$. OD pairs with speed below the 50th percentile or that require more than one transfer to be reached by public transport are considered to have poor supply.
 
 ### Demand analysis {#sec-method-transport-demand}
 
@@ -180,11 +180,11 @@ To calculate potential demand on all routes, we do the following:
 
 [^4]: Demand is distributed between the common lines (routes) in proportion to the frequency of each route
 
-To determine which OD pairs we want in our analysis ($OD_{sd}$), we compare the potential demand on all routes. For each OD, we (a) get potential demand on all routes directly serving it. If potential demand on the busiest direct route serving OD \> 50th percentile of route demand, we don't include it in $OD_{sd}$ (see @fig-flowchart-scenarios).
+To determine which OD pairs we want in our analysis ($OD_{sd}$), we compare the potential demand on all routes. For each OD, we (a) get potential demand on all routes directly serving it. If potential demand on the busiest direct route serving OD \> 75th percentile of route demand, we don't include it in $OD_{sd}$ (see @fig-flowchart-scenarios).
 
 OD pairs with high potential demand are not included in $OD_{sd}$ as there is sufficient demand to justify a high frequency FRT, even if one does not currently exist. The heuristic for calculating potential demand allows us to avoid serving areas with DRT just because there is poor FRT supply; there must also be insufficient demand to warrant a high frequency FRT.
 
-Setting the threshold at $p50$ implies that service on the top 50% of routes in terms of potential demand will be improved so that they are all high-frequency routes. In reality, this % could be edited based on the budget available for additional buses.
+Setting the threshold at $p75$ implies that service on the top 25% of routes in terms of potential demand will be improved so that they are all high-frequency routes. In reality, this % could be edited based on the budget available for additional buses.
 
 <!--# TODO: add pseudocode https://github.com/leovan/quarto-pseudocode -->
 
@@ -300,9 +300,7 @@ In this section we look at the clustering output of $OD_s$ and $OD_{sd}$. @sec-r
 
 ## Clustering based on transport supply {#sec-results-transport-supply}
 
-Our routing analysis shows us the number of transfers required to travel between each OD pair. The majority of OD pairs in our study area require at least 1 transfer, as shown in @fig-od-transfers. A large number of OD within close proximity require 2 or more transfers (@fig-od-transfers-bar).
-
-![Connectivity of OD pairs](images/map_desire_commuting_facet_transfers_crop.png){#fig-od-transfers width="750"}
+Our routing analysis shows us the number of transfers required to travel between each OD pair. The majority of OD pairs in our study area require at least 1 transfer, and a large number of OD pairs within close proximity require 2 or more transfers (@fig-od-transfers-bar).
 
 ![Connectivity of OD pairs (bar plot)](images/plot_bar_transfers_stacked_distance.png){#fig-od-transfers-bar width="300"}
 
@@ -318,19 +316,19 @@ Our routing analysis shows us the number of transfers required to travel between
 
 The clustering analysis shows a number of different clusters, some of which cut across the entire study area. The clustering results are visualised using a dashed border, and the colored polygons are used to show potential DRT service areas that could cover parts of each cluster. They are obtained by getting the spatial difference between each cluster and the high frequency bus network.
 
-![Clustering OD pairs with poor PT supply (OD2) - POLYGONS](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png){#fig-cluster-scenario-2}
+![Clustering OD pairs with poor PT supply ($OD_{s}$)](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png){#fig-cluster-scenario-2}
 
-If we compare the clusters to the spatial distribution of urbanisation (@fig-rural-urban), we find that most of the clusters are connecting areas with different levels of urbanisation, and that an area with high levels of urbanisation is always involved. For example clusters 1, 4 and 6 connect north east cities and towns in sparse settings to the urban major conurbation[^5]. Clusters 5, 9 and 10 do the same in the South east. Other clusters, such as 3, 7, and 8 are mainly inside the most urbanised areas.
+If we compare the clusters to the spatial distribution of urbanisation (@fig-rural-urban), we find that most of the clusters are connecting areas with different levels of urbanisation, and that an area with high levels of urbanisation is always involved. For example clusters 1, 4 and 6 connect somewhat rural areas in the North East to the urban major conurbation[^5]. Clusters 5, 9 and 10 do the same in the South East. Other clusters, such as 3, 7, and 8 are mainly inside the most urbanised areas.
 
 [^5]: The classifications are explained in the [2011 Rural Urban Classification User Guide](https://www.gov.uk/government/statistics/2011-rural-urban-classification)
 
 ## Clustering based on transport supply and demand {#sec-results-transport-demand}
 
-The results are similar to those of $OD_2$, but we see that some clusters in the South-East disappear. This is an indicator that there may be enough demand in the South East to warrant a high frequency bus service. Similarly, we see that cluster 3 in @fig-cluster-scenario-2 has no equivalent in @fig-cluster-scenario-3. The cluster were located in a high density area which seemed to overlap with many bus routes, so it is not surprising that there is sufficient demand in the area to warrant improved FRT service.
+The results are similar to those of $OD_s$, but we see that some clusters in the South-East disappear. This is an indicator that there may be enough demand in the South East to warrant a high frequency bus service. Similarly, we see that cluster 3 in @fig-cluster-scenario-2 has no equivalent in @fig-cluster-scenario-3. The cluster were located in a high density area which seemed to overlap with many bus routes, so it is not surprising that there is sufficient demand in the area to warrant improved FRT service.
 
 In most cases, the clusters partially overlap with the high frequency FRT services, but that is because the FRT service does not meet the demand at its endpoints. As mentioned previously, a DRT service in these cases would be more useful as a connector to the FRT service, not as a parallel service.
 
-![Clustering results (OD3)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png){#fig-cluster-scenario-3}
+![Clustering results ($OD_{sd}$)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png){#fig-cluster-scenario-3}
 
 Overall, we see that many of the clusters join up the urban core with its rural periphery. This is in line with research showing that DRT services can be used to efficiently compliment FRT systems that extend to rural areas [@sorensen2021much; @schluter2021impact]. As mentioned in @sec-lit-drt-failure, the ability of DRT schemes to concentrate demand in time and geography improves their likelihood of success.
 
@@ -342,11 +340,13 @@ The clusters vary in their composition, as shown in @fig-scatter-commuters-speed
 
 ![Characteristics of OD pairs in each cluster (light grey are all OD pairs and dark grey are all OD pairs in the cluster with no viable public transport option)](images/figure_scatter_commuters_color_speed_facet_cluster_scenario_3_length_50000.png){#fig-scatter-commuters-speed}
 
+@fig-zones-one-map gives an overview of how the zones could be merged based on the needs of the different clusters. It becomes more clear that the zones are predominantly in rhe outskirts and in rural areas. Zones in urban area, such as that in the South West covers an area with no public transport. Future work could explore where bus services could be added instead of taking the bus network as a fixed constraint [@pinto2020joint].
+
 ![Potential DRT zones](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_one_map.png){#fig-zones-one-map}
 
-Point on limitations from Song 2019
+<!--# Point on limitations from Song 2019 -->
 
--   "Many studies have made contributions to the OD flow clustering problem, although two defects remain in existing work. First, few studies can handle arbitrarily shaped OD flow clusters because most algorithms use regularly shaped regions to search for adjacent flows (Nanni and Pedreschi 2006, Zhu et al. 2013, Zhu and Guo 2014). Although certain density-based clustering methods can work on arbitrarily shaped clusters of point process data (Pei et al. 2008), managing OD flow data is still difficult because shapes in OD flow space are arbitrary. Second, the statistical significance of OD flow clusters is rarely considered in the clustering process, although it is a useful indicator for describing the intensity of OD flow clustering."
+<!--# "Many studies have made contributions to the OD flow clustering problem, although two defects remain in existing work. First, few studies can handle arbitrarily shaped OD flow clusters because most algorithms use regularly shaped regions to search for adjacent flows (Nanni and Pedreschi 2006, Zhu et al. 2013, Zhu and Guo 2014). Although certain density-based clustering methods can work on arbitrarily shaped clusters of point process data (Pei et al. 2008), managing OD flow data is still difficult because shapes in OD flow space are arbitrary. Second, the statistical significance of OD flow clusters is rarely considered in the clustering process, although it is a useful indicator for describing the intensity of OD flow clustering." -->
 
 # Conclusion
 
