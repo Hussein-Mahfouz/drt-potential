@@ -92,7 +92,7 @@ tt_matrix_d <- tt_matrix %>%
 
 ## Bar plots
 
-### Waiting time 
+### Waiting time
 
 ```{r}
 #| warning: false

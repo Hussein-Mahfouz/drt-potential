@@ -3,7 +3,9 @@
 ###    combination. r5r is used for the calculations                                            ###
 ###################################################################################################
 
+source("R/study_area_geographies.R")
 source("R/r5r_routing_wrappers.R")
+source("code/routing_prep.R")
 
 library(tidyverse)
 library(sf)
@@ -19,6 +21,9 @@ travel_time_path <- paste0("data/processed/travel_times/")
 
 geography <- "LSOA"
 
+# what number do we want to give to OD pairs that cannot be reached within our travel time threshold
+na_time_replace <- 150  # 2.5 hours
+
 # create a directory to store the results
 dir.create(paste0(travel_time_path, geography))
 
@@ -26,42 +31,9 @@ dir.create(paste0(travel_time_path, geography))
 
 study_area <- st_read("data/interim/study_area_boundary.geojson")
 
-
-# --- edit the sf to match the requested geographic resolution. The original layer is at the OA level, but we may want LSOA or MSOA
-
-study_area_geographies <- function(study_area,
-                                   geography){
-  # get a resolved geometry and retain the first value in each group (the values are the same for all elements in the same group - only the OA is different)
-  if(geography == "MSOA"){
-    message("converting from OA to MSOA")
-    study_area <- study_area %>%
-      group_by(MSOA21CD) %>%
-      summarise(across(c(OBJECTID, where(is.character)), ~first(.x))) %>%
-      select(-c(LSOA21CD, OA21CD))
-
-  } else if(geography == "LSOA"){
-    message("converting from OA to LSOA")
-    study_area <- study_area %>%
-      group_by(LSOA21CD) %>%
-      summarise(across(c(OBJECTID, where(is.character)), ~first(.x))) %>%
-      select(-OA21CD)
-
-  } else if(geography == "OA"){
-    message("keeping original OA boundaries")
-  }
-  return(study_area)
-}
-
-
 # edit the study area to match the chosen resolution
 study_area <- study_area_geographies(study_area = study_area,
                                      geography = geography)
-
-
-
-
-
-
 
 
 # r5r requires a POINT sf object with WGS84 CRS
@@ -131,6 +103,10 @@ tt_results <- tt_matrix(#scenarios = scenarios,
                         time_window = 20,
                         percentiles = c(25, 50, 75))
 
+# replace na results with very high number
+tt_results <- tt_results %>%
+  mutate(across(.cols = contains("travel_time"), ~ifelse(is.na(.), na_time_replace, .)))
+
 
 # save the results
 arrow::write_parquet(tt_results, paste0(travel_time_path, geography, "/travel_time_matrix.parquet"))
@@ -171,14 +147,42 @@ tt_results_expanded_s <- summarise_ttm_expanded(ttm_expanded_results = tt_result
 
 # save the results
 arrow::write_parquet(tt_results_expanded_s, paste0(travel_time_path, geography, "/travel_time_matrix_expanded.parquet"))
+#tt_results_expanded_s <- arrow::read_parquet(paste0(travel_time_path, geography, "/travel_time_matrix_expanded.parquet"))
 
 
 
 
 
 
+# -------------- CALCULATE DETAILED ITINERARIES TO GET CAR SHORTEST PATH GEOMETRIES
 
+#TODO: create function to spin up an r5 routable graph -> move function to R/ and source it here -> move this part to pt_or_drt.R and source the function there as well
 
+shortest_path_car <- r5r::detailed_itineraries(r5r_core = r5r_core,
+                                               origins = study_area_r5,
+                                               destinations = study_area_r5,
+                                               mode = "CAR",
+                                               departure_datetime = as.POSIXct(scenarios$departure_datetime[1][[1]],
+                                                                               format = "%d-%m-%Y %H:%M:%S"),
+                                               time_window = 1,
+                                               max_walk_time = 10,
+                                               max_trip_duration = 120,
+                                               shortest_path = TRUE,
+                                               all_to_all = TRUE,
+                                               drop_geometry = FALSE,
+                                               # to suppress r5 output. Change to true if debugging
+                                               verbose = FALSE,
+                                               # slow down function by ~20%
+                                               progress = TRUE)
+
+# keep necessary columns only
+shortest_path_car <- shortest_path_car %>%
+  select(from_id, to_id, total_duration, total_distance)
+
+# TODO: save as geoparquet file when geoarrow r package matures https://geoarrow.github.io/geoarrow-r/index.html
+
+#st_write(shortest_path_car, paste0(travel_time_path, geography, "/shortest_path_car.geojson"), delete_dsn = TRUE)
+saveRDS(shortest_path_car, paste0(travel_time_path, geography, "/shortest_path_car.Rds"))
 
 
 
@@ -188,24 +192,3 @@ r5r::stop_r5(r5r_core)
 # java garbage collector to free up memory
 rJava::.jgc(R.gc = TRUE)
 
-#
-#
-# x <- r5r::detailed_itineraries(r5r_core = r5r_core,
-#                                origins = study_area_r5[1:100,],
-#                                destinations = study_area_r5[1:100,],
-#                                mode = scenarios$mode[1][[1]],
-#                                departure_datetime = as.POSIXct(scenarios$departure_datetime[1][[1]],
-#                                                                format = "%d-%m-%Y %H:%M:%S"),
-#                                time_window = 5,
-#                                #suboptimal_minutes = 5,
-#                                max_walk_time = 10,
-#                                max_trip_duration = 120,
-#                                shortest_path = TRUE,
-#                                all_to_all = TRUE,
-#                                drop_geometry = TRUE,
-#                                # to suppress r5 output. Change to true if debugging
-#                                verbose = FALSE,
-#                                # slow down function by ~20%
-#                                progress = TRUE)
-#
-#

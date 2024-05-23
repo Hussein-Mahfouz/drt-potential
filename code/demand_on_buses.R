@@ -22,6 +22,8 @@ source("R/filter_od_matrix.R")
 
 ########## ----------------------- Read in the data ----------------------- ##########
 
+# is the demand data disaggregated by mode?
+mode = TRUE
 
 # ----------- 1. Study area
 
@@ -63,16 +65,26 @@ gtfs_bus <- gtfs_bus %>%
 
 # Demand (census) + supply (travel time) data
 
-od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
+if(mode == TRUE){
+  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode_with_speed.parquet"))
 
-# columns to reference (they differ based on geography)
-from_id_col = paste0(geography, "21CD_home")
-to_id_col = paste0(geography, "21CD_work")
+} else{
+  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_with_speed.parquet"))
+}
+
+# od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
+
+# # columns to reference (they differ based on geography)
+# from_id_col = paste0(geography, "21CD_home")
+# to_id_col = paste0(geography, "21CD_work")
 
 # remove intrazone trips
 # TODO: do we need to do this?
+# od_demand <- od_demand %>%
+#   filter(.data[[from_id_col]] != .data[[to_id_col]])
+
 od_demand <- od_demand %>%
-  filter(.data[[from_id_col]] != .data[[to_id_col]])
+  filter("Origin" != "Destination")
 
 ########## ----------------------- Identify which OD demand pairs are served by each bus ----------------------- ##########
 
@@ -115,40 +127,89 @@ od_supply_filtered = filter_matrix_by_distance(zones = study_area,
 #   st_drop_geometry() %>%
 #   #left_join(od_demand,
 #   inner_join(od_demand,
-#              by = c("Origin" = from_id_col, "Destination" = to_id_col))
+#              by = c("Origin", #  = from_id_col,
+#                     "Destination", #  = to_id_col,
+#                     "start_time" = "departure_time"))
+#
+# od_sd <- od_sd %>%
+#   filter(combination == "pt_wkday_morning")
 
-od_sd <- od_supply_filtered %>%
-  st_drop_geometry() %>%
-  #left_join(od_demand,
-  inner_join(od_demand,
-             by = c("Origin" = from_id_col, "Destination" = to_id_col, "start_time" = "departure_time"))
+od_sd <- od_demand %>%
+  filter(combination == "pt_wkday_morning") %>%
+  left_join(od_supply_filtered %>%
+              select(-distance_m) %>%
+              st_drop_geometry(),
+  by = c("Origin", #  = from_id_col,
+                    "Destination", #  = to_id_col,
+                    "departure_time" = "start_time"))
+
+
+# # save output
+# arrow::write_parquet(od_sd, paste0("data/interim/travel_demand/", toupper(geography), "/od_pairs_demand_and_supply.parquet"))
+
 
 # ----------- 3. Get the total potential ridership on each unique trip (sd = supply_demand)
 
 # Method 1: all_to_all
 trips_sd_1 <- od_sd %>%
-  group_by(trip_id, start_time, combination) %>%
+  group_by(trip_id, departure_time, combination) %>%
   summarise(potential_demand_all_to_all = sum(commute_all, na.rm = TRUE)) %>%
   ungroup()
 
 # Method 2: frequency-based
 trips_sd_2 <- od_sd %>%
-  group_by(start_time, combination, Origin, Destination) %>%
+  group_by(departure_time, combination, Origin, Destination) %>%
   # get number of passengers on each route for each OD pair
   mutate(group_id = cur_group_id(),
          frequency_min = 3600/headway_secs,
          commute_route = round((commute_all * frequency_min) / sum(frequency_min))) %>%
   ungroup() %>%
   # sum over the route
-  group_by(trip_id, start_time, combination) %>%
+  group_by(trip_id, departure_time, combination) %>%
   summarise(potential_demand_freq_based = sum(commute_route, na.rm = TRUE)) %>%
+  ungroup()
+
+# Method 3: split demand equally between all routes serving OD pair
+trips_sd_3 <- od_sd %>%
+  group_by(departure_time, combination, Origin, Destination) %>%
+  # get number of passengers on each route for each OD pair
+  mutate(commute_route = round((commute_all / n()))) %>%
+  ungroup() %>%
+  # sum over the route
+  group_by(trip_id, departure_time, combination) %>%
+  summarise(potential_demand_equal_split = sum(commute_route, na.rm = TRUE)) %>%
   ungroup()
 
 
 # add all to one df
 trips_sd <- trips_sd_1 %>%
-  left_join(trips_sd_2, by = c("trip_id", "start_time", "combination"))
+  left_join(trips_sd_2, by = c("trip_id", "departure_time", "combination")) %>%
+  left_join(trips_sd_3, by = c("trip_id", "departure_time", "combination"))
 
+# replace all potential_demand values with 0 when trip_id == NA.
+# IMPORTANT: This was causing a bug before fixing
+trips_sd = trips_sd %>%
+  mutate(across(contains("potential"), ~ if_else(is.na(trip_id), 0, .)))
+
+# add potential demand to original od df
+od_trips_sd <- od_sd %>%
+  left_join(trips_sd, by = c("trip_id", "departure_time", "combination"))
+
+od_trips_sd = od_trips_sd %>%
+  mutate(speed_kph = replace_na(speed_kph, 0))
+
+# keep one row per Origin-Destination - the trip with the highest potential demand
+od_trips_sd <- od_trips_sd %>%
+  group_by(Origin, Destination) %>%
+  dplyr::top_n(1, potential_demand_equal_split) %>%
+  ungroup()
+
+if(mode == TRUE){
+  arrow::write_parquet(od_trips_sd, paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode_with_speed_and_pd.parquet"))
+
+} else{
+  arrow::write_parquet(od_trips_sd, paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_with_speed_and_pd.parquet"))
+}
 
 # ----------- 4. Add geometry to plot results
 
@@ -178,7 +239,303 @@ trips_sd_sf_shape_sum <- trips_sd_sf %>%
   summarise(across(contains("potential_demand"), ~ sum(.x, na.rm = TRUE))) %>%
   ungroup()
 
+
+
+
 # ###########  ---------------------------  5. Plots  --------------------------- ##########
+
+
+# ----------- Potential demand histograms ----------- #
+
+plots_path <- "data/processed/plots/eda/speed_demand_cutoffs/"
+
+# TRIP LEVEL
+
+# equal split
+
+trips_sd %>%
+  #mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0)) %>%
+  ggplot(aes(x = potential_demand_equal_split)) +
+  geom_histogram(bins = 50, alpha = 0.8) +
+  labs(title = "Potential demand on PT routes",
+       subtitle = "Equal split of demand from each OD\nonto routes that serve it",
+       x = "Potential demand (no. of passengers)",
+       y = "No. of routes")
+
+ggsave(filename = paste0(plots_path, "plot_hist_potential_demand_routes_equal_split.png"))
+
+
+# all methods
+
+trips_sd %>%
+  pivot_longer(cols = starts_with("potential_demand"),
+               names_to = "distribution_type",
+               names_prefix = "potential_demand_",
+               values_to = "potential_demand") %>%
+  # thousands for ggplot axis
+  mutate(potential_demand = round(potential_demand / 1000, 2)) %>%
+  ggplot(aes(x = potential_demand)) +
+  geom_histogram(binwidth = 0.5, alpha = 0.8) +
+  facet_wrap(~ distribution_type) +
+  labs(title = "Potential demand on PT routes",
+       subtitle = "Different approaches to distributing OD demand",
+       x = "Potential demand (no. of passengers using route) - Thousands",
+       y = "No. of routes")  +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8)
+  )
+
+ggsave(filename = paste0(plots_path, "plot_hist_potential_demand_routes_all_methods.png"))
+
+
+# equal split vs freq_based
+
+trips_sd %>%
+  #filter(!is.na(trip_id), !is.na(departure_time)) %>%
+  pivot_longer(cols = starts_with("potential_demand"),
+               names_to = "distribution_type",
+               names_prefix = "potential_demand_",
+               values_to = "potential_demand") %>%
+  # remove method
+  filter(distribution_type != "all_to_all") %>%
+  # thousands for ggplot axis
+  mutate(potential_demand = round(potential_demand / 1000, 2)) %>%
+  ggplot(aes(x = potential_demand)) +
+  geom_histogram(binwidth = 0.1, alpha = 0.8) +
+  facet_wrap(~ distribution_type) +
+  labs(title = "Potential demand on PT routes",
+       subtitle = "Different approaches to distributing OD demand",
+       x = "Potential demand (no. of passengers using route) - Thousands",
+       y = "No. of routes")  +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8)
+  )
+
+ggsave(filename = paste0(plots_path, "plot_hist_potential_demand_routes_two_methods.png"))
+
+#  ----- OD LEVEL
+
+# equal split
+
+od_trips_sd %>%
+  #filter(!is.na(trip_id), !is.na(departure_time)) %>%
+  pivot_longer(cols = starts_with("potential_demand"),
+               names_to = "distribution_type",
+               names_prefix = "potential_demand_",
+               values_to = "potential_demand") %>%
+  # keep busiest route only
+  filter(distribution_type == "equal_split") %>%
+  group_by(Origin, Destination, distribution_type) %>%
+  slice_max(potential_demand, with_ties = FALSE) %>%
+  ungroup() %>%
+  mutate(potential_demand = round(potential_demand / 1000, 2)) %>%
+  ggplot(aes(x = potential_demand)) +
+  geom_histogram(binwidth = 0.5, alpha = 0.8) +
+  #geom_density()+
+  #scale_y_log10() +
+  #geom_vline(data = percentiles_df, aes(xintercept = potential_demand, color = "blue")) +
+  #scale_color_manual(values = c("10th Percentile" = "red", "25th Percentile" = "green", "Median" = "blue", "75th Percentile" = "purple", "90th Percentile" = "orange")) +  # Specify line colors for percentiles
+  labs(title = "Potential demand on PT routes",
+       subtitle = "Equal split of demand from each OD\nonto routes that serve it",
+       x = "Potential demand on busiest route serving OD pair ('000)",
+       y = "No. of OD pairs")  +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8)
+  )
+
+
+ggsave(filename = paste0(plots_path, "plot_hist_potential_demand_od_equal_split.png"))
+
+# equal split vs freq_based
+
+od_trips_sd %>%
+  #filter(!is.na(trip_id), !is.na(departure_time)) %>%
+  pivot_longer(cols = starts_with("potential_demand"),
+               names_to = "distribution_type",
+               names_prefix = "potential_demand_",
+               values_to = "potential_demand") %>%
+  # remove method
+  filter(distribution_type != "all_to_all") %>%
+  # keep busiest route only
+  group_by(Origin, Destination, distribution_type) %>%
+  slice_max(potential_demand, with_ties = FALSE) %>%
+  ungroup() %>%
+  mutate(potential_demand = round(potential_demand / 1000, 2)) %>%
+  ggplot(aes(x = potential_demand)) +
+  geom_histogram(binwidth = 0.5, alpha = 0.8) +
+  #scale_y_log10() +
+  facet_wrap(~ distribution_type) +
+  labs(title = "Potential demand on PT routes",
+       subtitle = "Different approaches to distributing OD demand",
+       x = "Potential demand on busiest route serving OD pair ('000)",
+       y = "No. of OD pairs")  +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8)
+  )
+
+ggsave(filename = paste0(plots_path, "plot_hist_potential_demand_od_two_methods.png"))
+
+
+# all methods
+
+od_trips_sd %>%
+  #filter(!is.na(trip_id), !is.na(departure_time)) %>%
+  pivot_longer(cols = starts_with("potential_demand"),
+               names_to = "distribution_type",
+               names_prefix = "potential_demand_",
+               values_to = "potential_demand") %>%
+  # keep busiest route only
+  group_by(Origin, Destination, distribution_type) %>%
+  slice_max(potential_demand, with_ties = FALSE) %>%
+  ungroup() %>%
+  mutate(potential_demand = round(potential_demand / 1000, 2)) %>%
+  ggplot(aes(x = potential_demand)) +
+  geom_histogram(binwidth = 0.5, alpha = 0.8) +
+  #scale_y_log10() +
+  facet_wrap(~ distribution_type) +
+  labs(title = "Potential demand on PT routes",
+       subtitle = "Different approaches to distributing OD demand",
+       x = "Potential demand on busiest route serving OD pair ('000)",
+       y = "No. of OD pairs")  +
+  theme(
+         axis.text.x = element_text(angle = 45, hjust = 1),
+         axis.title.x = element_text(size = 8),
+         axis.title.y = element_text(size = 8)
+       )
+
+ggsave(filename = paste0(plots_path, "plot_hist_potential_demand_od_all_methods.png"))
+
+
+
+
+# --- Density plots with quantile vertical lines
+
+
+# --- Trip level
+
+percentiles_trip <- data.frame(
+  percentiles = c(0.1, 0.25, 0.5, 0.75, 0.9),
+  potential_demand = quantile(trips_sd$potential_demand_equal_split,  c(0.1, 0.25, 0.5, 0.75, 0.9)),
+  labels = c("10", "25", "50", "75", "90")
+)
+
+
+trips_sd %>%
+  #mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0)) %>%
+  ggplot(aes(x = potential_demand_equal_split)) +
+  geom_density()+
+  #scale_y_log10() +
+  geom_vline(data = percentiles_trip, aes(xintercept = potential_demand, color = labels))+
+  labs(title = "Potential demand on PT routes",
+       subtitle = "Equal split of demand from each OD\nonto routes that serve it",
+       x = "Potential demand (no. of passengers)",
+       color = "Percentile") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8),
+    legend.position = "bottom"
+  )
+
+ggsave(filename = paste0(plots_path, "plot_dens_potential_demand_trips_equal_split.png"))
+
+
+
+# --- OD level
+
+percentiles_df <- data.frame(
+  percentiles = c(0.1, 0.25, 0.5, 0.75, 0.9),
+  potential_demand = quantile(od_trips_sd$potential_demand_equal_split / 1000,  c(0.1, 0.25, 0.5, 0.75, 0.9)),
+  labels = c("10", "25", "50", "75", "90")
+)
+
+# equal split
+
+od_trips_sd %>%
+  #filter(!is.na(trip_id), !is.na(departure_time)) %>%
+  pivot_longer(cols = starts_with("potential_demand"),
+               names_to = "distribution_type",
+               names_prefix = "potential_demand_",
+               values_to = "potential_demand") %>%
+  # keep busiest route only
+  filter(distribution_type == "equal_split") %>%
+  group_by(Origin, Destination, distribution_type) %>%
+  slice_max(potential_demand, with_ties = FALSE) %>%
+  ungroup() %>%
+  mutate(potential_demand = round(potential_demand / 1000, 2)) %>%
+  ggplot(aes(x = potential_demand)) +
+  geom_density()+
+  #scale_y_log10() +
+  geom_vline(data = percentiles_df, aes(xintercept = potential_demand, color = labels))+
+  scale_color_brewer(type = "qual", palette = "Set1") +
+  labs(title = "Potential demand on PT routes",
+       subtitle = "Equal split of demand from each OD\nonto routes that serve it",
+       x = "Potential demand on busiest route serving OD pair ('000)",
+       color = "Percentile")  +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8),
+    legend.position = "bottom"
+  )
+
+ggsave(filename = paste0(plots_path, "plot_dens_potential_demand_od_equal_split.png"))
+
+
+
+
+# ----------- Speed histograms ----------- #
+
+
+# histogram
+od_trips_sd %>%
+  #mutate(speed_kph = replace_na(speed_kph, 0)) %>%
+  ggplot(aes(x = speed_kph)) +
+  geom_histogram(binwidth = 1, alpha = 0.8) +
+  labs(title = "Average speeds between ODs using PT",
+       subtitle = "Speed = 0 implies unreachable by PT",
+       x = "Speed (kph)",
+       y = "No. of OD pairs")
+
+ggsave(filename = paste0(plots_path, "plot_hist_speeds_od_equal_split.png"))
+
+# density plot with persentiles
+
+percentiles_speed <- data.frame(
+  percentiles = c(0.1, 0.25, 0.5, 0.75, 0.9),
+  potential_demand = quantile(od_trips_sd$speed_kph,  c(0.1, 0.25, 0.5, 0.75, 0.9)),
+  labels = c("10", "25", "50", "75", "90")
+)
+
+
+od_trips_sd %>%
+  ggplot(aes(x = speed_kph)) +
+  geom_density()+
+  #scale_y_log10() +
+  geom_vline(data = percentiles_speed, aes(xintercept = potential_demand, color = labels))+
+  scale_color_brewer(type = "qual", palette = "Set1") +
+  labs(title = "Average speeds between ODs using PT",
+       subtitle = "Speed = 0 implies unreachable by PT",
+       x = "Speed (kph)",
+       color = "Percentile")  +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8),
+    legend.position = "bottom"
+  )
+
+ggsave(filename = paste0(plots_path, "plot_dens_speeds_od_equal_split.png"))
+
+
 #
 #
 # # ----- a)  potential ridership on all different trips

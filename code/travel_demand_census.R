@@ -33,7 +33,7 @@ study_area <- st_read("data/interim/study_area_boundary.geojson")
 
 census_work_oa_clipped <- census_work_oa %>%
   filter(`Output Areas code` %in% study_area$OA21CD |
-         `OA of workplace code` %in% study_area$OA21CD)
+           `OA of workplace code` %in% study_area$OA21CD)
 
 # ------------- 3. Remove unnecessary columns and rename others
 
@@ -86,12 +86,20 @@ census_work_msoa <- census_work_oa %>%
   ungroup()
 
 
+
+
 # -------------- 5.  Join travel time data
 
 # ---------- OA level
 
 # read in the data
 tt_matrix_oa <- arrow::read_parquet("data/processed/travel_times/OA/travel_time_matrix_expanded.parquet")
+
+# some OD pairs don't have travel time data (for some combinaitons). Expand grid so that we explitly mention these OD pairs
+tt_matrix_oa_exp <- tidyr::crossing(from_id = tt_matrix_oa$from_id, to_id = tt_matrix_oa$to_id, combination = tt_matrix_oa$combination)
+
+tt_matrix_oa <- tt_matrix_oa_exp %>%
+  left_join(tt_matrix_oa, by = c("from_id", "to_id", "combination"))
 
 # add metadata (OA, LSOA, and MSOA for each home and workplace zone)
 tt_matrix_oa <- tt_matrix_oa %>%
@@ -110,6 +118,7 @@ census_work_oa <- census_work_oa %>%
 census_work_oa_tt <- census_work_oa %>%
   left_join(tt_matrix_oa, by = c("OA21CD_home", "OA21CD_work"))
 
+
 # save
 #write_csv(census_work_oa_tt, "data/raw/travel_demand/od_census_2021/demand_study_area_oa.csv")
 arrow::write_parquet(census_work_oa_tt, "data/raw/travel_demand/od_census_2021/demand_study_area_oa.parquet")
@@ -120,6 +129,13 @@ arrow::write_parquet(census_work_oa_tt, "data/raw/travel_demand/od_census_2021/d
 
 # read in the data
 tt_matrix_lsoa <- arrow::read_parquet("data/processed/travel_times/LSOA/travel_time_matrix_expanded.parquet")
+
+# some OD pairs don't have travel time data (for some combinaitons). Expand grid so that we explitly mention these OD pairs
+tt_matrix_lsoa_exp <- tidyr::crossing(from_id = tt_matrix_lsoa$from_id, to_id = tt_matrix_lsoa$to_id, combination = tt_matrix_lsoa$combination)
+
+tt_matrix_lsoa <- tt_matrix_lsoa_exp %>%
+  left_join(tt_matrix_lsoa, by = c("from_id", "to_id", "combination"))
+
 
 # add metadata (OA, LSOA, and MSOA for each home and workplace zone)
 tt_matrix_lsoa <- tt_matrix_lsoa %>%
@@ -147,6 +163,14 @@ arrow::write_parquet(census_work_lsoa_tt, "data/raw/travel_demand/od_census_2021
 
 # read in the data
 tt_matrix_msoa <- arrow::read_parquet("data/processed/travel_times/MSOA/travel_time_matrix_expanded.parquet")
+
+# some OD pairs don't have travel time data (for some combinaitons). Expand grid so that we explitly mention these OD pairs
+tt_matrix_msoa_exp <- tidyr::crossing(from_id = tt_matrix_msoa$from_id, to_id = tt_matrix_msoa$to_id, combination = tt_matrix_msoa$combination)
+
+tt_matrix_msoa <- tt_matrix_msoa_exp %>%
+  left_join(tt_matrix_msoa, by = c("from_id", "to_id", "combination"))
+
+
 
 # add metadata (OA, LSOA, and MSOA for each home and workplace zone)
 tt_matrix_msoa <- tt_matrix_msoa %>%
