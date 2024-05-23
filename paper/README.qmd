@@ -301,7 +301,7 @@ Setting the threshold at $p75$ implies that service on the top 25% of routes in 
 
 <!-- ``` -->
 
-# Results and discussion
+# Results
 
 In this section we look at the clustering output of $OD_s$ and $OD_{sd}$. @sec-results-transport-supply and @sec-results-transport-demand presents the results for each respectively.
 
@@ -359,9 +359,9 @@ Left: Classification of areas covered by each \| Right: Characteristics of OD pa
 
 <!--# "Many studies have made contributions to the OD flow clustering problem, although two defects remain in existing work. First, few studies can handle arbitrarily shaped OD flow clusters because most algorithms use regularly shaped regions to search for adjacent flows (Nanni and Pedreschi 2006, Zhu et al. 2013, Zhu and Guo 2014). Although certain density-based clustering methods can work on arbitrarily shaped clusters of point process data (Pei et al. 2008), managing OD flow data is still difficult because shapes in OD flow space are arbitrary. Second, the statistical significance of OD flow clusters is rarely considered in the clustering process, although it is a useful indicator for describing the intensity of OD flow clustering." -->
 
-# Conclusion
+# Discussion
 
-The need to decarbonise the transport sector and improvements in real-time routing technology and the proliferation of app-based services have contributed to a surge in DRT services. However DRT services continue to suffer from the lack of robust strategic level planning, and many fail to capture sufficient passenger demand to make them economically viable.
+## Limitations and future work 
 
 The paper proposes a method that can help identify concentrations of travel demand, an exercise that is important for improving the chances of successful DRT schemes [@enoch2006demand]. The method can be further improved by adding a temporal element to the travel demand and carrying out spatiotemporal clustering [@yao2018stepwise; @yan2023spatiotemporal]. This would allow us to identify how DRT operating areas could differ throughout the day or on weekdays/weekends.
 
@@ -370,6 +370,10 @@ More spatially disaggregated flow data would also help handle the Modifiable Are
 Different density-based clustering algorithms such as HDBSCAN [@tao2017flowhdbscan] and OPTICS [@fang2021adaptive] can also be explored. Both of these algorithms require only one input parameter (DBSAN requires 2) and can identify cluster formation at different scales.
 
 The candidate zones identified by the method vary in size, and a follow up exercise would be necessary to validate them. Analytical models mentioned in @sec-planning_drt could be used to determine more precise service areas. They could identify whether the critical demand density for a DRT service is met [@quadrifoglio2009methodology], look at schedule coordination with FRT [@sivakumaran2012cost], and predict DRT performance based on the street network layout in the different zones [@chandra2013new].
+
+## Conclusion
+
+The need to decarbonise the transport sector and improvements in real-time routing technology and the proliferation of app-based services have contributed to a surge in DRT services. However DRT services continue to suffer from the lack of robust strategic level planning, and many fail to capture sufficient passenger demand to make them economically viable.
 
 \pagebreak
 
