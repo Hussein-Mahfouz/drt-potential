@@ -1,7 +1,7 @@
 ---
 title: "Exploring the Potential for Integrating Demand Responsive Transport with Public Transport"
 author: "Hussein Mahfouz"
-abstract: "Demand-Responsive Transport (DRT) has emerged as a mobility option for areas that are traditionally hard to serve by high frequency public transport. The integration of DRT with public transport could help in reducing car mode share, but planning DRT remains challenging; many studies show that DRT can inadvertantly reduce public transport demand while also increasing congestion and vehicle-miles traveled (VMT).  More research is needed on how to constrain operating areas of DRT based on the unique demand patterns of an area. This work investigates delineating service areas of DRT using spatial clustering of spatial flow data. A density-based clustering method for bivariate flows is used to study commuting patterns by car and public transport in the city of Leeds. We consider clusters based on (a) Origin-Destinations (OD) pairs with poor public transport supply, and (b) OD pairs with poor public transport supply and low potential demand. The method identifies clusters of OD flows where demand is concentrated, and calculates the modal split of these clusters. Identifying concentrated demand clusters could help address one of the main reasons for high DRT failure rates - unnecessarily flexible ‘many-to-many’ services – by constraining the service to clusters with high car use. The areas identified provide a useful input into additional simulations that aim to further refine the operating characteristics of DRT. Our approach provides a foundation for agent-based models of DRT and future research into and practical applications of DRT integration with existing Fixet-Route Transit (FRT)."
+abstract: "Demand-Responsive Transport (DRT) has emerged as a mobility option for areas that are traditionally hard to serve by high frequency public transport. The integration of DRT with public transport could help in reducing car mode share, but planning DRT remains challenging; many studies show that DRT can inadvertently reduce public transport demand while also increasing congestion and vehicle-miles traveled (VMT).  More research is needed on how to constrain operating areas of DRT based on the unique demand patterns of an area. This work investigates delineating service areas of DRT using spatial clustering of spatial flow data. A density-based clustering method for bivariate flows is used to study commuting patterns by car and public transport in the city of Leeds. We consider clusters based on (a) Origin-Destinations (OD) pairs with poor public transport supply, and (b) OD pairs with poor public transport supply and low potential demand. The method identifies clusters of OD flows where demand is concentrated, and calculates the modal split of these clusters. Identifying concentrated demand clusters could help address one of the main reasons for high DRT failure rates - unnecessarily flexible ‘many-to-many’ services – by constraining the service to clusters with high car use. The areas identified provide a useful input into additional simulations that aim to further refine the operating characteristics of DRT. Our approach provides a foundation for agent-based models of DRT and future research into and practical applications of DRT integration with existing Fixed-Route Transit (FRT)."
 date: "`r format(Sys.time(), '%d %m %y')`"
 format:
   #gfm: default
@@ -323,7 +323,7 @@ Our routing analysis shows us the number of transfers required to travel between
 
 The clustering analysis shows a number of different clusters, some of which cut across the entire study area. The clustering results are visualised using a dashed border, and the colored polygons are used to show potential DRT service areas that could cover parts of each cluster. They are obtained by getting the spatial difference between each cluster and the high frequency bus network.
 
-![Clustering OD pairs with poor PT supply ($OD_{s}$)](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png){#fig-cluster-scenario-2}
+![Clustering results - OD pairs with poor PT supply ($OD_{s}$)](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png){#fig-cluster-scenario-2}
 
 If we compare the clusters to the spatial distribution of urbanisation (@fig-rural-urban), we find that most of the clusters are connecting areas with different levels of urbanisation, and that an area with high levels of urbanisation is always involved. For example clusters 1, 4 and 6 connect somewhat rural areas in the North East to the urban major conurbation[^4]. Clusters 5, 9 and 10 do the same in the South East. Other clusters, such as 3, 7, and 8 are mainly inside the most urbanised areas.
 
@@ -335,7 +335,7 @@ The results are similar to those of $OD_s$, but we see that some clusters in the
 
 In most cases, the clusters partially overlap with the high frequency FRT services, but that is because the FRT service does not meet the demand at its endpoints. As mentioned previously, a DRT service in these cases would be more useful as a connector to the FRT service, not as a parallel service.
 
-![Clustering results ($OD_{sd}$)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png){#fig-cluster-scenario-3}
+![Clustering results - OD pairs with poor PT supply and low potential demand ($OD_{sd}$)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png){#fig-cluster-scenario-3}
 
 Overall, we see that many of the clusters join up the urban core with its rural periphery. This is in line with research showing that DRT services can be used to efficiently compliment FRT systems that extend to rural areas [@sorensen2021much; @schluter2021impact]. As mentioned in @sec-intro, the ability of DRT schemes to concentrate demand in time and geography improves their likelihood of success.
 
@@ -361,55 +361,43 @@ Left: Classification of areas covered by each \| Right: Characteristics of OD pa
 
 # Discussion
 
-## Spatial concentration of travel demand
+## Spatial concentrations of travel demand
 
--   Clustering algorithms -\> patterns from data that is otherwise difficult to decode
+The success of DRT schemes is subject to their ability to serve spatial concentrations of travel demand [@enoch2006demand]. By leveraging a density-based clustering algorithm, our analysis can identify groups of ODs with sufficiently similar patterns, each of which can be served by a different DRT scheme. The identified clusters predominantly connect urban cores with rural peripheries, underscoring the importance of DRT in complementing fixed-route transit systems, especially in areas with low public transport accessibility and relatively low travel demand.
 
--   They show that most clusters connect urban cores with rural peripheries
+The clustering algorithm used requires the input of two parameters: epsilon (the search radius) and minpts (the minimum number of points inside the radius necessary for a cluster to form). A parameter sweep is done to determine feasible parameter combinations (\@fig-dbscan-sensitivity). We find that there are a few different parameter combinations that give us feasible clusters.
 
-    -   comment on differences between ODs and ODsd
+-   What if we changed alpha and beta? What would we learn? Why would we focus specifically on origins or destinations?
 
--   The clustering results are influenced by the distance metric used and the parameters passed to the algorithm
+-   comment on sensitivity analysis? How can minpts be informed by literature on min / max number of people required for a DRT?
 
-    -   What if we changed alpha and beta? What would we learn? Why would we focus specifically on origins or destinations?
+![Parameter sweep for DBScan algorithm](images/sensitivity_analysis_eps_minpts_filtered.png){#fig-dbscan-sensitivity}
 
-    -   comment on sensitivity analysis? How can minpts be informed by literature on min / max number of people required for a DRT?
+<!--# comment on differences between ODs and ODsd -->
 
 ## Implications for strategic planning of DRT
 
--   Variation in composition and spatial extent of clusters -\> need for tailored operating characteristics
+The composition and spatial extent of these clusters inform the design and operation of DRT services. Clusters vary in terms of the number and characteristics of OD pairs they encompass, supporting the evidence that DRT solutions need to be tailored to the area they are serving. Clusters that cover a large area may require many-to-many services that connect to multiple fixed-route transit stops, whereas clusters with a high concentration of commuters in a small area may require more direct services to one or two stops. , while clusters with dispersed demand patterns may benefit from flexible, many-to-many DRT services.
 
-    -   High concentration = more direct services
+Essential to our analysis is the use of DRT as part of an intermodal transport offering. It is clear that our clusters often overlap with high-frequency FRT [@fig-cluster-scenario-3], highlighting the potential for DRT to act as a feeder service. By limiting DRT coverage to areas that are not covered by a high-frequency FRT (step 6 in @fig-workflow), we aim to minimize unnecessary mode shift (e.g. PT to DRT) and enhance the efficiency of public transport systems. Intermodal routing has only recently become possible in agent-based transport simulations [@haslebacher2018intermodal], with the integration of DRT into this intermodal framework being a subsequent development [@chouaki2023agent]. Such a framework should be used to test the feasibility of our DRT zones in facilitating intermodal trips, but it should be noted that the success of such integration is dependent on other factors besides operating zones, such as seamless transfers and fare structures that do not penalise the use of multiple modes.
 
-    -   Low concentration = flexible, many-to-many services
+<!--# Simulations are necessary to inform which solution is more suitable. Discrete event simulations (citation) can be used to inform DRT efficiency under different operating characteristics. More sophisticated agent-based models could help us understand how -->
 
--   Simulations are necessary to inform which solution is more suitable. Discrete event simulations (citation) can be used to inform DRT efficiency under different perating characteristics. More sophisticated agent-based models could help us understand how
+## Limitations and future work
 
--   Feasibility of integration with Fixed-Route Transport
+<!--# THIS DOESN'T NEED TO BE A STAND-ALONE SECTION - BETTER TO EMBED PARAGRAPHS IN OTHER DISCUSSION SUBSECTIONS -->
 
-    -   Zones connect to high frequency FRT
-
-    -   Replacing car trips with integrated DRT-FRT trips necessitates transfers. Such trips will only be appealing if transfers are seamless; FRT routes that connect to DRT need to maintain a high frequency, and schedules need to be synchronized to minimize waiting times
-
-## Limitations and future work 
-
-THIS DOESN'T NEED TO BE A STAND-ALONE SECTION - BETTER TO EMBED PARAGRAPHS IN OTHER DISCUSSION SUBSECTIONS
-
-The method can be further improved by adding a temporal element to the travel demand and carrying out spatiotemporal clustering [@yao2018stepwise; @yan2023spatiotemporal]. This would allow us to identify how DRT operating areas could differ throughout the day or on weekdays/weekends.
-
-More spatially disaggregated flow data would also help handle the Modifiable Areal Unit Problem (MAUP), which is only partially mitigated in our case by jittering the aggregated flow data.
+The method can be further improved by adding a temporal element to the travel demand and carrying out spatiotemporal clustering [@yao2018stepwise; @yan2023spatiotemporal]. This would allow us to identify how DRT operating areas could differ throughout the day or on weekdays/weekends. More spatially disaggregated flow data would also help handle the Modifiable Areal Unit Problem (MAUP), which is only partially mitigated in our case by jittering the aggregated flow data.
 
 Different density-based clustering algorithms such as HDBSCAN [@tao2017flowhdbscan] and OPTICS [@fang2021adaptive] can also be explored. Both of these algorithms require only one input parameter (DBSAN requires 2) and can identify cluster formation at different scales.
 
-The candidate zones identified by the method vary in size, and a follow up exercise would be necessary to validate them. Analytical models mentioned in @sec-planning_drt could be used to determine more precise service areas. They could identify whether the critical demand density for a DRT service is met [@quadrifoglio2009methodology], look at schedule coordination with FRT [@sivakumaran2012cost], and predict DRT performance based on the street network layout in the different zones [@chandra2013new].
-
-Future work could explore where bus services could be added instead of taking the bus network as a fixed constraint [@pinto2020joint].
+The candidate zones identified by the method vary in size, and a follow up exercise would be necessary to validate them. Analytical models mentioned in @sec-planning_drt could be used to determine more precise service areas. They could identify whether the critical demand density for a DRT service is met [@quadrifoglio2009methodology], look at schedule coordination with FRT [@sivakumaran2012cost], and predict DRT performance based on the street network layout in the different zones [@chandra2013new]. Future work could also explore where bus services could be added instead of taking the bus network as a fixed constraint [@pinto2020joint].
 
 ## Conclusion
 
 The need to decarbonise the transport sector and improvements in real-time routing technology and the proliferation of app-based services have contributed to a surge in DRT services. However DRT services continue to suffer from the lack of robust strategic level planning, and many fail to capture sufficient passenger demand to make them economically viable.
 
-The paper proposes a method that can help identify concentrations of travel demand, an exercise that is important for improving the chances of successful DRT schemes [@enoch2006demand].
+Strategic planning of DRT that accounts for its integration with more traditional public transport systems presents a promising avenue for improved mobility in areas with pockets of concentrated travel demand that is difficult to serve cost-effectively by fixed-route transit. This work offers both conceptual and methodological contributions that can help realise this promise. Conceptually, we borrow methods from spatial data mining and argue that they are well suited to filling gaps in the current approaches for strategic planning of DRT services. We build on this concept methodologically by embedding a clustering algorithm into a larger transport planning pipeline with more traditional supply and demand components.
 
 \pagebreak
 
