@@ -299,6 +299,12 @@ where $\alpha$ and $\beta$ control the relative importance of the origins / dest
 
 Our analysis looks at commuting flows by mode. Taking inspiration from @shu2022density, we study the composition of each cluster and determine the ratio of car to public transport users. Clusters with a low ratio of public transport to car users are considered initial candidates for DRT.
 
+## Clusters to potential DRT zones
+
+The clusters produced by our algorithm may return clusters that cover large geographical areas. These areas may, in turn, be partly served by high frequency FRT services. Having DRT cover the entirety of such areas may not be optimal as it (a) may provide competition to these FRT services, and (b) may necessitate complex operations that make the service more prone to failure (as mentioned in @sec-drt-overview).
+
+We therefore propose a subsequent step to extract potential DRT zones from the obtained clusters. We get the spatial difference between each cluster and the high frequency FRT routes in the study area, leaving us with polygons that extend to but do not overlap with said routes. This is in line with a DRT service that acts as a complimentary first/last mile connector.
+
 ## Case Study {#sec-case-study}
 
 The research will focus on the city of Leeds, UK as a case study. Leeds is the biggest city in West Yorkshire, and the one of the largest European cities without rapid transit. The rgional authority in charge of transport, the West Yorkshire Combined Authority (WYCA), has declared a climate emergency, and has put a target to reach net-zero by 2038. It has estimated that a significant mode shift will be needed to achieve this target, and has set a target of 52% increase in bus mode share [@wyca2021connectivity]. This is an ambitious target seeing as the decade between 2009-2019 saw a decrease of 15% (from 170 million to 144 million) in annual bus trips in the region. [@wyca2021improvement].
@@ -307,7 +313,7 @@ The research will focus on the city of Leeds, UK as a case study. Leeds is the b
 
 Following the new powers given to local transport authorities under the bus services act [@uk2017busact], the West Yorkshire Bus Service Improvement Plan [@wyca2021improvement] has set ambitious targets for bus mode share, patronage, service provision (bus miles), journey times, as well as accessibility. The plan acknowledges that changes will need to be made to the network, which currently fails to meet user needs (due to a reduction in services and to routes being based on historic travel patterns) and is heavily subsidized [@wyca2021improvement]. A big part of the ambition is better integration of buses as part of a multimodal public transport offer. DRT is also seen as a means of providing more efficient access than traditional public transport to low-density areas; WYCA has already piloted such a service (Flexibus) in East Leeds [@wyca2021improvement], but during the 18 month pilot phase, the service was struggling to attract ridership and was only covering 5% of it's operating costs [@wyca2022drtflexibusreview]. An average number of customers per trip of 1.38 was in large part due to an inflexible service that only pooled people doing almost exactly the same route. More flexible services, along with an identification of spatial concentrations in travel demand, can help improve viability of DRT services.
 
-![Urban Rural Classification - 1: most rural, 10: most urban](images/rural_urban.png){alt="Urban Rural Classification - 1: most rural, 10: most urban"}
+![Urban Rural Classification - 1: most rural, 10: most urban](images/rural_urban.png){#fig-rural-urban alt="Urban Rural Classification - 1: most rural, 10: most urban"}
 
 # Results
 
@@ -378,6 +384,8 @@ Left: Classification of areas covered by each \| Right: Characteristics of OD pa
 The success of DRT schemes is subject to their ability to serve spatial concentrations of travel demand [@enoch2006demand]. By leveraging a density-based clustering algorithm, our analysis can identify groups of ODs with sufficiently similar patterns, each of which can be served by a different DRT scheme. The identified clusters predominantly connect urban cores with rural peripheries, underscoring the importance of DRT in complementing fixed-route transit systems, especially in areas with low public transport accessibility and relatively low travel demand.
 
 The clustering algorithm used requires the input of two parameters: epsilon (the search radius) and minpts (the minimum number of points inside the radius necessary for a cluster to form). A parameter sweep is done to determine feasible parameter combinations . @fig-dbscan-sensitivity shows the parameter combinations that successfully resulted in grouping the flows into clusters. We find that clusters are only formed in the eps range between 6 and 9. Within that range, the number of clusters returned decreases as minpts is increased, which is to be expected since a higher minpts value means the threshold for cluster formation is higher. We find that the lowest values for minpts returns clusters that are too disaggregated and fail to capture similar demand patterns. We choose a value of 75 as it returns clusters that are sufficiently distinct and yet not too disaggregate as to be meaningless.
+
+-   TALK ABOUT OTHER DISTANCE METRICS (E.g. Frechet Distance) and other approaches for flow normalization based on distance
 
 In the absense of established theoretical framework for this approach, we adopt an iterative and exploratory method to parameter setting. Future work should explore more robust methods, or link the method to research on DRT demand requirements. Additionally, different density-based clustering algorithms such as HDBSCAN [@tao2017flowhdbscan] and OPTICS [@fang2021adaptive] can also be explored. Both of these algorithms require only one input parameter and can identify cluster formation at different scales. Identifying clusters at different scales can provide results that are well--suited to variations in population density and can also allow researchers and practitioners to compare different options for the same area.
 
