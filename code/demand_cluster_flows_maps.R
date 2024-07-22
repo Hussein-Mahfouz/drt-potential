@@ -16,7 +16,7 @@ source("R/filter_od_matrix.R")
 
 # ------------------------- Define the scenario ------------------------- #
 
-scenario <- 2 # 3, 2
+scenario <- 3 # 3, 2
 clustering <- "equal"
 distance_threshold <- 50000   # 10000
 
@@ -1929,7 +1929,7 @@ od_demand_figures_bearings <- od_demand_figures_bearings %>%
 #breaks_angle <- seq(-10, 370, by = 20)
 breaks_angle <- seq(0, 360, by = 30)
 #breaks_angle <- seq(0, 180, by = 15)
-breaks_distance <- seq(0, 50, by = 5)
+breaks_distance <- seq(0, 50, by = 10)
 
 od_demand_figures_bearings <- od_demand_figures_bearings %>%
   mutate(bucket = cut(bearing_adjusted, breaks = breaks_angle, right = FALSE, include.lowest = TRUE),
