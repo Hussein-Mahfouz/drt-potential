@@ -413,5 +413,3 @@ st_write(cluster_dbscan_res, paste0("data/processed/clustering/scenario_", scena
 
 
 
-
-

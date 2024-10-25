@@ -7,21 +7,21 @@ format:
   #gfm: default
   # html:
   #   toc: true
-  # docx:
-  #   toc: false
-  #   number-sections: true
-  #   fig-pos: 'H'
-  pdf:
+  docx:
     toc: false
     number-sections: true
-    extra_dependencies: ["float"]
-    pdf-engine: xelatex #pdflatex # xelatex
-    geometry:
-         - left=15.0mm
-         - right=15.0mm
-         - top=15mm
     fig-pos: 'H'
-keep-tex: true
+  # pdf:
+  #   toc: false
+  #   number-sections: true
+  #   extra_dependencies: ["float"]
+  #   pdf-engine: xelatex #pdflatex # xelatex
+  #   geometry:
+  #        - left=15.0mm
+  #        - right=15.0mm
+  #        - top=15mm
+  #   fig-pos: 'H'
+    keep-tex: true
 bibliography: lit-review.bib
 # elsevier style for referencing (from https://github.com/citation-style-language/styles)
 csl: elsevier-harvard.csl
@@ -127,7 +127,7 @@ The research will focus on the city of Leeds, UK as a case study. Leeds is the b
 
 Following the new powers given to local transport authorities under the bus services act [@uk2017busact], the West Yorkshire Bus Service Improvement Plan [@wyca2021improvement] has set ambitious targets for bus mode share, patronage, service provision (bus miles), journey times, as well as accessibility. The plan acknowledges that changes will need to be made to the network, which currently fails to meet user needs (due to a reduction in services and to routes being based on historic travel patterns) and is heavily subsidized [@wyca2021improvement]. A big part of the ambition is better integration of buses as part of a multimodal public transport offer. DRT is also seen as a means of providing more efficient access than traditional public transport to low-density areas; WYCA has already piloted such a service (Flexibus) in East Leeds [@wyca2021improvement], but during the 18 month pilot phase, the service was struggling to attract ridership and was only covering 5% of it's operating costs [@wyca2022drtflexibusreview]. An average number of customers per trip of 1.38 was in large part due to an inflexible service that only pooled people doing almost exactly the same route. More flexible services, along with an identification of spatial concentrations in travel demand, can help improve viability of DRT services.
 
-![Urban Rural Classification for the city of Leeds](images/rural_urban_bus.png){#fig-rural-urban alt="Urban Rural Classification - 1: most rural, 10: most urban" fig-align="center" width="80%"}
+![Urban Rural Classification - 1: most rural, 10: most urban](images/rural_urban_bus.png){#fig-rural-urban fig-align="center" width="80%"}
 
 ## Preparing input data for clustering {#sec-methods-preparing-data}
 
@@ -135,7 +135,7 @@ For our analysis, we use OD commuting (flow) data from the 2021 UK census to rep
 
 $OD_s$ is meant to suggest DRT zones that complement FRT by only including the OD demand that is not well served by FRT, as explained in @sec-method-transport-supply. $OD_{sd}$ is similar, but also excludes OD pairs that could be served by a better FRT service. This exclusion is based on criteria explained in @sec-method-transport-demand. The workflow for the supply and demand analysis is shown in @fig-flowchart-scenarios. The number of OD pairs in each approach is shown in @tbl-od_pairs_scenarios.
 
-![Flowchart for determining input to clustering algorithm](images/flowchart_od_potential_demand.png){#fig-flowchart-scenarios alt="Flowchart for determining input to clustering algorithm"}
+![Flowchart for determining input to clustering algorithm](images/flowchart_od_potential_demand.png){#fig-flowchart-scenarios}
 
 ### Supply analysis {#sec-method-transport-supply}
 
@@ -169,17 +169,17 @@ OD pairs with high potential demand are not included in $OD_{sd}$ as there is su
 
 Setting the threshold at $p75$ implies that service on the top 25% of routes in terms of potential demand will be improved so that they are all high-frequency routes. In reality, this % could be edited based on the budget available for additional buses.
 
-::: columns
+:::: columns
 ::: {#tbl-od_pairs_scenarios .column width="90%"}
-| Name       | No. of OD pairs | Description                                                                                        |
-|------------|------------|------------------------------------------------|
-| $OD_{all}$ | 10,506 (100%)   | All OD pairs in the study area that have people commuting between them                             |
-| $OD_{s}$   | 10,130 (96%)    | OD pairs with poor public transport supply (see @fig-flowchart-scenarios)                          |
-| $OD_{sd}$  | 7,876 (75%)     | OD pairs with poor public transport supply and low potential demand (see @fig-flowchart-scenarios) |
+| Name | No. of OD pairs | Description |
+|----|----|----|
+| $OD_{all}$ | 10,506 (100%) | All OD pairs in the study area that have people commuting between them |
+| $OD_{s}$ | 10,130 (96%) | OD pairs with poor public transport supply (see @fig-flowchart-scenarios) |
+| $OD_{sd}$ | 7,876 (75%) | OD pairs with poor public transport supply and low potential demand (see @fig-flowchart-scenarios) |
 
 : Number of OD pairs in after each step
 :::
-:::
+::::
 
 <!--# TODO: add pseudocode https://github.com/leovan/quarto-pseudocode -->
 
@@ -376,9 +376,9 @@ Noticeably, clusters made up of longer distance OD flows show more variance in t
 <!-- ::: -->
 
 ::: {#fig-cluster-stats layout="[[1,1], [1]]"}
-![Classification of areas covered by each cluster and the DRT zone extracted from it](images/figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_3_length_50000.png){#fig-cluster-stats-1 width="78%"}
+![Classification of areas covered by each cluster and the DRT zone extracted from it](images/figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_3_length_50000.png){#fig-cluster-stats-1 width="35%"}
 
-![Total commuters on the different OD pairs making up each cluster](images/figure_scatter_commuters_color_speed_facet_cluster_scenario_3_length_50000.png){#fig-cluster-stats-2 width="78%"}
+![Total commuters on the different OD pairs making up each cluster](images/figure_scatter_commuters_color_speed_facet_cluster_scenario_3_length_50000.png){#fig-cluster-stats-2 width="35%"}
 
 ![Distribution of commuters (weighted OD pairs) in each cluster. Commuters are faceted by the angle of their trajectory (x axis) and their commuting distance in km (y axis - right side)](images/figure_bar_bearing_y_commuters_facet_grid_cluster_distance_3_length_50000.png){#fig-cluster-stats-3 width="75%"}
 
