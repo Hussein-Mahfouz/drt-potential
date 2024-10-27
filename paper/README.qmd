@@ -5,12 +5,12 @@ abstract: "Demand-Responsive Transport (DRT) has emerged as a mobility option fo
 #date: "`r format(Sys.time(), '%d %m %y')`"
 format:
   #gfm: default
-  # html:
-  #   toc: true
-  docx:
-    toc: false
-    number-sections: true
-    fig-pos: 'H'
+  html:
+    toc: true
+  # docx:
+  #   toc: false
+  #   number-sections: true
+  #   fig-pos: 'H'
   # pdf:
   #   toc: false
   #   number-sections: true
@@ -79,13 +79,17 @@ In trying to map DRT research onto these planning pillars, @papanikolaou2017meth
 
 Whereas the latter is studied extensively, there remains a need to develop general approaches on identifying potential areas for DRT services [@papanikolaou2017methodological]. This has become more necessary as DRT systems evolve from being targeted at special groups (in parallel to conventional public transport), to being integrated with public transport with the aim of improving accessibility for entire communities [@nelson2010recent]. <!--# this should be grounded in accessibility, not something else … cite Tools of the Trade -->
 
-### Importance of delineating DRT operating areas {#sec-lit-service-areas}
+### Existing approaches to DRT operating zone identification
 
-There are various elements of DRT operating characteristics that effect its uptake and the wider system, including fares, fleet size and rebalancing, operating zones (as well as wider changes to the system such as car tolls and public transport service levels). While studies have looked at scenarios with different fleet sizes and fare structures, the choice of operating zones is generally simplified. Analytical models exist for deciding whether areas should be served by a FRT or DRT, but these models are based on idealized representations at the route level with pre-defined service areas [@quadrifoglio2009methodology; @li2010feeder; @sivakumaran2012cost]. For these models to be applied in a real case study, it is important to take a step back to identify potential service areas in an actual network. 
+**Analytical models** exist for deciding whether areas should be served by a FRT or DRT, but these models are based on idealized representations at the route level with pre-defined service areas [@quadrifoglio2009methodology; @li2010feeder; @sivakumaran2012cost]. For these models to be applied in a real case study, it is important to take a step back to identify potential service areas in an actual network. 
 
-Simulation-based approaches on real world networks have also been used to analyse potential DRT service areas. Research has looked at (a) splitting the study area into inner and outer city [@kaddoura2020impact], restricting service to zones that (b) have a low public transport accessibility [@rath2023assessing], or (c) are within a certain buffer distance from rail (with the intention for DRT to act as a feeder) [@oke2020evaluating]. These simulations have shown that, when allowed to operate across an entire city or region, the % of DRT users that are shifting from public transport can vary significantly, between 2% [@kagho2021demand] and 65% [@kaddoura2020impact]. A shift away from active travel is also seen when DRT is allowed to operate in dense urban cores [@kaddoura2020impact; @kagho2021demand; @rath2023assessing]. These shifts can be mitigated by excluding areas with high FRT accessibility (which normally includes the urban core) from the service area of DRT [@rath2023assessing]. Given these results, it has been suggested that DRT may only be effective in increasing sustainable travel when provided in areas with poor FRT level of service [@rath2023assessing].
+**Accessibility based approaches** have also been used for delineating DRT service areas. Research in this direction has looked at (a) splitting the study area into inner and outer city [@kaddoura2020impact], restricting service to zones that (b) have a low public transport accessibility [@giuffrida2021addressing; @rath2023assessing], or (c) are within a certain buffer distance from rail (with the intention for DRT to act as a feeder) [@oke2020evaluating].
 
-However, the high variance in mode share results shows that generic rules based on accessibility levels cannot be applied to all cities, but that specific characteristics of travel demand need to be accounted for when defining operating zones. We should also note that mode shift on it's own is not an indicator of more sustainable travel. A high DRT mode share could be the result of a large fleet size with high dead mileage or low-occupancy trips. Simulation results show that increases in congestion and system-wide total vehicle km are likely [@oke2020evaluating; @kagho2021demand; @rath2023assessing], even under scenarios which constrain operating areas [@rath2023assessing] or offer DRT as a feeder to mass transit [@oke2020evaluating]. In order to move towards a lower car mode share and reduce overall VMT, the service area needs to be informed by spatial and temporal demand in the region [@kagho2021demand]. In the following section, we explore methods for capturing these concentrations in demand from OD data.
+The transport configuration is then evaluated using either measures of social equity [@giuffrida2021addressing], or through agent-based simulations [@rath2023assessing; @kaddoura2020impact; @oke2020evaluating]. While these simulations show that constrained DRT to certain areas can mitigate against undesired mode shift, they are looking in two aspects. Firstly, the travel demand is not factored into the initial zonal configuration, but is only used later to evaluate the network performance. The high variance in mode share results indicate that generic rules based on accessibility levels cannot be applied to all cities, but that specific characteristics of travel demand need to be accounted for when defining operating zones. Secondly, the public transport network is taken as a fixed constraint, and no attempt is made to reconfigure the network
+
+**Network reconfiguration** approaches have been studied as part of DRT service zone delineation. @giuffrida2021addressing reorganize the network by reassigning vehicles to improve service frequency on routes connecting to railway stations. They then measure accessibility and add DRT stops to areas with poor public transport accessibility. @shen2018integrating adopt a similar approach, opting to keep the busiest 90% of routes, and replacing the remaining 10% by a flexible service. While these approaches conceptually factor in demand, the reconfiguration is a bit ad-hoc. @pinto2020joint proposes reconfiguration based on an optimization formulation that attempts to minimize passenger wait time, but the approach looks only at optimal DRT fleet size and does not consider zoning constraints.
+
+While these approaches inform where to add DRT stops, they do not limit service areas, and DRT fleet can operate across an entire area. This is not ideal as simulation results have shown that increases in congestion and system-wide total vehicle km are likely [@oke2020evaluating; @kagho2021demand; @rath2023assessing], even under scenarios which constrain operating areas [@rath2023assessing] or offer DRT as a feeder to mass transit [@oke2020evaluating]. In order to move towards a lower car mode share and reduce overall VMT, it is important for service areas to be informed by spatial and temporal demand in the region [@kagho2021demand]. In the following section, we explore methods for capturing these concentrations in demand from OD data.
 
 ## Identifying spatial concentrations in travel demand
 
@@ -172,7 +176,7 @@ Setting the threshold at $p75$ implies that service on the top 25% of routes in 
 :::: columns
 ::: {#tbl-od_pairs_scenarios .column width="90%"}
 | Name | No. of OD pairs | Description |
-|----|----|----|
+|------------------------|------------------------|------------------------|
 | $OD_{all}$ | 10,506 (100%) | All OD pairs in the study area that have people commuting between them |
 | $OD_{s}$ | 10,130 (96%) | OD pairs with poor public transport supply (see @fig-flowchart-scenarios) |
 | $OD_{sd}$ | 7,876 (75%) | OD pairs with poor public transport supply and low potential demand (see @fig-flowchart-scenarios) |
