@@ -49,6 +49,7 @@ cpc_matrices_all <- bind_rows(cpc_matrices)
 # Add column to sum all flow types
 cpc_matrices_all <- cpc_matrices_all %>%
   mutate(total_flow = rowSums(across(hbw_outbound:nhb), na.rm = TRUE))
+
 # ------- Geo boundaries
 
 # England
