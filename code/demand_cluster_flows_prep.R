@@ -46,20 +46,12 @@ study_area <- study_area %>%
 
 # Demand (census) + supply (travel time) data
 
-if(mode == FALSE){
-  # data with "commute_all" only
-  #od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
-  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_with_speed_and_pd.parquet"))
-} else{
-  # data with modes
-  #od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode.parquet"))
-  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode_with_speed_and_pd.parquet"))
-}
+od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), "_with_speed_and_pd.parquet"))
 
-# filter to specific combination
-# TODO: get seperate flows for car and pt, and keep two combinations
-od_demand <- od_demand %>%
-  filter(combination == "pt_wkday_morning")
+# # filter to specific combination
+# # TODO: get seperate flows for car and pt, and keep two combinations
+# od_demand <- od_demand %>%
+#   filter(combination == "pt_wkday_morning")
 
 od_demand <- od_demand %>%
   select(-distance_m)
@@ -125,7 +117,7 @@ unlink(paste0(normalizePath(tempdir()), "/", dir(tempdir())), recursive = TRUE)
 dir(tempdir())
 
 od_demand_for_jittering <- od_demand_filtered %>%
-  select(Origin, Destination, starts_with("commute_"))
+  select(Origin, Destination, total_flow)
 
 # arguments are here: https://github.com/dabreegster/odjitter?tab=readme-ov-file#details
 
@@ -138,7 +130,7 @@ od_demand_jittered = odjitter::jitter(
   origin_key = "Origin",
   destination_key = "Destination",
   # column with the flows (to be disaggregated)
-  disaggregation_key = "commute_all",
+  disaggregation_key = "total_flow",
   # What's the maximum number of trips per output OD row that's allowed?
   disaggregation_threshold = 95,
 
@@ -167,9 +159,12 @@ od_demand_jittered = odjitter::jitter(
   deduplicate_pairs = TRUE
 )
 
+# # TODO: remove when jittering is fixed
+# od_demand_jittered <- od_demand_filtered
+
 # jittered returns fractions. Round them
 od_demand_jittered <- od_demand_jittered %>%
-  mutate(across(starts_with("commute_"), round))
+  mutate(across(starts_with("total_flow"), round))
 
 
 
@@ -227,15 +222,7 @@ od_demand_jittered_scenarios <- od_demand_jittered %>%
 
 ### Save the sfs for each scenario
 
-
-if(mode == FALSE){
-  # data with "commute_all" only
-  st_write(od_demand_jittered_scenarios, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios.geojson"), delete_dsn = TRUE)
-
-} else{
-  # data with modes
-  st_write(od_demand_jittered_scenarios, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_mode.geojson"), delete_dsn = TRUE)
-  }
+st_write(od_demand_jittered_scenarios, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_temporal.geojson"), delete_dsn = TRUE)
 
 
 

@@ -46,6 +46,12 @@ cpc_matrices <- purrr::map2(cpc_matrices, short_names, ~mutate(.x, source = .y))
 # Combine into one df
 cpc_matrices_all <- bind_rows(cpc_matrices)
 
+# replace NA values with 0
+cols <- c("hbw_outbound", "hbw_inbound", "hbo_outbound", "hbo_inbound", "nhb")
+
+cpc_matrices_all <- cpc_matrices_all %>%
+  mutate(across(all_of(cols), ~replace_na(., 0)))
+
 # Add column to sum all flow types
 cpc_matrices_all <- cpc_matrices_all %>%
   mutate(total_flow = rowSums(across(hbw_outbound:nhb), na.rm = TRUE))
@@ -84,7 +90,7 @@ study_area <- study_area %>%
 
 #  ----- filter zones to study area
 
-# filter matrices to keep study area zones only
+# filter matrices to keep study area zones only (i.e intrazonal flows only)
 cpc_matrices_all_internal <- cpc_matrices_all %>%
   filter(from_zone %in% zones_internal$zone_id & to_zone %in% zones_internal$zone_id)
 
@@ -119,13 +125,9 @@ cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
 cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
   rename(Origin = from_msoa, Destination = to_msoa)
 
+
 # Filter matrix by distance also adds desire lines
 cpc_matrices_all_internal_sf <- filter_matrix_by_distance(zones = study_area_large, od_matrix = cpc_matrices_all_internal, dist_threshold = 1000)
-
-
-
-
-
 
 
 

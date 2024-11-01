@@ -16,8 +16,8 @@ source("R/dbscan_sensitivity.R")
 ########## ----------------------- Read in the data ----------------------- ##########
 geography <- "MSOA"
 
+od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_temporal.geojson"))
 # od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios.geojson"))
-od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_mode.geojson"))
 
 # path tp save plots
 plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/")

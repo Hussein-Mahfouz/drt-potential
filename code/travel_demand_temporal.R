@@ -9,7 +9,7 @@ library(sf)
 source("R/study_area_geographies.R")
 source("R/filter_od_matrix.R")
 
-# --------------- 1. READ IN THE DEMaND DATA
+# --------------- 1. READ IN THE DEMAND DATA
 
 # ------- Zoning layer (2011 MSOAs)
 
@@ -86,16 +86,13 @@ study_area <- study_area %>%
             by = "MSOA21CD")
 
 
-# ----------------------- 2. ADD GEOGRAPHIC COORDINATES TO ZONES ----------------------- #
+# ----------------------- 2. ADD MSOA CODES AND FILTER TO INTERNAL FLOWS ----------------------- #
 
 #  ----- filter zones to study area
 
 # filter matrices to keep study area zones only (i.e intrazonal flows only)
 cpc_matrices_all_internal <- cpc_matrices_all %>%
   filter(from_zone %in% zones_internal$zone_id & to_zone %in% zones_internal$zone_id)
-
-
-# ----- Add desire lines
 
 # prepare data for od::od_to_sf()
 
@@ -115,30 +112,12 @@ cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
   relocate("from_msoa", .before = everything()) %>%
   relocate("to_msoa", .after = "from_msoa")
 
-# od::od_to_sf
-
-# cpc_matrices_all_internal_sf <- od::od_to_sf(x = cpc_matrices_all_internal,
-#                                              z = study_area_cpc_internal,
-#                                              silent = FALSE)
 
 # Filter to Leeds only
 cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
   filter(from_msoa %in% study_area$MSOA11CD & to_msoa %in% study_area$MSOA11CD)
 
-# Rename columns
-cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
-  rename(Origin = from_msoa, Destination = to_msoa)
-
-
-# Filter matrix by distance also adds desire lines
-cpc_matrices_all_internal_sf <- filter_matrix_by_distance(zones = study_area_large,
-                                                          od_matrix = cpc_matrices_all_internal,
-                                                          dist_threshold = 1000)
-
-
-
-
-# -------------- 3.  JOIN TRAVEL TIME DATA
+# -------------- 3.  JOIN TRAVEL TIME DATA ---------- #
 
 # ----------  MSOA level
 
@@ -176,7 +155,7 @@ tt_matrix_msoa <- tt_matrix_msoa %>%
   filter(str_detect(combination, "pt_"))
 
 # add combination column to cpc data
-cpc_matrices_all_internal_sf <- cpc_matrices_all_internal_sf %>%
+cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
   mutate(combination = case_when(
     source %in% c("05-06", "06-07", "07-08", "08-09", "09-10", "10-11", "11-12") ~ "pt_wkday_morning",
     source %in% c("12-13", "13-14", "14-15", "15-16", "16-17") ~ "pt_wkday_afternoon",
@@ -186,21 +165,31 @@ cpc_matrices_all_internal_sf <- cpc_matrices_all_internal_sf %>%
 # group by combination column
 cols_to_sum = c("hbw_outbound", "hbw_inbound", "hbo_outbound", "hbo_inbound", "nhb", "total_flow")
 
-cpc_matrices_all_internal_sf_grouped <- cpc_matrices_all_internal_sf %>%
-  #st_drop_geometry() %>%
-  group_by(Origin, Destination, distance_m, combination) %>%
-  summarise(across(cols_to_sum, sum, na.rm = TRUE))
+cpc_matrices_all_internal_grouped <- cpc_matrices_all_internal %>%
+  group_by(from_msoa, to_msoa, combination) %>%
+  summarise(across(cols_to_sum, sum, na.rm = TRUE)) %>%
+  ungroup()
 
 
 # join travel time data and census commute data
 #TODO: join on time of day also!!!
 
-census_work_msoa_tt <- cpc_matrices_all_internal_sf_long %>%
-  left_join(tt_matrix_msoa, by = c("Origin" = "MSOA11CD_home", "Destination" = "MSOA11CD_work", "combination"))
+cpc_matrices_all_internal_tt <- cpc_matrices_all_internal_grouped %>%
+  left_join(tt_matrix_msoa, by = c("from_msoa" = "MSOA11CD_home", "to_msoa" = "MSOA11CD_work", "combination"))
+
+
+# # ---------- 4. ADD DESIRE LINES ---------- #
+#
+# # # Filter matrix by distance also adds desire lines
+# cpc_matrices_all_internal_tt_sf <- filter_matrix_by_distance(zones = study_area_large,
+#                                                           od_matrix = cpc_matrices_all_internal_tt,
+#                                                           dist_threshold = 500)
+
 
 
 # save
-#write_csv(census_work_msoa_tt, "data/raw/travel_demand/od_census_2021/demand_study_area_msoa.csv")
-arrow::write_parquet(census_work_msoa_tt, )
+#write_csv(cpc_matrices_all_internal_tt, "data/raw/travel_demand/cpc_matrices_2019/demand_study_area_msoa.csv")
+arrow::write_parquet(cpc_matrices_all_internal_tt, "data/raw/travel_demand/cpc_matrices_2019/demand_study_area_msoa.parquet")
+
 
 
