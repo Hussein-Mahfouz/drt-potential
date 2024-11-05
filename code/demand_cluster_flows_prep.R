@@ -204,8 +204,8 @@ split_points <- function(sf_points, col_to_split, splits, offset_dist_min,
 sub_zones_2 <- split_points(sub_zones,
                             col_to_split = "population",
                             splits = 5,
-                            offset_dist_min = 10,
-                            offset_dist_max = 20,
+                            offset_dist_min = 100,
+                            offset_dist_max = 500,
                             target_crs = 3857)
 
 
@@ -219,7 +219,7 @@ unlink(paste0(normalizePath(tempdir()), "/", dir(tempdir())), recursive = TRUE)
 # confirm it's empty
 dir(tempdir())
 
-selected_combination = "pt_wkday_morning"
+selected_combination = "pt_wkday_evening"
 
 od_demand_for_jittering <- od_demand_filtered %>%
   #filter(combination == selected_combination) %>%
