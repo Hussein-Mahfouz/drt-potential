@@ -5,13 +5,13 @@
 #' @param options_minpts a vector of options for the minPts paramter
 #' @param weights a vector where each value represents the number of people going between an OD pair (to pass to the weights argument of dbscan)
 #' @param flows the original od matrix with a column that represents flows between od pairs
-#'
+#' @param flow_column the column that represents the number of people travelling between an OD pair
 #' @return a df with columns {id} (to identify the eps and minpts used), {cluster}, {size} (no of desire lines in cluster), commuters_sum (total no. of commuters in cluster)
 #'
 #' @examples
 #'
 #' @export
-dbscan_sensitivity = function(distance_matrix, options_epsilon, options_minpts, weights, flows){
+dbscan_sensitivity = function(distance_matrix, options_epsilon, options_minpts, weights, flows, flow_column){
 
   # dataframe with all combinations of eps and minpts
   options_parameters <- tidyr::expand_grid(eps = options_epsilon, minpts = options_minpts)
@@ -53,7 +53,7 @@ dbscan_sensitivity = function(distance_matrix, options_epsilon, options_minpts, 
     cluster_res_i <- cluster_dbscan_res_i %>%
       st_drop_geometry() %>%
       group_by(cluster) %>%
-      summarise(size = n(), commuters_sum = sum(commute_all)) %>%
+      summarise(size = n(), commuters_sum = sum(.data[[flow_column]])) %>%
       arrange(desc(size)) %>%
       ungroup()
 
