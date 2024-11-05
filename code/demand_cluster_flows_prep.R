@@ -203,7 +203,7 @@ split_points <- function(sf_points, col_to_split, splits, offset_dist_min,
 # apply function
 sub_zones_2 <- split_points(sub_zones,
                             col_to_split = "population",
-                            splits = 5,
+                            splits = 3,
                             offset_dist_min = 100,
                             offset_dist_max = 500,
                             target_crs = 3857)
@@ -238,7 +238,7 @@ od_demand_jittered = odjitter::jitter(
   # column with the flows (to be disaggregated)
   disaggregation_key = "total_flow",
   # What's the maximum number of trips per output OD row that's allowed?
-  disaggregation_threshold = 95,
+  disaggregation_threshold = 30,
 
   # ----- arguments for ZONES ----- #
 
