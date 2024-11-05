@@ -22,6 +22,9 @@ od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "
 # path tp save plots
 plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/")
 
+# what combination are we clustering
+day_time = "pt_wkday_evening"
+
 # ----------- 1. Study area
 
 # --- administrative boundaries
@@ -42,6 +45,13 @@ geoid_col = paste0(geography, "21CD")
 study_area <- study_area %>%
   relocate(all_of(geoid_col), .before = everything())
 
+# add distance_m column
+od_demand_jittered = filter_matrix_by_distance(zones = study_area,
+                                               od_matrix = od_demand_jittered %>% st_drop_geometry(),
+                                               dist_threshold = 500)
+
+od_demand_jittered = od_demand_jittered %>%
+  filter(combination == day_time)
 ########## ----------------------- Different parameter combinations  ----------------------- ##########
 
 # # 1) All flows + equal weight to origins and destinations (for flow distance)
@@ -138,10 +148,10 @@ od_demand_xyuv <- od_demand_jittered %>%
 # assign unique id to each point
 od_demand_xyuv <- od_demand_xyuv %>%
   group_by(Origin, x, y) %>%
-  mutate(O_ID = cur_group_id()) %>%
+  mutate(O_ID = paste0(cur_group_id(), "_", row_number())) %>%
   ungroup() %>%
   group_by(Destination, u, v) %>%
-  mutate(D_ID = cur_group_id()) %>%
+  mutate(D_ID = paste0(cur_group_id(), "_", row_number())) %>%
   ungroup()
 
 # assign unique id to each OD pair
@@ -261,11 +271,11 @@ w <- dist_mat %>%
   select(flow_ID) %>%
   # add commuting data to
   inner_join(od_demand_jittered %>%
-               select(flow_ID, commute_all),
+               select(flow_ID, total_flow),
              by = "flow_ID")
 
 # weight vector
-w_vec <- as.vector(w$commute_all)
+w_vec <- as.vector(w$total_flow)
 
 
 
@@ -408,7 +418,7 @@ cluster_dbscan_res <- od_demand_jittered %>%
 
 
 # save
-st_write(cluster_dbscan_res, paste0("data/processed/clustering/scenario_", scenario, "_distance_", distance_threshold, "_", clustering, ".geojson"), delete_dsn = TRUE)
+st_write(cluster_dbscan_res, paste0("data/processed/clustering/temporal/scenario_", scenario, "_distance_", distance_threshold, "_", clustering, "_", day_time, ".geojson"), delete_dsn = TRUE)
 
 
 

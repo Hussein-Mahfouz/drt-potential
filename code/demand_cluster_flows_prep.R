@@ -238,7 +238,7 @@ od_demand_jittered = odjitter::jitter(
   # column with the flows (to be disaggregated)
   disaggregation_key = "total_flow",
   # What's the maximum number of trips per output OD row that's allowed?
-  disaggregation_threshold = 50,
+  disaggregation_threshold = 95,
 
   # ----- arguments for ZONES ----- #
 
