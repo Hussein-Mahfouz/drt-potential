@@ -23,7 +23,7 @@ od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "
 plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/")
 
 # what combination are we clustering
-day_time = "pt_wkday_evening"
+day_time = "pt_wkday_afternoon"
 # sensitivity analysis?
 sensitivity = FALSE
 
@@ -48,9 +48,17 @@ study_area <- study_area %>%
   relocate(all_of(geoid_col), .before = everything())
 
 # add distance_m column
-od_demand_jittered = filter_matrix_by_distance(zones = study_area,
-                                               od_matrix = od_demand_jittered %>% st_drop_geometry(),
-                                               dist_threshold = 500)
+
+crs_orig = st_crs(od_demand_jittered)
+crs_metric = 3857
+
+od_demand_jittered = od_demand_jittered %>%
+  st_transform(crs_metric) %>%
+  mutate(distance_m = units::drop_units(sf::st_length(.))) %>%
+  st_transform(crs_orig) %>%
+  filter(distance_m >= 500)
+
+
 
 od_demand_jittered = od_demand_jittered %>%
   filter(combination == day_time)
@@ -322,8 +330,8 @@ hist(distances$fds, breaks = 100)
 # function to get clustering results for many combinations
 if(sensitivity == TRUE){
   dbscan_sensitivity_res <- dbscan_sensitivity(distance_matrix = dist_mat,
-                                               options_epsilon <- c(0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 7.5, 8, 9),
-                                               options_minpts <- c(50, 75, 100, 150, 175, 200, 250, 300, 400, 500, 1000),
+                                               options_epsilon <- c(1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9),
+                                               options_minpts <- c(50, 75, 100, 150, 200, 300, 500, 1000, 2500),
                                                weights = w_vec,
                                                flows = st_drop_geometry(od_demand_jittered),
                                                flow_column = "total_flow"
@@ -380,8 +388,8 @@ if(sensitivity == TRUE){
 
 # cluster option 1: border points assigned to cluster
 cluster_dbscan = dbscan::dbscan(dist_mat,
-                                minPts = 50, # 125
-                                eps = 7, # 9.5
+                                minPts = 50, # evening: 50 # 125
+                                eps = 7, # evening: 7   # 9.5
                                 #borderPoints = FALSE,
                                 weights = w_vec)
 # # for splitted distance
@@ -430,4 +438,33 @@ st_write(cluster_dbscan_res, paste0("data/processed/clustering/temporal/scenario
 
 
 
+# --- Compare clusters at different points in the day
+dbscan_sensitivity_res_wkday_morning = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_morning.parquet")) %>%
+  mutate(scenario = "pt_wkday_morning")
+dbscan_sensitivity_res_wkday_afternoon = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_afternoon.parquet")) %>%
+  mutate(scenario = "pt_wkday_afternoon")
+dbscan_sensitivity_res_wkday_evening = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_evening.parquet")) %>%
+  mutate(scenario = "pt_wkday_evening")
 
+dbscan_sensitivity_res_compare = bind_rows(dbscan_sensitivity_res_wkday_morning,
+                                           dbscan_sensitivity_res_wkday_evening)
+
+
+dbscan_sensitivity_res_compare %>%
+  filter(cluster != 0) %>%
+  group_by(id) %>%
+  #mutate(clusters = n()) %>%
+  # How many clusters have more than 5 od pairs in them?
+  mutate(clusters = sum(size > 25)) %>%
+  ungroup() %>%
+  filter(clusters > 25) %>%
+  ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
+  geom_col() +
+  scale_y_continuous(trans='log10') +
+  facet_grid(id ~ scenario, scales = "fixed") +
+  labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
+       subtitle = "Parameter combinations with > 5 clusters having at least 5 od pairs each",
+       x = "Cluster no.",
+       y = "No. of od pairs in cluster",
+       fill= "No. of commuters") +
+  theme_bw()
