@@ -103,7 +103,10 @@ sub_zones <- sub_zones %>%
 
 # rename population density column
 sub_zones <- sub_zones %>%
-  rename(population = gbr_pd_2020_1km_UNadj)
+  rename(population = gbr_pd_2020_1km_UNadj) %>%
+  # odjitter samples with replacement. Higher weighted subpoints will keep getting sampled
+  # Get cube root to increase probability of other points being sampled
+  mutate(population = population^(1/3))
 
 
 # --- Create more points (if we don't have enough points, then odjitter may not find a feasible solution)
@@ -203,9 +206,9 @@ split_points <- function(sf_points, col_to_split, splits, offset_dist_min,
 # apply function
 sub_zones_2 <- split_points(sub_zones,
                             col_to_split = "population",
-                            splits = 5,
-                            offset_dist_min = 100,
-                            offset_dist_max = 500,
+                            splits = 7,
+                            offset_dist_min = 200,
+                            offset_dist_max = 700,
                             target_crs = 3857)
 
 
@@ -238,7 +241,7 @@ od_demand_jittered = odjitter::jitter(
   # column with the flows (to be disaggregated)
   disaggregation_key = "total_flow",
   # What's the maximum number of trips per output OD row that's allowed?
-  disaggregation_threshold = 30,
+  disaggregation_threshold = 20,
 
   # ----- arguments for ZONES ----- #
 
@@ -261,7 +264,7 @@ od_demand_jittered = odjitter::jitter(
   # ----- arguments OTHER ----- #
 
   # Guarantee that jittered origin and destination points are at least this distance apart
-  min_distance_meters = 500,
+  min_distance_meters = 100,
   deduplicate_pairs = TRUE
 )
 
@@ -343,6 +346,9 @@ od_demand_jittered_scenarios <- od_demand_jittered %>%
                                 TRUE ~ 0)
   )
 
+# remove rows that have no flows
+od_demand_jittered_scenarios = od_demand_jittered_scenarios %>%
+  filter(total_flow != 0)
 
 ### Save the sfs for each scenario
 

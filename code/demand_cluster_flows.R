@@ -23,7 +23,7 @@ od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "
 plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/")
 
 # what combination are we clustering
-day_time = "pt_wkday_afternoon"
+day_time = "pt_wkday_evening"
 # sensitivity analysis?
 sensitivity = FALSE
 
@@ -77,7 +77,7 @@ od_demand_jittered = od_demand_jittered %>%
 # # 3) Flows with poor PT supply and low potential demand + and equal weight to origins and destinations (for flow distance)
 scenario <- 3
 clustering <- "equal"
-distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
+distance_threshold <- 50000
 #
 # # 2) Focusing on shorter distances
 # scenario <- 3

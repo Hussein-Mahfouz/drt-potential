@@ -26,7 +26,7 @@ save = TRUE
 #  ------------------------ Load in the data  -------------------------- #
 
 # ----- Clustering results
-day_time = "pt_wkday_evening"
+day_time = "pt_wkday_afternoon"
 cluster_dbscan_res <- st_read(paste0("data/processed/clustering/temporal/scenario_", scenario, "_distance_", distance_threshold, "_", clustering, "_", day_time, ".geojson"))
 
 
@@ -67,7 +67,8 @@ cluster_dbscan_res %>%
   st_drop_geometry() %>%
   group_by(cluster) %>%
   summarise(size = n(), commuters_sum = sum(commute_all)) %>%
-  arrange(desc(size))
+  arrange(desc(size)) %>%
+  head(15)
 
 # add size and total commuters columns
 cluster_dbscan_res <- cluster_dbscan_res %>%
@@ -83,7 +84,7 @@ plot(cluster_dbscan_res["cluster"])
 
 # get clusters to map
 cluster_dbscan_res %>%
-  filter(size > 20, size < 5000) %>%
+  filter(size > 15, size < 5000) %>%
   filter(commuters_sum > 200) %>%
   filter(cluster != 0) -> clusters_vis
 
@@ -95,6 +96,20 @@ clusters_vis <- clusters_vis %>%
   group_by(cluster_orig) %>%
   mutate(cluster = cur_group_id()) %>%
   ungroup()
+
+
+# Keep only the 12 largest clusters by commuters_sum if there are more than 12
+if (n_distinct(clusters_vis$cluster) > 12) {
+  top_clusters <- clusters_vis %>%
+    group_by(cluster) %>%
+    summarise(total_commuters = first(commuters_sum)) %>%
+    arrange(desc(total_commuters)) %>%
+    slice_head(n = 12) %>%
+    pull(cluster)
+
+  clusters_vis <- clusters_vis %>%
+    filter(cluster %in% top_clusters)
+}
 
 # we want maximum 4 maps per row
 rows <- round(length(unique(clusters_vis$cluster)) / 3)
@@ -142,7 +157,7 @@ tm_shape(study_area) +
 map_cluster_results
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_", day_time, "_.png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results, filename = paste0(plots_path, "map_clusters_scenario_", "_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -203,7 +218,7 @@ tm_shape(study_area) +
 map_cluster_results_bus_frac_grouped
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 # --- Map with clusters ovelayed onto bus routes
@@ -268,7 +283,7 @@ tm_shape(study_area) +
 map_cluster_results_bus_frac_grouped_gtfs
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -279,8 +294,8 @@ if(save == TRUE){
 # turn clusters into polygons using convex hull
 
 clusters_vis_mode_poly <- clusters_vis_mode %>%
-  filter(size > 7, size < 5000) %>%
-  filter(commuters_sum > 200) %>%
+  # filter(size > 7, size < 5000) %>%
+  # filter(commuters_sum > 200) %>%
   filter(cluster != 0) %>%
   mutate(cluster = as.factor(cluster)) %>%
   #head(1000) %>%
@@ -346,7 +361,7 @@ tm_shape(study_area) +
 map_cluster_results_bus_frac_grouped_gtfs_poly
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -429,7 +444,7 @@ tm_shape(clusters_vis_mode_poly) +
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -563,7 +578,7 @@ tm_shape(study_area) +
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -640,7 +655,7 @@ tm_shape(study_area) +
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -770,7 +785,7 @@ tm_shape(study_area) +
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -850,7 +865,7 @@ tm_shape(study_area) +
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -973,7 +988,7 @@ tm_shape(study_area) +
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -1112,7 +1127,7 @@ tm_shape(study_area) +
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -1250,7 +1265,7 @@ tm_shape(study_area) +
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_ppt
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_ppt, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_ppt_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_ppt, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_ppt.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -1328,7 +1343,7 @@ tm_shape(study_area) +
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave2_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave2.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -1440,7 +1455,7 @@ tm_shape(basemap_urban_rural) +
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -1490,7 +1505,7 @@ tm_shape(basemap_urban_rural) +
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_one_map_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_one_map.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
@@ -1547,7 +1562,7 @@ tm_shape(basemap_urban_rural) +
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP_overline
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP_overline, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_one_map_overline_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP_overline, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_one_map_overline.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 # ----- ONE BIG MAP (pop density as background)
@@ -1599,7 +1614,7 @@ tm_shape(st_union(study_area)) +
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_pop_density_ONE_MAP_overline
 
 if(save == TRUE){
-  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_pop_density_ONE_MAP_overline, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_pop_density_one_map_overline_", day_time, ".png"), width = 12, dpi = 1080, asp = 0)
+  tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_pop_density_ONE_MAP_overline, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_pop_density_one_map_overline.png"), width = 12, dpi = 1080, asp = 0)
 }
 
 
