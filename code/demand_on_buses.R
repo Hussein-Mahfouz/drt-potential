@@ -51,7 +51,7 @@ gtfs_paths = paste0(gtfs_dir, gtfs_names)
 
 
 # --- read in the feeds
-gtfs_bus <- gtfstools::read_gtfs(gtfs_paths[grepl("bus", gtfs_paths)])
+gtfs_bus <- gtfstools::read_gtfs(gtfs_paths[grepl("bus_temporal", gtfs_paths)])
 #gtfs_rail <- gtfstools::read_gtfs(gtfs_paths[grepl("rail", gtfs_paths)])
 
 # # --- filter the feeds to a specific point in time
@@ -241,7 +241,7 @@ plots_path <- "data/processed/plots/eda/speed_demand_cutoffs/temporal/"
 # TRIP LEVEL
 
 trips_sd = trips_sd %>%
-  mutate(combination = factor(combination, levels = c("pt_wkday_morning", "pt_wkday_afternoon", "pt_wkday_evening")))
+  mutate(combination = factor(combination, levels = c("pt_wkday_06_30", "pt_wkday_09_30", "pt_wkday_12_30", "pt_wkday_15_30", "pt_wkday_18_30")))
 
 
 # equal split
@@ -314,7 +314,7 @@ ggsave(filename = paste0(plots_path, "plot_hist_potential_demand_routes_two_meth
 #  ----- OD LEVEL
 
 od_trips_sd = od_trips_sd %>%
-  mutate(combination = factor(combination, levels = c("pt_wkday_morning", "pt_wkday_afternoon", "pt_wkday_evening")))
+  mutate(combination = factor(combination, levels = c("pt_wkday_06_30", "pt_wkday_09_30", "pt_wkday_12_30", "pt_wkday_15_30", "pt_wkday_18_30")))
 
 # equal split
 
@@ -331,7 +331,7 @@ od_trips_sd %>%
   ungroup() %>%
   mutate(potential_demand = round(potential_demand / 1000, 2)) %>%
   ggplot(aes(x = potential_demand)) +
-  geom_histogram(binwidth = 0.5, alpha = 0.8) +
+  geom_histogram(binwidth = 0.2, alpha = 0.8) +
   facet_grid(.~combination) +
   #geom_density()+
   #scale_y_log10() +
@@ -366,7 +366,7 @@ od_trips_sd %>%
   ungroup() %>%
   mutate(potential_demand = round(potential_demand / 1000, 2)) %>%
   ggplot(aes(x = potential_demand)) +
-  geom_histogram(binwidth = 0.5, alpha = 0.8) +
+  geom_histogram(binwidth = 0.2, alpha = 0.8) +
   #scale_y_log10() +
   facet_grid(combination ~ distribution_type) +
   labs(title = "Potential demand on PT routes",
@@ -396,7 +396,7 @@ od_trips_sd %>%
   ungroup() %>%
   mutate(potential_demand = round(potential_demand / 1000, 2)) %>%
   ggplot(aes(x = potential_demand)) +
-  geom_histogram(binwidth = 0.5, alpha = 0.8) +
+  geom_histogram(binwidth = 0.2, alpha = 0.8) +
   #scale_y_log10() +
   facet_grid(combination ~ distribution_type) +
   labs(title = "Potential demand on PT routes",

@@ -123,7 +123,7 @@ tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
   tm_shape(od_demand_sf_rank %>%
-             filter(combination == "pt_wkday_morning") %>%
+             filter(combination == "pt_wkday_06_30") %>%
              mutate(n_rides = as.factor(round(n_rides)))) +
   tm_lines(col = "n_rides",
            lwd = "total_flow",
@@ -166,7 +166,7 @@ tm_shape(study_area) +
   tm_borders(col = "grey60",
              alpha = 0.5) +
   tm_shape(od_demand_sf_rank %>%
-             filter(combination == "pt_wkday_morning", n_rides == 1)) +
+             filter(combination == "pt_wkday_06_30", n_rides == 1)) +
   tm_lines(col = "total_flow",
            lwd = "total_flow",
            legend.lwd.show = FALSE,
@@ -207,7 +207,7 @@ tm_shape(study_area) +
   tm_fill(col = "grey80",
           alpha = 0.5) +
   tm_shape(od_demand_sf_rank %>%
-             filter(combination == "pt_wkday_morning", speed_percentile <= 0.25)) +
+             filter(combination == "pt_wkday_06_30", speed_percentile <= 0.25)) +
   tm_lines(col = "total_flow",
            lwd = "total_flow",
            scale = 10,

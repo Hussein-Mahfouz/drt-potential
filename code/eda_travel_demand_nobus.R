@@ -55,8 +55,8 @@ plots_path <- paste0("data/processed/plots/eda/flows_no_direct/", geography, "/"
 # ---------- 2. Filter GTFS by time of day (one feed for each combination)
 
 # feeds
-gtfs_bus <- gtfs_feeds$study_area_gtfs_bus_f.zip
-gtfs_rail <- gtfs_feeds$study_area_gtfs_rail_f.zip
+gtfs_bus <- gtfs_feeds$study_area_gtfs_bus_temporal_f.zip
+gtfs_rail <- gtfs_feeds$study_area_gtfs_rail_temporal_f.zip
 # add shapes.txt to the rail feed
 gtfs_rail <- UK2GTFS::ATOC_shapes(gtfs_rail)
 
@@ -65,13 +65,19 @@ gtfs_rail <- UK2GTFS::ATOC_shapes(gtfs_rail)
 scenarios <- tribble(
   ~scenario, ~date, ~min_departure_time, ~max_arrival_time,
   # public transport at different times of day / week
-  "pt_wkday_morning", "2023-08-14", "06:00:00", "09:00:00",
-  "pt_wkday_afternoon", "2023-08-14", "11:00:00", "14:00:00",
-  "pt_wkday_evening", "2023-08-14", "17:00:00", "20:00:00",
-  "pt_wkday_night", "2023-08-14", "21:30:00", "23:59:00:00",
-  "pt_wkend_morning", "2023-08-13", "06:00:00", "09:00:00",
-  "pt_wkend_evening", "2023-08-13", "17:00:00", "20:00:00",
+  "pt_wkday_06_30", "2023-08-14", "05:00:00", "08:00:00",
+  "pt_wkday_09_30", "2023-08-14", "08:00:00", "11:00:00",
+  "pt_wkday_12_30", "2023-08-14", "11:00:00", "14:00:00",
+  "pt_wkday_15_30", "2023-08-14", "14:00:00", "17:00:00",
+  "pt_wkday_18_30", "2023-08-14", "17:00:00", "20:00:00",
+  "pt_wkend_06_30", "2023-08-14", "05:00:00", "08:00:00",
+  "pt_wkend_09_30", "2023-08-14", "08:00:00", "11:00:00",
+  "pt_wkend_12_30", "2023-08-14", "11:00:00", "14:00:00",
+  "pt_wkend_15_30", "2023-08-14", "14:00:00", "17:00:00",
+  "pt_wkend_18_30", "2023-08-14", "17:00:00", "20:00:00",
 )
+
+
 
 
 # Bus
@@ -97,8 +103,8 @@ gtfs_bus_filtered_df <- bind_rows(gtfs_bus_filtered)
 gtfs_rail_filtered_df <- bind_rows(gtfs_rail_filtered)
 
 # save the output
-st_write(gtfs_bus_filtered_df, "data/interim/gtfs_freq/gtfs_bus_sf.geojson", delete_dsn =TRUE)
-st_write(gtfs_rail_filtered_df, "data/interim/gtfs_freq/gtfs_rail_sf.geojson", delete_dsn =TRUE)
+st_write(gtfs_bus_filtered_df, "data/interim/gtfs_freq/gtfs_bus_sf_temporal.geojson", delete_dsn =TRUE)
+st_write(gtfs_rail_filtered_df, "data/interim/gtfs_freq/gtfs_rail_sf_temporal.geojson", delete_dsn =TRUE)
 
 # Bus headway (morning peak)
 
@@ -110,7 +116,7 @@ tm_shape(study_area) +
           alpha = 0.5) +
   tm_shape(gtfs_bus_filtered_df %>%
              mutate(headway_inv = 1/headway_secs) %>%
-             filter(headway_secs < 3600, scenario == "pt_wkday_morning")) +
+             filter(headway_secs < 3600, scenario == "pt_wkday_06_30")) +
   tm_lines(col = "headway_secs",
            lwd = "headway_inv",
            scale = 5,

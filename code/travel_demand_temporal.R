@@ -122,7 +122,7 @@ cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
 # ----------  MSOA level
 
 # read in the data
-tt_matrix_msoa <- arrow::read_parquet("data/processed/travel_times/MSOA/travel_time_matrix_expanded.parquet")
+tt_matrix_msoa <- arrow::read_parquet("data/processed/travel_times/MSOA/travel_time_matrix_expanded_temporal.parquet")
 
 # some OD pairs don't have travel time data (for some combinations). Expand grid so that we explitly mention these OD pairs
 tt_matrix_msoa_exp <- tidyr::crossing(from_id = tt_matrix_msoa$from_id, to_id = tt_matrix_msoa$to_id, combination = tt_matrix_msoa$combination)
@@ -157,9 +157,11 @@ tt_matrix_msoa <- tt_matrix_msoa %>%
 # add combination column to cpc data
 cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
   mutate(combination = case_when(
-    source %in% c("05-06", "06-07", "07-08", "08-09", "09-10", "10-11", "11-12") ~ "pt_wkday_morning",
-    source %in% c("12-13", "13-14", "14-15", "15-16", "16-17") ~ "pt_wkday_afternoon",
-    source %in% c("17-18", "18-19", "19-20") ~ "pt_wkday_evening")
+    source %in% c("05-06", "06-07", "07-08") ~ "pt_wkday_06_30",
+    source %in% c("08-09", "09-10", "10-11") ~ "pt_wkday_09_30",
+    source %in% c("11-12", "12-13", "13-14") ~ "pt_wkday_12_30",
+    source %in% c("14-15", "15-16", "16-17") ~ "pt_wkday_15_30",
+    source %in% c("17-18", "18-19", "19-20") ~ "pt_wkday_18_30")
     )
 
 # group by combination column

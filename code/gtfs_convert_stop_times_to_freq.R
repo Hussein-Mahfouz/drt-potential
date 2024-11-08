@@ -21,16 +21,16 @@ gtfs_rail <- tidytransit::read_gtfs("data/interim/study_area_gtfs_rail.zip")
 
 # apply the function
 gtfs_freq_bus = stop_times_to_frequencies(gtfs = gtfs_bus,
-                                      time_ranges = tibble(start_time = c("00:00:00", "05:00:00", "07:30:00", "09:00:00", "12:30:00", "15:00:00", "18:30:00", "21:00:00", "23:30:00"),
-                                                           end_time = c("05:00:00", "07:30:00", "09:00:00", "12:30:00", "15:00:00", "18:30:00", "21:00:00", "23:30:00", "23:59:00")))
+                                      time_ranges = tibble(start_time = c("00:00:00", "05:00:00", "06:30:00", "09:30:00", "12:30:00", "15:30:00", "18:30:00", "21:30:00", "23:30:00"),
+                                                           end_time = c("05:00:00", "06:30:00", "09:00:00", "12:30:00", "15:30:00", "18:30:00", "21:30:00", "23:30:00", "23:59:00")))
 
 # apply the function
 gtfs_freq_rail = stop_times_to_frequencies(gtfs = gtfs_rail,
-                                          time_ranges = tibble(start_time = c("00:00:00", "05:00:00", "07:30:00", "09:00:00", "12:30:00", "15:00:00", "18:30:00", "21:00:00", "23:30:00"),
-                                                               end_time = c("05:00:00", "07:30:00", "09:00:00", "12:30:00", "15:00:00", "18:30:00", "21:00:00", "23:30:00", "23:59:00")))
+                                           time_ranges = tibble(start_time = c("00:00:00", "05:00:00", "06:30:00", "09:30:00", "12:30:00", "15:30:00", "18:30:00", "21:30:00", "23:30:00"),
+                                                                end_time = c("05:00:00", "06:30:00", "09:00:00", "12:30:00", "15:30:00", "18:30:00", "21:30:00", "23:30:00", "23:59:00")))
 
 
 # save the new feed
-tidytransit::write_gtfs(gtfs_freq_bus, "data/interim/gtfs_freq/study_area_gtfs_bus_f.zip")
-tidytransit::write_gtfs(gtfs_freq_rail, "data/interim/gtfs_freq/study_area_gtfs_rail_f.zip")
+tidytransit::write_gtfs(gtfs_freq_bus, "data/interim/gtfs_freq/study_area_gtfs_bus_temporal_f.zip")
+tidytransit::write_gtfs(gtfs_freq_rail, "data/interim/gtfs_freq/study_area_gtfs_rail_temporal_f.zip")
 

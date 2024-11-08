@@ -23,9 +23,9 @@ od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "
 plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/")
 
 # what combination are we clustering
-day_time = "pt_wkday_evening"
+# day_time = "pt_wkday_06_30"
 # sensitivity analysis?
-sensitivity = FALSE
+# sensitivity = FALSE
 
 # ----------- 1. Study area
 
@@ -435,36 +435,43 @@ cluster_dbscan_res <- od_demand_jittered %>%
 st_write(cluster_dbscan_res, paste0("data/processed/clustering/temporal/scenario_", scenario, "_distance_", distance_threshold, "_", clustering, "_", day_time, ".geojson"), delete_dsn = TRUE)
 
 
+#
+#
+#
+# # --- Compare clusters at different points in the day
+# dbscan_sensitivity_res_wkday_06_30 = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_morning.parquet")) %>%
+#   mutate(scenario = "pt_wkday_06_30")
+# dbscan_sensitivity_res_wkday_09_30 = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_morning.parquet")) %>%
+#   mutate(scenario = "pt_wkday_09_30")
+# dbscan_sensitivity_res_wkday_12_30 = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_morning.parquet")) %>%
+#   mutate(scenario = "pt_wkday_12_30")
+# dbscan_sensitivity_res_wkday_15_30 = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_morning.parquet")) %>%
+#   mutate(scenario = "pt_wkday_15_30")
+# dbscan_sensitivity_res_wkday_18_30 = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_morning.parquet")) %>%
+#   mutate(scenario = "pt_wkday_18_30")
+#
+# dbscan_sensitivity_res_compare = bind_rows(dbscan_sensitivity_res_wkday_morning,
+#                                            dbscan_sensitivity_res_wkday_evening)
+#
+#
+# dbscan_sensitivity_res_compare %>%
+#   filter(cluster != 0) %>%
+#   group_by(id) %>%
+#   #mutate(clusters = n()) %>%
+#   # How many clusters have more than 5 od pairs in them?
+#   mutate(clusters = sum(size > 25)) %>%
+#   ungroup() %>%
+#   filter(clusters > 25) %>%
+#   ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
+#   geom_col() +
+#   scale_y_continuous(trans='log10') +
+#   facet_grid(id ~ scenario, scales = "fixed") +
+#   labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
+#        subtitle = "Parameter combinations with > 5 clusters having at least 5 od pairs each",
+#        x = "Cluster no.",
+#        y = "No. of od pairs in cluster",
+#        fill= "No. of commuters") +
+#   theme_bw()
 
 
 
-# --- Compare clusters at different points in the day
-dbscan_sensitivity_res_wkday_morning = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_morning.parquet")) %>%
-  mutate(scenario = "pt_wkday_morning")
-dbscan_sensitivity_res_wkday_afternoon = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_afternoon.parquet")) %>%
-  mutate(scenario = "pt_wkday_afternoon")
-dbscan_sensitivity_res_wkday_evening = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_evening.parquet")) %>%
-  mutate(scenario = "pt_wkday_evening")
-
-dbscan_sensitivity_res_compare = bind_rows(dbscan_sensitivity_res_wkday_morning,
-                                           dbscan_sensitivity_res_wkday_evening)
-
-
-dbscan_sensitivity_res_compare %>%
-  filter(cluster != 0) %>%
-  group_by(id) %>%
-  #mutate(clusters = n()) %>%
-  # How many clusters have more than 5 od pairs in them?
-  mutate(clusters = sum(size > 25)) %>%
-  ungroup() %>%
-  filter(clusters > 25) %>%
-  ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
-  geom_col() +
-  scale_y_continuous(trans='log10') +
-  facet_grid(id ~ scenario, scales = "fixed") +
-  labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
-       subtitle = "Parameter combinations with > 5 clusters having at least 5 od pairs each",
-       x = "Cluster no.",
-       y = "No. of od pairs in cluster",
-       fill= "No. of commuters") +
-  theme_bw()
