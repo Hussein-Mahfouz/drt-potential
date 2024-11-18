@@ -1,3 +1,8 @@
+
+
+# -------------------- Clusteting
+
+
 sensitivity = TRUE
 day_time = "pt_wkday_06_30"
 source("code/demand_cluster_flows.R")
@@ -83,15 +88,15 @@ dbscan_sensitivity_res_compare %>%
 
 ggsave(paste0("data/processed/plots/eda/od_clustering/temporal/sensitivity_analysis_eps_minpts_filtered_compare.png"), width = 14, height = 10)
 
-
-
+# minimum number of commuters in a cluster for it to be part of our analysis
+commuters_sum_minimum = 150
 
 # -------------- Plots
 day_time = "pt_wkday_06_30"
 source("code/demand_cluster_flows_maps_temporal.R")
 print(paste0("finished scenario: ", day_time))
 # clear environment
-rm(list = ls())
+rm(list = setdiff(ls(), "commuters_sum_minimum"))
 gc()
 
 
@@ -99,7 +104,7 @@ day_time = "pt_wkday_09_30"
 source("code/demand_cluster_flows_maps_temporal.R")
 print(paste0("finished scenario: ", day_time))
 # clear environment
-rm(list = ls())
+rm(list = setdiff(ls(), "commuters_sum_minimum"))
 gc()
 
 
@@ -107,7 +112,7 @@ day_time = "pt_wkday_12_30"
 source("code/demand_cluster_flows_maps_temporal.R")
 print(paste0("finished scenario: ", day_time))
 # clear environment
-rm(list = ls())
+rm(list = setdiff(ls(), "commuters_sum_minimum"))
 gc()
 
 
@@ -115,7 +120,7 @@ day_time = "pt_wkday_15_30"
 source("code/demand_cluster_flows_maps_temporal.R")
 print(paste0("finished scenario: ", day_time))
 # clear environment
-rm(list = ls())
+rm(list = setdiff(ls(), "commuters_sum_minimum"))
 gc()
 
 
@@ -123,8 +128,9 @@ day_time = "pt_wkday_18_30"
 source("code/demand_cluster_flows_maps_temporal.R")
 print(paste0("finished scenario: ", day_time))
 # clear environment
-rm(list = ls())
+rm(list = setdiff(ls(), "commuters_sum_minimum"))
 gc()
+
 
 
 # ----- Facet map with different times of day
@@ -164,7 +170,7 @@ oa_pop_density_crop <- st_crop(oa_pop_density, study_area)
 # -------- 4. DRT operating zone polygons
 
 # Specify the directory containing the GeoJSON files
-directory_path <- "data/processed/plots/eda/od_clustering/MSOA/temporal/polygons_combined"
+directory_path <- paste0("data/processed/plots/eda/od_clustering/MSOA/temporal/polygons_combined/", commuters_sum_minimum, "/")
 
 # Get the list of all GeoJSON files of DRT boundaries (1 file per scenario)
 geojson_files <- list.files(directory_path, pattern = "\\.geojson$", full.names = TRUE)
@@ -238,7 +244,8 @@ tm_shape(st_union(study_area)) +
 
 map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES
 
-plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/temporal/")
+plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/temporal/", "min_commuters_", commuters_sum_minimum)
+
 
 tmap_save(tm = map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES, filename = paste0(plots_path, "map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES.png"), width = 12, dpi = 1080, asp = 0)
 
@@ -248,4 +255,36 @@ tmap_save(tm = map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#  ------------------------ Test clustering input  -------------------------- #
+
+
+od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_temporal.geojson"))
+
+
+od_demand_jittered %>%
+  st_drop_geometry() %>%
+  pivot_longer(cols = c(scenario_1, scenario_2, scenario_3),
+               names_to = "scenario") %>%
+  group_by(combination, scenario) %>%
+  summarise(number_of_ods = sum(value == 1))
 

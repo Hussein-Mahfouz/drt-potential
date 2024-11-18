@@ -305,7 +305,6 @@ plot(st_geometry(od_demand_jittered %>%
 # ----- Option 1: All OD pairs
 
 od_demand_1 <- od_demand_filtered
-
 # ----- Option 2: OD pairs with poor PT supply (many transfers or low travel speed)
 
 od_demand_2 <- od_demand_filtered %>%

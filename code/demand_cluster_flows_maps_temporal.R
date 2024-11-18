@@ -21,7 +21,10 @@ clustering <- "equal"
 distance_threshold <- 50000   # 10000
 
 # save plots?
-save = FALSE
+save = TRUE
+
+# # minimum number of commuters in a cluster for it to be part of our analysis
+# commuters_sum_minimum = 150
 
 #  ------------------------ Load in the data  -------------------------- #
 
@@ -53,8 +56,15 @@ study_area <- study_area %>%
   relocate(all_of(geoid_col), .before = everything())
 
 
-plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/temporal/")
-
+polygons_path <-paste0("data/processed/plots/eda/od_clustering/", geography, "/temporal/polygons_combined/", "min_commuters_", commuters_sum_minimum, "/")
+if (!dir.exists(polygons_path)) {
+  dir.create(polygons_path, recursive = TRUE)
+}
+plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/temporal/", "min_commuters_", commuters_sum_minimum, "/")
+# Check if the directory exists, and if not, create it
+if (!dir.exists(plots_path)) {
+  dir.create(plots_path, recursive = TRUE)
+}
 
 # ------------------------- VISUALISE RESULTS ------------------------- #
 
@@ -85,7 +95,7 @@ plot(cluster_dbscan_res["cluster"])
 # get clusters to map
 cluster_dbscan_res %>%
   filter(size > 15, size < 5000) %>%
-  filter(commuters_sum > 200) %>%
+  filter(commuters_sum > commuters_sum_minimum) %>%
   filter(cluster != 0) -> clusters_vis
 
 
@@ -295,7 +305,7 @@ if(save == TRUE){
 
 clusters_vis_mode_poly <- clusters_vis_mode %>%
   # filter(size > 7, size < 5000) %>%
-  # filter(commuters_sum > 200) %>%
+  # filter(commuters_sum > commuters_sum_minimum) %>%
   filter(cluster != 0) %>%
   mutate(cluster = as.factor(cluster)) %>%
   #head(1000) %>%
@@ -919,7 +929,7 @@ tm_shape(study_area) +
   # lines
   tm_shape(clusters_vis_mode %>%
              filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
+             filter(commuters_sum > commuters_sum_minimum) %>%
              filter(cluster != 0) %>%
              filter(cluster %in% clusters_vis_mode_poly_filt3$cluster) %>%
              mutate(cluster = as.factor(cluster)) %>%
@@ -1023,7 +1033,7 @@ tm_shape(study_area) +
   # lines
   tm_shape(clusters_vis_mode %>%
              filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
+             filter(commuters_sum > commuters_sum_minimum) %>%
              filter(cluster != 0) %>%
              filter(cluster %in% clusters_vis_mode_poly_filt3$cluster) %>%
              mutate(cluster = as.factor(cluster)) %>%
@@ -1048,7 +1058,7 @@ tm_shape(study_area) +
   # START AND ENDPOINTS
   tm_shape(clusters_vis_mode %>%
              filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
+             filter(commuters_sum > commuters_sum_minimum) %>%
              filter(cluster != 0) %>%
              filter(cluster %in% clusters_vis_mode_poly_filt3$cluster) %>%
              mutate(cluster = as.factor(cluster)) %>%
@@ -1067,7 +1077,7 @@ tm_shape(study_area) +
             showNA = FALSE) +
   tm_shape(clusters_vis_mode %>%
              filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
+             filter(commuters_sum > commuters_sum_minimum) %>%
              filter(cluster != 0) %>%
              filter(cluster %in% clusters_vis_mode_poly_filt3$cluster) %>%
              mutate(cluster = as.factor(cluster)) %>%
@@ -1161,7 +1171,7 @@ tm_shape(study_area) +
   # lines
   tm_shape(clusters_vis_mode %>%
              filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
+             filter(commuters_sum > commuters_sum_minimum) %>%
              filter(cluster != 0) %>%
              filter(cluster %in% clusters_vis_mode_poly_filt3$cluster) %>%
              mutate(cluster = as.factor(cluster)) %>%
@@ -1186,7 +1196,7 @@ tm_shape(study_area) +
   # START AND ENDPOINTS
   tm_shape(clusters_vis_mode %>%
              filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
+             filter(commuters_sum > commuters_sum_minimum) %>%
              filter(cluster != 0) %>%
              filter(cluster %in% clusters_vis_mode_poly_filt3$cluster) %>%
              mutate(cluster = as.factor(cluster)) %>%
@@ -1205,7 +1215,7 @@ tm_shape(study_area) +
             showNA = FALSE) +
   tm_shape(clusters_vis_mode %>%
              filter(size > 7, size < 5000) %>%
-             filter(commuters_sum > 200) %>%
+             filter(commuters_sum > commuters_sum_minimum) %>%
              filter(cluster != 0) %>%
              filter(cluster %in% clusters_vis_mode_poly_filt3$cluster) %>%
              mutate(cluster = as.factor(cluster)) %>%
@@ -1473,7 +1483,7 @@ clusters_vis_mode_poly_filt3_all = clusters_vis_mode_poly_filt3 %>%
   mutate(scenario = day_time)
 
 # Save to make temporal comparison plot
-st_write(clusters_vis_mode_poly_filt3_all, paste0(plots_path, "polygons_combined/", day_time, ".geojson"), delete_dsn = TRUE)
+st_write(clusters_vis_mode_poly_filt3_all, paste0(polygons_path, day_time, ".geojson"), delete_dsn = TRUE)
 
 
 
