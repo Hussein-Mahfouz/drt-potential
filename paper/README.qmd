@@ -5,12 +5,12 @@ abstract: "Demand-Responsive Transport (DRT) has emerged as a mobility option fo
 #date: "`r format(Sys.time(), '%d %m %y')`"
 format:
   #gfm: default
-  html:
-    toc: true
-  # docx:
-  #   toc: false
-  #   number-sections: true
-  #   fig-pos: 'H'
+  # html:
+  #   toc: true
+  docx:
+    toc: false
+    number-sections: true
+    fig-pos: 'H'
   # pdf:
   #   toc: false
   #   number-sections: true
