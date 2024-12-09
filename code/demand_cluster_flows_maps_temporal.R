@@ -1184,7 +1184,7 @@ tm_shape(study_area) +
            alpha = 0.4,
            title.col = "Travel demand",
            #title.lwd = "No. of commuters",
-           legend.col.show = FALSE,
+           #legend.col.show = FALSE,
            legend.lwd.show = FALSE,
            # remove "missing from legend
            showNA = FALSE) +
