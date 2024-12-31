@@ -45,15 +45,11 @@ study_area <- study_area %>%
 
 # Demand (census) + supply (travel time) data
 
-od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), "_with_speed_and_pd.parquet"))
+od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), ".parquet")) %>%
+  # select(from_msoa:total_flow) %>%
+  rename("Origin" = "from_msoa",
+         "Destination" = "to_msoa")
 
-# # filter to specific combination
-# # TODO: get seperate flows for car and pt, and keep two combinations
-# od_demand <- od_demand %>%
-#   filter(combination == "pt_wkday_morning")
-
-od_demand <- od_demand %>%
-  select(-distance_m)
 
 # # rename columns as most functions are applied on generic column names
 # from_id_col = paste0(geography, "21CD_home")
@@ -296,62 +292,71 @@ plot(st_geometry(od_demand_jittered %>%
                    filter(Origin == "E02002331", Destination == "E02002335")),
      add = TRUE, col = "red")
 
-########## ----------------------- Decide on the SCENARIOS we want to analyse ----------------------- ##########
-
-# Scenario 1: All OD pairs
-# Scenario 2: All OD pairs with poor PT supply
-# Scenario 3: All OD pairs with poor PT supply and low potential demand
-
-# ----- Option 1: All OD pairs
-
-od_demand_1 <- od_demand_filtered
-# ----- Option 2: OD pairs with poor PT supply (many transfers or low travel speed)
-
-od_demand_2 <- od_demand_filtered %>%
-  # transfers - NA transfers means there is no option to go by bus
-  filter(n_rides > 1 | is.na(n_rides) |
-           speed_percentile < 0.5 | is.na(speed_percentile))
 
 
-# ----- Option 3: OD pairs with poor PT supply and low potential demand
-
-# get percentiles
-od_demand_3 <- od_demand_filtered %>%
-  mutate(demand_route_percentile = percent_rank(potential_demand_equal_split),
-         demand_route_percentile_fct = cut(demand_route_percentile,
-                                           breaks = seq(0, 1, by = 0.25),
-                                           include.lowest = TRUE))
-
-# od_filtered: keeps od pairs in od_demand_poor_Supply that have low pd on routes
-od_demand_3 <- od_demand_3 %>%
-  #filter(od_id %in% od_demand_2$od_id & potential_demand_equal_split < 500)
-  filter(od_id %in% od_demand_2$od_id & demand_route_percentile < 0.75)
+# ----- save the output#
+st_write(od_demand_jittered, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_temporal_for_routing.geojson"), delete_dsn = TRUE)
 
 
 
-### -----  Add a column to identify which scenarios each od pair belongs to
 
-# IMPORTANT: Read this as jittering has stopped working
-# od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_mode.geojson"))
 
-# add a column to identify which scenarios each od pair belongs to
-od_demand_jittered_scenarios <- od_demand_jittered %>%
-  mutate(od_id = paste0(Origin, "-", Destination, "-", combination)) %>%
-  mutate(scenario_1 = case_when(od_id %in% od_demand_1$od_id ~ 1,
-                                TRUE ~ 0),
-         scenario_2 = case_when(od_id %in% od_demand_2$od_id ~ 1,
-                                TRUE ~ 0),
-         scenario_3 = case_when(od_id %in% od_demand_3$od_id ~ 1,
-                                TRUE ~ 0)
-  )
-
-# remove rows that have no flows
-od_demand_jittered_scenarios = od_demand_jittered_scenarios %>%
-  filter(total_flow != 0)
-
-### Save the sfs for each scenario
-
-st_write(od_demand_jittered_scenarios, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_temporal.geojson"), delete_dsn = TRUE)
+# ########## ----------------------- Decide on the SCENARIOS we want to analyse ----------------------- ##########
+#
+# # Scenario 1: All OD pairs
+# # Scenario 2: All OD pairs with poor PT supply
+# # Scenario 3: All OD pairs with poor PT supply and low potential demand
+#
+# # ----- Option 1: All OD pairs
+#
+# od_demand_1 <- od_demand_filtered
+# # ----- Option 2: OD pairs with poor PT supply (many transfers or low travel speed)
+#
+# od_demand_2 <- od_demand_filtered %>%
+#   # transfers - NA transfers means there is no option to go by bus
+#   filter(n_rides > 1 | is.na(n_rides) |
+#            speed_percentile < 0.5 | is.na(speed_percentile))
+#
+#
+# # ----- Option 3: OD pairs with poor PT supply and low potential demand
+#
+# # get percentiles
+# od_demand_3 <- od_demand_filtered %>%
+#   mutate(demand_route_percentile = percent_rank(potential_demand_equal_split),
+#          demand_route_percentile_fct = cut(demand_route_percentile,
+#                                            breaks = seq(0, 1, by = 0.25),
+#                                            include.lowest = TRUE))
+#
+# # od_filtered: keeps od pairs in od_demand_poor_Supply that have low pd on routes
+# od_demand_3 <- od_demand_3 %>%
+#   #filter(od_id %in% od_demand_2$od_id & potential_demand_equal_split < 500)
+#   filter(od_id %in% od_demand_2$od_id & demand_route_percentile < 0.75)
+#
+#
+#
+# ### -----  Add a column to identify which scenarios each od pair belongs to
+#
+# # IMPORTANT: Read this as jittering has stopped working
+# # od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_mode.geojson"))
+#
+# # add a column to identify which scenarios each od pair belongs to
+# od_demand_jittered_scenarios <- od_demand_jittered %>%
+#   mutate(od_id = paste0(Origin, "-", Destination, "-", combination)) %>%
+#   mutate(scenario_1 = case_when(od_id %in% od_demand_1$od_id ~ 1,
+#                                 TRUE ~ 0),
+#          scenario_2 = case_when(od_id %in% od_demand_2$od_id ~ 1,
+#                                 TRUE ~ 0),
+#          scenario_3 = case_when(od_id %in% od_demand_3$od_id ~ 1,
+#                                 TRUE ~ 0)
+#   )
+#
+# # remove rows that have no flows
+# od_demand_jittered_scenarios = od_demand_jittered_scenarios %>%
+#   filter(total_flow != 0)
+#
+# ### Save the sfs for each scenario
+#
+# st_write(od_demand_jittered_scenarios, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_temporal.geojson"), delete_dsn = TRUE)
 
 
 
