@@ -191,6 +191,6 @@ census_work_msoa_tt <- census_work_msoa %>%
 
 # save
 #write_csv(census_work_msoa_tt, "data/raw/travel_demand/od_census_2021/demand_study_area_msoa.csv")
-arrow::write_parquet(census_work_msoa_tt, "data/raw/travel_demand/od_census_2021/demand_study_area_msoa.parquet")
+arrow::write_parquet(census_work_msoa_tt, )
 
 

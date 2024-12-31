@@ -16,11 +16,16 @@ source("R/dbscan_sensitivity.R")
 ########## ----------------------- Read in the data ----------------------- ##########
 geography <- "MSOA"
 
+od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_temporal.geojson"))
 # od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios.geojson"))
-od_demand_jittered <- st_read(paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_mode.geojson"))
 
 # path tp save plots
 plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/")
+
+# what combination are we clustering
+# day_time = "pt_wkday_06_30"
+# sensitivity analysis?
+# sensitivity = FALSE
 
 # ----------- 1. Study area
 
@@ -42,6 +47,21 @@ geoid_col = paste0(geography, "21CD")
 study_area <- study_area %>%
   relocate(all_of(geoid_col), .before = everything())
 
+# add distance_m column
+
+crs_orig = st_crs(od_demand_jittered)
+crs_metric = 3857
+
+od_demand_jittered = od_demand_jittered %>%
+  st_transform(crs_metric) %>%
+  mutate(distance_m = units::drop_units(sf::st_length(.))) %>%
+  st_transform(crs_orig) %>%
+  filter(distance_m >= 500)
+
+
+
+od_demand_jittered = od_demand_jittered %>%
+  filter(combination == day_time)
 ########## ----------------------- Different parameter combinations  ----------------------- ##########
 
 # # 1) All flows + equal weight to origins and destinations (for flow distance)
@@ -57,7 +77,7 @@ study_area <- study_area %>%
 # # 3) Flows with poor PT supply and low potential demand + and equal weight to origins and destinations (for flow distance)
 scenario <- 3
 clustering <- "equal"
-distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
+distance_threshold <- 50000
 #
 # # 2) Focusing on shorter distances
 # scenario <- 3
@@ -138,10 +158,10 @@ od_demand_xyuv <- od_demand_jittered %>%
 # assign unique id to each point
 od_demand_xyuv <- od_demand_xyuv %>%
   group_by(Origin, x, y) %>%
-  mutate(O_ID = cur_group_id()) %>%
+  mutate(O_ID = paste0(cur_group_id(), "_", row_number())) %>%
   ungroup() %>%
   group_by(Destination, u, v) %>%
-  mutate(D_ID = cur_group_id()) %>%
+  mutate(D_ID = paste0(cur_group_id(), "_", row_number())) %>%
   ungroup()
 
 # assign unique id to each OD pair
@@ -261,11 +281,11 @@ w <- dist_mat %>%
   select(flow_ID) %>%
   # add commuting data to
   inner_join(od_demand_jittered %>%
-               select(flow_ID, commute_all),
+               select(flow_ID, total_flow),
              by = "flow_ID")
 
 # weight vector
-w_vec <- as.vector(w$commute_all)
+w_vec <- as.vector(w$total_flow)
 
 
 
@@ -307,56 +327,60 @@ hist(distances$fds, breaks = 100)
 #
 # # ----- Sensitivity analysis(for different epsilon and minpts combinaitons)
 #
-# # function to get clustering results for many combinations
-# dbscan_sensitivity_res <- dbscan_sensitivity(distance_matrix = dist_mat,
-#                                              options_epsilon <- c(0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 7.5, 8, 9),
-#                                              options_minpts <- c(50, 75, 100, 150, 175, 200, 250, 300, 400, 500, 700, 1000, 1500, 3000, 5000, 10000),
-#                                              weights = w_vec,
-#                                              flows = st_drop_geometry(od_demand_jittered)
-#                                              )
-#
-#
-# arrow::write_parquet(dbscan_sensitivity_res, paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity.parquet"))
-# # dbscan_sensitivity_res <- arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity.parquet"))
-#
-#
-# # All results plotted together
-# dbscan_sensitivity_res %>%
-#   filter(cluster != 0) %>%
-#   ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
-#   geom_col() +
-#   scale_y_continuous(trans='log10') +
-#   facet_wrap(~id, scales = "fixed") +
-#   labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
-#        subtitle = "Parameter combinations that returned more than 1 cluster",
-#        x = "Cluster no.",
-#        y = "No. of od pairs in cluster",
-#        fill= "No. of commuters") +
-#  theme_minimal()
-#
-# ggsave("data/processed/plots/eda/od_clustering/sensitivity_analysis_eps_minpts_all.png", width = 14, height = 10)
-#
-# dbscan_sensitivity_res %>%
-#   filter(cluster != 0) %>%
-#   group_by(id) %>%
-#   #mutate(clusters = n()) %>%
-#   # How many clusters have more than 5 od pairs in them?
-#   mutate(clusters = sum(size > 5)) %>%
-#   ungroup() %>%
-#   filter(clusters > 5) %>%
-#   ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
-#   geom_col() +
-#   scale_y_continuous(trans='log10') +
-#   facet_wrap(~id, scales = "fixed") +
-#   labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
-#        subtitle = "Parameter combinations with > 5 clusters having at least 5 od pairs each",
-#        x = "Cluster no.",
-#        y = "No. of od pairs in cluster",
-#        fill= "No. of commuters") +
-#   theme_minimal()
-#
-# ggsave("data/processed/plots/eda/od_clustering/sensitivity_analysis_eps_minpts_filtered.png", width = 14, height = 10)
-#
+# function to get clustering results for many combinations
+if(sensitivity == TRUE){
+  dbscan_sensitivity_res <- dbscan_sensitivity(distance_matrix = dist_mat,
+                                               options_epsilon <- c(1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9),
+                                               options_minpts <- c(50, 75, 100, 150, 200, 300, 500, 1000, 2500),
+                                               weights = w_vec,
+                                               flows = st_drop_geometry(od_demand_jittered),
+                                               flow_column = "total_flow"
+  )
+
+
+  arrow::write_parquet(dbscan_sensitivity_res, paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_", day_time, ".parquet"))
+  # dbscan_sensitivity_res <- arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity.parquet"))
+
+
+  # All results plotted together
+  dbscan_sensitivity_res %>%
+    filter(cluster != 0) %>%
+    ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
+    geom_col() +
+    scale_y_continuous(trans='log10') +
+    facet_wrap(~id, scales = "fixed") +
+    labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
+         subtitle = "Parameter combinations that returned more than 1 cluster",
+         x = "Cluster no.",
+         y = "No. of od pairs in cluster",
+         fill= "No. of commuters") +
+    theme_bw()
+
+  ggsave(paste0("data/processed/plots/eda/od_clustering/temporal/sensitivity_analysis_eps_minpts_all_", day_time, ".png"), width = 14, height = 10)
+
+  dbscan_sensitivity_res %>%
+    filter(cluster != 0) %>%
+    group_by(id) %>%
+    #mutate(clusters = n()) %>%
+    # How many clusters have more than 5 od pairs in them?
+    mutate(clusters = sum(size > 5)) %>%
+    ungroup() %>%
+    filter(clusters > 5) %>%
+    ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
+    geom_col() +
+    scale_y_continuous(trans='log10') +
+    facet_wrap(~id, scales = "fixed") +
+    labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
+         subtitle = "Parameter combinations with > 5 clusters having at least 5 od pairs each",
+         x = "Cluster no.",
+         y = "No. of od pairs in cluster",
+         fill= "No. of commuters") +
+    theme_bw()
+
+  ggsave(paste0("data/processed/plots/eda/od_clustering/temporal/sensitivity_analysis_eps_minpts_filtered_", day_time, ".png"), width = 14, height = 10)
+
+}
+
 
 
 ###  --------------------  STEP 3: Cluster  -------------------- ###
@@ -364,8 +388,8 @@ hist(distances$fds, breaks = 100)
 
 # cluster option 1: border points assigned to cluster
 cluster_dbscan = dbscan::dbscan(dist_mat,
-                                minPts = 70, # 125
-                                eps = 8, # 9.5
+                                minPts = 50, # evening: 50 # 125
+                                eps = 7, # evening: 7   # 9.5
                                 #borderPoints = FALSE,
                                 weights = w_vec)
 # # for splitted distance
@@ -408,10 +432,46 @@ cluster_dbscan_res <- od_demand_jittered %>%
 
 
 # save
-st_write(cluster_dbscan_res, paste0("data/processed/clustering/scenario_", scenario, "_distance_", distance_threshold, "_", clustering, ".geojson"), delete_dsn = TRUE)
+st_write(cluster_dbscan_res, paste0("data/processed/clustering/temporal/scenario_", scenario, "_distance_", distance_threshold, "_", clustering, "_", day_time, ".geojson"), delete_dsn = TRUE)
 
 
-
+#
+#
+#
+# # --- Compare clusters at different points in the day
+# dbscan_sensitivity_res_wkday_06_30 = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_morning.parquet")) %>%
+#   mutate(scenario = "pt_wkday_06_30")
+# dbscan_sensitivity_res_wkday_09_30 = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_morning.parquet")) %>%
+#   mutate(scenario = "pt_wkday_09_30")
+# dbscan_sensitivity_res_wkday_12_30 = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_morning.parquet")) %>%
+#   mutate(scenario = "pt_wkday_12_30")
+# dbscan_sensitivity_res_wkday_15_30 = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_morning.parquet")) %>%
+#   mutate(scenario = "pt_wkday_15_30")
+# dbscan_sensitivity_res_wkday_18_30 = arrow::read_parquet(paste0("data/interim/travel_demand/", geography, "/od_demand_clustering_sensitivity_pt_wkday_morning.parquet")) %>%
+#   mutate(scenario = "pt_wkday_18_30")
+#
+# dbscan_sensitivity_res_compare = bind_rows(dbscan_sensitivity_res_wkday_morning,
+#                                            dbscan_sensitivity_res_wkday_evening)
+#
+#
+# dbscan_sensitivity_res_compare %>%
+#   filter(cluster != 0) %>%
+#   group_by(id) %>%
+#   #mutate(clusters = n()) %>%
+#   # How many clusters have more than 5 od pairs in them?
+#   mutate(clusters = sum(size > 25)) %>%
+#   ungroup() %>%
+#   filter(clusters > 25) %>%
+#   ggplot(aes(x = cluster, y = size, fill = commuters_sum)) +
+#   geom_col() +
+#   scale_y_continuous(trans='log10') +
+#   facet_grid(id ~ scenario, scales = "fixed") +
+#   labs(title = "Sensitivity analysis for clustering - Varying {eps} and {minPts}",
+#        subtitle = "Parameter combinations with > 5 clusters having at least 5 od pairs each",
+#        x = "Cluster no.",
+#        y = "No. of od pairs in cluster",
+#        fill= "No. of commuters") +
+#   theme_bw()
 
 
 

@@ -1,6 +1,6 @@
 # the purpose of this script is to prepare the flow data for spatial clustering #
 # This is done by jittering the flows so that it is not concentrated at zone centroids
-
+#
 library(tidyverse)
 library(sf)
 #library(lwgeom)
@@ -18,8 +18,7 @@ source("R/filter_od_matrix.R")
 ########## ----------------------- Read in the data ----------------------- ##########
 
 # is the data disaggregated by mode?
-mode <- TRUE
-#mode <- FALSE
+mode <- FALSE
 
 
 # ----------- 1. Study area
@@ -46,20 +45,12 @@ study_area <- study_area %>%
 
 # Demand (census) + supply (travel time) data
 
-if(mode == FALSE){
-  # data with "commute_all" only
-  #od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
-  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_with_speed_and_pd.parquet"))
-} else{
-  # data with modes
-  #od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode.parquet"))
-  od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode_with_speed_and_pd.parquet"))
-}
+od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), "_with_speed_and_pd.parquet"))
 
-# filter to specific combination
-# TODO: get seperate flows for car and pt, and keep two combinations
-od_demand <- od_demand %>%
-  filter(combination == "pt_wkday_morning")
+# # filter to specific combination
+# # TODO: get seperate flows for car and pt, and keep two combinations
+# od_demand <- od_demand %>%
+#   filter(combination == "pt_wkday_morning")
 
 od_demand <- od_demand %>%
   select(-distance_m)
@@ -112,10 +103,117 @@ sub_zones <- sub_zones %>%
 
 # rename population density column
 sub_zones <- sub_zones %>%
-  rename(population = gbr_pd_2020_1km_UNadj)
+  rename(population = gbr_pd_2020_1km_UNadj) %>%
+  # odjitter samples with replacement. Higher weighted subpoints will keep getting sampled
+  # Get cube root to increase probability of other points being sampled
+  mutate(population = population^(1/3))
+
+
+# --- Create more points (if we don't have enough points, then odjitter may not find a feasible solution)
+
+
+#' Split Points into Multiple Offset Points with CRS Transformation
+#'
+#' This function takes an `sf` object containing spatial points and splits each
+#' point into multiple new points that are offset from the original points.
+#' Each new point represents an equal share of a specified numeric column value,
+#' and is randomly distributed within a given distance range from the original
+#' point. The function transforms the CRS to a specified metric CRS for
+#' processing and then converts it back to the original CRS.
+#'
+#' @param sf_points An `sf` object representing multiple spatial points with
+#'   geometry and a numeric column to be split.
+#' @param col_to_split A string indicating the name of the numeric column to
+#'   be split across the new points.
+#' @param splits An integer indicating the number of new points to generate
+#'   from each original point.
+#' @param offset_dist_min A numeric value specifying the minimum distance
+#'   (in meters) for the offsets of the new points from the original points.
+#' @param offset_dist_max A numeric value specifying the maximum distance
+#'   (in meters) for the offsets of the new points from the original points.
+#' @param target_crs A numeric EPSG code or a PROJ string for the target
+#'   metric CRS to be used during processing.
+#'
+#' @return An `sf` object containing the new points, with the specified
+#'   numeric column value equally distributed among the generated points.
+#'
+#' @examples
+#' # Example usage
+#' library(sf)
+#' sf_points <- st_as_sf(data.frame(id = 1,
+#'                                   population = 100,
+#'                                   geometry = st_sfc(st_point(c(1, 1)),
+#'                                                     crs = 4326)))
+#' result <- split_points(sf_points, col_to_split = "population",
+#'                        splits = 5, offset_dist_min = 10,
+#'                        offset_dist_max = 20, target_crs = 32630)
+#' plot(st_geometry(result))
+split_points <- function(sf_points, col_to_split, splits, offset_dist_min,
+                         offset_dist_max, target_crs) {
+
+  # Ensure that the specified column exists in the sf object
+  if (!col_to_split %in% names(sf_points)) {
+    stop(paste("Column", col_to_split, "does not exist in the sf object."))
+  }
+
+  # Store the original CRS
+  original_crs <- st_crs(sf_points)
+
+  # Transform to the target CRS
+  sf_points_metric <- st_transform(sf_points, target_crs)
+
+  # Create an empty list to store new points
+  new_points_list <- vector("list", nrow(sf_points_metric))
+
+  # Loop through each point in the sf object
+  for (i in 1:nrow(sf_points_metric)) {
+    point <- sf_points_metric[i, ]
+    population <- point[[col_to_split]]  # Get the value of the specified column
+
+    # Calculate new population per point
+    new_col_to_split <- population / splits
+
+    # Generate new points with offsets
+    offsets <- lapply(1:splits, function(index) {
+      angle <- runif(1, 0, 2 * pi)  # Random angle in radians
+      offset_dist <- runif(1, min = offset_dist_min, max = offset_dist_max)
+      offset_x <- offset_dist * cos(angle)
+      offset_y <- offset_dist * sin(angle)
+      st_point(c(st_coordinates(point)[1] + offset_x,
+                 st_coordinates(point)[2] + offset_y))
+    })
+
+    # Create sf object for new points
+    new_points_sf <- st_sf(
+      # TODO: take column name from funciton argument instead of hardcoding
+      population = rep(new_col_to_split, splits),  # Dynamically assign the column name
+      geometry = st_sfc(offsets, crs = st_crs(point))
+    )
+
+    # Append the new points sf object to the list
+    new_points_list[[i]] <- new_points_sf
+  }
+
+  # Combine all new points into a single sf object
+  result_sf <- do.call(rbind, new_points_list)
+
+  # Transform back to the original CRS
+  result_sf <- st_transform(result_sf, original_crs)
+
+  return(result_sf)
+}
+
+# apply function
+sub_zones_2 <- split_points(sub_zones,
+                            col_to_split = "population",
+                            splits = 7,
+                            offset_dist_min = 200,
+                            offset_dist_max = 700,
+                            target_crs = 3857)
 
 
 
+#######
 
 ##### ----- STEP 2: Jittering
 
@@ -124,8 +222,11 @@ unlink(paste0(normalizePath(tempdir()), "/", dir(tempdir())), recursive = TRUE)
 # confirm it's empty
 dir(tempdir())
 
+# selected_combination = "pt_wkday_evening"
+
 od_demand_for_jittering <- od_demand_filtered %>%
-  select(Origin, Destination, starts_with("commute_"))
+  #filter(combination == selected_combination) %>%
+  select(Origin, Destination, total_flow, combination)
 
 # arguments are here: https://github.com/dabreegster/odjitter?tab=readme-ov-file#details
 
@@ -138,9 +239,9 @@ od_demand_jittered = odjitter::jitter(
   origin_key = "Origin",
   destination_key = "Destination",
   # column with the flows (to be disaggregated)
-  disaggregation_key = "commute_all",
+  disaggregation_key = "total_flow",
   # What's the maximum number of trips per output OD row that's allowed?
-  disaggregation_threshold = 95,
+  disaggregation_threshold = 20,
 
   # ----- arguments for ZONES ----- #
 
@@ -150,7 +251,7 @@ od_demand_jittered = odjitter::jitter(
   # ----- Arguments for SUBPOINTS ----- #
 
   # subpoints to jitter origins and destinations to
-  subpoints = sub_zones,
+  subpoints = sub_zones_2,
   # # alternatively, define different points for origins and destinations
   # subpoints_origins = points_home,
   # subpoints_destinations = points_work,
@@ -163,16 +264,37 @@ od_demand_jittered = odjitter::jitter(
   # ----- arguments OTHER ----- #
 
   # Guarantee that jittered origin and destination points are at least this distance apart
-  min_distance_meters = 500,
+  min_distance_meters = 100,
   deduplicate_pairs = TRUE
 )
 
+# TODO: remove when jittering is fixed
+# od_demand_jittered <- od_demand_filtered
+
 # jittered returns fractions. Round them
 od_demand_jittered <- od_demand_jittered %>%
-  mutate(across(starts_with("commute_"), round))
+  mutate(across(starts_with("total_flow"), round))
+
+# # ---------- check if new ODs are in the same zone paairs as the old ODs ----------
+
+od_demand_jittered_test <- od_demand_jittered %>%
+  mutate(Origin_new = lwgeom::st_startpoint(geometry),
+         Destination_new = lwgeom::st_endpoint(geometry)) %>%
+  st_set_geometry("Origin_new") %>%
+  st_join(study_area %>% select(MSOA21CD) %>%
+            rename(MSOA_study_area_O = MSOA21CD)) %>%
+  st_set_geometry("Destination_new") %>%
+  st_join(study_area %>% select(MSOA21CD) %>%
+            rename(MSOA_study_area_D = MSOA21CD)) %>%
+  mutate(Origin_match = MSOA_study_area_O == Origin,
+         Destination_match = MSOA_study_area_D == Destination)
 
 
-
+# plot to check
+plot(st_geometry(study_area))
+plot(st_geometry(od_demand_jittered %>%
+                   filter(Origin == "E02002331", Destination == "E02002335")),
+     add = TRUE, col = "red")
 
 ########## ----------------------- Decide on the SCENARIOS we want to analyse ----------------------- ##########
 
@@ -183,7 +305,6 @@ od_demand_jittered <- od_demand_jittered %>%
 # ----- Option 1: All OD pairs
 
 od_demand_1 <- od_demand_filtered
-
 # ----- Option 2: OD pairs with poor PT supply (many transfers or low travel speed)
 
 od_demand_2 <- od_demand_filtered %>%
@@ -224,18 +345,13 @@ od_demand_jittered_scenarios <- od_demand_jittered %>%
                                 TRUE ~ 0)
   )
 
+# remove rows that have no flows
+od_demand_jittered_scenarios = od_demand_jittered_scenarios %>%
+  filter(total_flow != 0)
 
 ### Save the sfs for each scenario
 
-
-if(mode == FALSE){
-  # data with "commute_all" only
-  st_write(od_demand_jittered_scenarios, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios.geojson"), delete_dsn = TRUE)
-
-} else{
-  # data with modes
-  st_write(od_demand_jittered_scenarios, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_mode.geojson"), delete_dsn = TRUE)
-  }
+st_write(od_demand_jittered_scenarios, paste0("data/interim/travel_demand/", geography, "/od_demand_jittered_for_clustering_scenarios_temporal.geojson"), delete_dsn = TRUE)
 
 
 
@@ -362,9 +478,4 @@ if(mode == FALSE){
 #
 #
 # # density plot: facet by demand percentile: Keep potential_demand_equal_split = NA (replace with 0)
-#
-#
-#
-#
-#
 #

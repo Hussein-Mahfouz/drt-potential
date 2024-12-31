@@ -377,7 +377,7 @@ tm_shape(study_area) +
             #panel.show = FALSE,
             panel.label.size = 1,
             panel.label.bg.color = NA,
-           # panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly$cluster)),
+            # panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly$cluster)),
             frame = FALSE) -> map_cluster_results_bus_frac_grouped_gtfs_poly
 
 map_cluster_results_bus_frac_grouped_gtfs_poly
@@ -742,7 +742,7 @@ tm_shape(study_area) +
            breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
            palette = "RdYlGn", #Accent
            alpha = 0.4,
-          # title.col = "Fraction of Bus to Car users",
+           # title.col = "Fraction of Bus to Car users",
            #title.lwd = "No. of commuters",
            legend.col.show = FALSE,
            legend.lwd.show = FALSE,
@@ -1143,7 +1143,7 @@ tm_shape(basemap_urban_rural) +
   ) +
   # ---- clusters
   # poly border
-tm_shape(clusters_vis_mode_poly %>%
+  tm_shape(clusters_vis_mode_poly %>%
              filter(cluster %in% clusters_vis_mode_poly_filt$cluster)) +
   tm_borders(col = "black",
              lwd = 3,
@@ -1154,9 +1154,9 @@ tm_shape(clusters_vis_mode_poly %>%
             nrow = rows,
             showNA = FALSE) +
   # poly fill
-# tm_shape(cluster_dbscan_res_mode_poly_filt_max %>%
-#              filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster) %>%
-tm_shape(clusters_vis_mode_poly_filt %>%
+  # tm_shape(cluster_dbscan_res_mode_poly_filt_max %>%
+  #              filter(cluster %in% cluster_dbscan_res_mode_poly_filt$cluster) %>%
+  tm_shape(clusters_vis_mode_poly_filt %>%
              st_buffer(1000)) +
   tm_borders(col = "darkgreen",
              lwd = 2) +
@@ -1221,9 +1221,9 @@ tm_shape(basemap_urban_rural) +
   tm_shape(st_union(clusters_vis_mode_poly_filt %>%
                       mutate(area = st_area(.)) %>%
                       filter(area > 0.2 * mean(area)))) +
-    tm_borders(col = "darkgreen",
-               lwd = 3.5,
-               lty = "dashed") +
+  tm_borders(col = "darkgreen",
+             lwd = 3.5,
+             lty = "dashed") +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Potential DRT Service Areas"),
             main.title.size = 1.1,
@@ -1487,8 +1487,8 @@ ggplot(clusters_ur_poly_combined) +
                     #direction = -1,
                     labels = function(x) str_wrap(x, width = 25)) +
   scale_color_manual(values = colors_urban_rural,
-                    #direction = -1,
-                    labels = function(x) str_wrap(x, width = 25)) +
+                     #direction = -1,
+                     labels = function(x) str_wrap(x, width = 25)) +
   labs(x = "",
        y = "Area covered by cluster (km2)",
        fill = "Rural / Urban Classification",
@@ -1507,4 +1507,3 @@ ggplot(clusters_ur_poly_combined) +
   facet_wrap(facets = vars(cluster))
 
 ggsave(paste0(plots_path, "figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
-
