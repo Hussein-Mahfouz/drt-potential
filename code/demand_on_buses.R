@@ -65,7 +65,9 @@ gtfs_bus <- gtfstools::read_gtfs(gtfs_paths[grepl("bus_temporal", gtfs_paths)])
 
 # Demand (census) + supply (travel time) data
 
-od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), "_with_speed.parquet"))
+# od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), "_with_speed.parquet"))
+od_demand = st_read(paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), "_with_speed.geojson"))
+
 
 # # columns to reference (they differ based on geography)
 # from_id_col = paste0(geography, "21CD_home")
@@ -83,25 +85,29 @@ od_demand <- od_demand %>%
 
 
 # ----------- 1. Identify which od pairs are served directly by each trip
+if(run_od_supply == TRUE){
+  od_supply <- gtfs_trips_od_coverage(gtfs = gtfs_bus, zones = study_area, zone_column = paste0(toupper(geography), "21CD"))
 
-od_supply <- gtfs_trips_od_coverage(gtfs = gtfs_bus, zones = study_area, zone_column = paste0(toupper(geography), "21CD"))
+  # trip_id refers to each unique bus that goes from A to B - we want one row for each trip that goees from A -> B (think directional route_id)
 
-# trip_id refers to each unique bus that goes from A to B - we want one row for each trip that goees from A -> B (think directional route_id)
+  # add other columns that can help identify a unique trip
+  od_supply <- od_supply %>%
+    inner_join(gtfs_bus$trips %>%
+                 select(trip_id, route_id, trip_headsign, shape_id),
+               by = "trip_id")
 
-# add other columns that can help identify a unique trip
-od_supply <- od_supply %>%
-  inner_join(gtfs_bus$trips %>%
-               select(trip_id, route_id, trip_headsign, shape_id),
-             by = "trip_id")
-
-# identify unique trips using distinct
-od_supply <- od_supply %>%
-  distinct(Origin, Destination, start_time, route_id, trip_headsign, .keep_all = TRUE)
+  # identify unique trips using distinct
+  od_supply <- od_supply %>%
+    distinct(Origin, Destination, start_time, route_id, trip_headsign, .keep_all = TRUE)
 
 
-# save the output
-arrow::write_parquet(od_supply, paste0("data/interim/travel_demand/", toupper(geography), "/od_pairs_bus_coverage_temporal.parquet"))
-#od_supply <- arrow::read_parquet( paste0("data/interim/travel_demand/", toupper(geography), "/od_pairs_bus_coverage_temporal.parquet"))
+  # save the output
+  arrow::write_parquet(od_supply, paste0("data/interim/travel_demand/", toupper(geography), "/od_pairs_bus_coverage_temporal.parquet"))
+
+
+} else{
+  od_supply <- arrow::read_parquet( paste0("data/interim/travel_demand/", toupper(geography), "/od_pairs_bus_coverage_temporal.parquet"))
+}
 
 # --- remove od pairs with very short distance
 
@@ -144,12 +150,14 @@ od_sd <- od_demand %>%
 
 # Method 1: all_to_all
 trips_sd_1 <- od_sd %>%
+  st_drop_geometry() %>%
   group_by(trip_id, departure_time, combination) %>%
   summarise(potential_demand_all_to_all = sum(total_flow, na.rm = TRUE)) %>%
   ungroup()
 
 # Method 2: frequency-based
 trips_sd_2 <- od_sd %>%
+  st_drop_geometry() %>%
   group_by(departure_time, combination, Origin, Destination) %>%
   # get number of passengers on each route for each OD pair
   mutate(group_id = cur_group_id(),
@@ -163,6 +171,7 @@ trips_sd_2 <- od_sd %>%
 
 # Method 3: split demand equally between all routes serving OD pair
 trips_sd_3 <- od_sd %>%
+  st_drop_geometry() %>%
   group_by(departure_time, combination, Origin, Destination) %>%
   # get number of passengers on each route for each OD pair
   mutate(commute_route = round((total_flow / n()))) %>%
@@ -197,7 +206,8 @@ od_trips_sd <- od_trips_sd %>%
   ungroup()
 
 
-arrow::write_parquet(od_trips_sd, paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), "_with_speed_and_pd.parquet"))
+# arrow::write_parquet(od_trips_sd, paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), "_with_speed_and_pd.parquet"))
+st_write(od_trips_sd, paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), "_with_speed_and_pd.geojson"), delete_dsn = TRUE)
 
 # ----------- 4. Add geometry to plot results
 

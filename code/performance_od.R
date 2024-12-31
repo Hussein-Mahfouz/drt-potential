@@ -19,6 +19,7 @@ source = "cpc"
 
 # --- where do we want to save the plots?
 plots_path <- paste0("data/processed/plots/eda/od_performance/", geography, "/", source, "/")
+travel_time_path <- paste0("data/processed/travel_times/")
 
 
 
@@ -41,7 +42,8 @@ study_area <- study_area %>%
 
 # ----- Travel time and demand matrix
 
-od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), ".parquet"))
+# od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), ".parquet"))
+od_demand <- st_read(paste0(travel_time_path, geography, "/travel_time_matrix_expanded_temporal_jitter_demand.geojson"))
 
 
 
@@ -50,22 +52,25 @@ od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/cpc_matrices_201
 # we don't want OD pairs below a certain distance (say 1km)
 
 
-from_id_col = paste0(geography, "21CD_home")
-to_id_col = paste0(geography, "21CD_work")
+# from_id_col = paste0(geography, "21CD_home")
+# to_id_col = paste0(geography, "21CD_work")
+#
+# # rename columns for function below
+# od_demand <- od_demand %>%
+#   rename(Origin = all_of(from_id_col),
+#          Destination = all_of(to_id_col)) %>%
+#   relocate(Origin, Destination)
 
-# rename columns for function below
-od_demand <- od_demand %>%
-  rename(Origin = all_of(from_id_col),
-         Destination = all_of(to_id_col)) %>%
-  relocate(Origin, Destination)
 
+#
+# # filter od pairs by euclidian distance
+# od_demand_sf = filter_matrix_by_distance(zones = study_area,
+#                                          od_matrix = od_demand,
+#                                          dist_threshold = 500)
 
-
-# filter od pairs by euclidian distance
-od_demand_sf = filter_matrix_by_distance(zones = study_area,
-                                         od_matrix = od_demand,
-                                         dist_threshold = 500)
-
+od_demand_sf = od_demand %>%
+  st_transform(3857) %>%
+  mutate(distance_m = units::drop_units(sf::st_length(.)))
 
 # ----------- 3. Get travel speeds
 
@@ -105,11 +110,8 @@ od_demand_sf_rank <- od_demand_sf %>%
 
 # ---------- 5. Save the output
 
-arrow::write_parquet(st_drop_geometry(od_demand_sf_rank), paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), "_with_speed.parquet"))
-
-
-
-
+# arrow::write_parquet(st_drop_geometry(od_demand_sf_rank), paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), "_with_speed.parquet"))
+st_write(od_demand_sf_rank, paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_", tolower(geography), "_with_speed.geojson"), delete_dsn = TRUE)
 # ---------- 6. Map the results
 
 
