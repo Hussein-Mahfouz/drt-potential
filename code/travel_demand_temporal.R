@@ -126,15 +126,40 @@ cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
   filter(from_msoa %in% study_area$MSOA11CD & to_msoa %in% study_area$MSOA11CD)
 
 
+
+
+# --------- Group into time buckets
+
+# add combination column to cpc data
+cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
+  mutate(combination = case_when(
+    source %in% c("05-06", "06-07", "07-08") ~ "pt_wkday_06_30",
+    source %in% c("08-09", "09-10", "10-11") ~ "pt_wkday_09_30",
+    source %in% c("11-12", "12-13", "13-14") ~ "pt_wkday_12_30",
+    source %in% c("14-15", "15-16", "16-17") ~ "pt_wkday_15_30",
+    source %in% c("17-18", "18-19", "19-20") ~ "pt_wkday_18_30")
+  )
+
+
+
+# group by combination column. #TODO speed up using tidytable
+cols_to_sum = c("hbw_outbound", "hbw_inbound", "hbo_outbound", "hbo_inbound", "nhb", "total_flow")
+
+cpc_matrices_all_internal_grouped <- cpc_matrices_all_internal %>%
+  group_by(from_msoa, to_msoa, combination) %>%
+  summarise(across(all_of(cols_to_sum), sum, na.rm = TRUE)) %>%
+  ungroup()
+
+
 # save
-arrow::write_parquet(cpc_matrices_all_internal, "data/raw/travel_demand/cpc_matrices_2019/demand_study_area_msoa.parquet")
+arrow::write_parquet(cpc_matrices_all_internal_grouped, "data/raw/travel_demand/cpc_matrices_2019/demand_study_area_msoa.parquet")
 
 
 
 
 
 
-
+#
 #
 #
 #
@@ -174,24 +199,6 @@ arrow::write_parquet(cpc_matrices_all_internal, "data/raw/travel_demand/cpc_matr
 # # keep only pt travel times
 # tt_matrix_msoa <- tt_matrix_msoa %>%
 #   filter(str_detect(combination, "pt_"))
-#
-# # add combination column to cpc data
-# cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
-#   mutate(combination = case_when(
-#     source %in% c("05-06", "06-07", "07-08") ~ "pt_wkday_06_30",
-#     source %in% c("08-09", "09-10", "10-11") ~ "pt_wkday_09_30",
-#     source %in% c("11-12", "12-13", "13-14") ~ "pt_wkday_12_30",
-#     source %in% c("14-15", "15-16", "16-17") ~ "pt_wkday_15_30",
-#     source %in% c("17-18", "18-19", "19-20") ~ "pt_wkday_18_30")
-#     )
-#
-# # group by combination column
-# cols_to_sum = c("hbw_outbound", "hbw_inbound", "hbo_outbound", "hbo_inbound", "nhb", "total_flow")
-#
-# cpc_matrices_all_internal_grouped <- cpc_matrices_all_internal %>%
-#   group_by(from_msoa, to_msoa, combination) %>%
-#   summarise(across(cols_to_sum, sum, na.rm = TRUE)) %>%
-#   ungroup()
 #
 #
 # # join travel time data and census commute data
