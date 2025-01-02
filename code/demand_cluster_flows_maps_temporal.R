@@ -8,6 +8,8 @@ library(lwgeom)
 library(geos)
 # library(spatstat)
 library(tmap)
+tmap_options(check.and.fix = TRUE)
+
 
 source("R/study_area_geographies.R")
 source("R/filter_od_matrix.R")
@@ -22,6 +24,8 @@ distance_threshold <- 50000   # 10000
 
 # save plots?
 save = TRUE
+# save only specific plots (set to TRUE if we only want some of the plots)
+save_all = FALSE
 
 # # minimum number of commuters in a cluster for it to be part of our analysis
 # commuters_sum_minimum = 150
@@ -48,12 +52,8 @@ study_area = study_area_geographies(study_area = study_area,
 study_area <- study_area %>%
   st_cast("MULTIPOLYGON")
 
-# move the geographic ID to the first column. od::points_to_od() only keeps the first column as ID
-
-geoid_col = paste0(geography, "21CD")
-
-study_area <- study_area %>%
-  relocate(all_of(geoid_col), .before = everything())
+study_area = st_union(study_area) %>%
+  st_make_valid()
 
 
 polygons_path <-paste0("data/processed/plots/eda/od_clustering/", geography, "/temporal/polygons_combined/", "min_commuters_", commuters_sum_minimum, "/")
@@ -94,7 +94,7 @@ plot(cluster_dbscan_res["cluster"])
 
 # get clusters to map
 cluster_dbscan_res %>%
-  filter(size > 15, size < 5000) %>%
+  filter(size > 10, size <= 85) %>% # size < 5000
   filter(commuters_sum > commuters_sum_minimum) %>%
   filter(cluster != 0) -> clusters_vis
 
@@ -122,7 +122,8 @@ if (n_distinct(clusters_vis$cluster) > 12) {
 }
 
 # we want maximum 4 maps per row
-rows <- round(length(unique(clusters_vis$cluster)) / 3)
+#rows <- round(length(unique(clusters_vis$cluster)) / 3)
+cols <- 3
 
 
 ##### ---------- MAPS ---------- #####
@@ -241,11 +242,11 @@ gtfs_bus <- st_read("data/interim/gtfs_freq/gtfs_bus_sf_temporal.geojson")
 #   st_filter(st_union(study_area), .predicate = st_within)
 
 tm_shape(study_area) +
-  tm_borders(col = "grey60",
-             alpha = 0.5) +
+  tm_borders(col = "grey50",
+             alpha = 0.8,
+             lwd = 3) +
   tm_shape(study_area) +
-  tm_fill(col = "grey95",
-          alpha = 0.5) +
+  tm_fill(col = "white") +
   # bus layer
   tm_shape(gtfs_bus %>%
              filter(scenario == day_time) %>%
@@ -276,13 +277,15 @@ tm_shape(study_area) +
            showNA = FALSE) +
   tm_facets(by = "cluster",
             free.coords = FALSE,
-            nrow = rows,
+           # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows (OD", scenario, ") - ", day_time),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
+            bg.color = "grey95",
             #legend.outside = TRUE,
             #legend.outside.position = "bottom",
             #legend.stack = "horizontal",
@@ -292,7 +295,7 @@ tm_shape(study_area) +
 
 map_cluster_results_bus_frac_grouped_gtfs
 
-if(save == TRUE){
+if(save){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -318,11 +321,11 @@ clusters_vis_mode_poly <- clusters_vis_mode %>%
 # plot
 
 tm_shape(study_area) +
-  tm_borders(col = "grey60",
-             alpha = 0.5) +
-  tm_shape(study_area) +
-  tm_fill(col = "grey95",
-          alpha = 0.5) +
+  tm_borders(col = "grey50",
+             alpha = 0.8,
+             lwd = 3) +
+tm_shape(study_area) +
+  tm_fill(col = "white") +
   # bus layer
   tm_shape(gtfs_bus %>%
              filter(scenario == day_time) %>%
@@ -351,7 +354,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows"),
@@ -363,6 +367,7 @@ tm_shape(study_area) +
             #legend.stack = "horizontal",
             # remove panel headers
             #panel.show = FALSE,
+            bg.color = "grey95",
             panel.label.size = 1,
             panel.label.bg.color = NA,
             # panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly$cluster)),
@@ -370,7 +375,7 @@ tm_shape(study_area) +
 
 map_cluster_results_bus_frac_grouped_gtfs_poly
 
-if(save == TRUE){
+if (save_all){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -380,12 +385,13 @@ if(save == TRUE){
 # --- Map with clusters as polygons (convex_hull()) + lines in background
 
 
+
 tm_shape(study_area) +
-  tm_borders(col = "grey60",
-             alpha = 0.5) +
+  tm_borders(col = "grey50",
+             alpha = 0.8,
+             lwd = 3) +
   tm_shape(study_area) +
-  tm_fill(col = "grey95",
-          alpha = 0.5) +
+  tm_fill(col = "white") +
   # bus layer
   tm_shape(gtfs_bus %>%
              filter(scenario == day_time) %>%
@@ -419,7 +425,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # poly
 tm_shape(clusters_vis_mode_poly) +
@@ -434,7 +441,8 @@ tm_shape(clusters_vis_mode_poly) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows"),
@@ -445,6 +453,7 @@ tm_shape(clusters_vis_mode_poly) +
             #legend.outside.position = "bottom",
             #legend.stack = "horizontal",
             # remove panel headers
+            bg.color = "grey95",
             panel.label.size = 1,
             panel.label.bg.color = NA,
             #panel.labels = 1:length(unique(cluster_dbscan_res_mode_poly$cluster)),
@@ -453,7 +462,7 @@ tm_shape(clusters_vis_mode_poly) +
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines
 
-if(save == TRUE){
+if (save_all){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -499,12 +508,13 @@ clusters_vis_mode_poly_filt_max <- st_convex_hull(clusters_vis_mode_poly_filt_ma
 
 
 
+
 tm_shape(study_area) +
-  tm_borders(col = "grey60",
-             alpha = 0.5) +
-  tm_shape(study_area) +
-  tm_fill(col = "grey95",
-          alpha = 0.5) +
+  tm_borders(col = "grey50",
+             alpha = 0.8,
+             lwd = 3) +
+tm_shape(study_area) +
+  tm_fill(col = "white") +
   # bus layer
   tm_shape(gtfs_bus %>%
              filter(scenario == day_time) %>%
@@ -539,7 +549,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # poly border
   tm_shape(clusters_vis_mode_poly %>%
@@ -550,7 +561,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # poly fill
   tm_shape(clusters_vis_mode_poly_filt_max %>%
@@ -566,7 +578,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows"),
@@ -578,6 +591,7 @@ tm_shape(study_area) +
             #legend.stack = "horizontal",
             # remove panel headers
             # panel.show = FALSE,
+            bg.color = "grey95",
             panel.label.size = 1,
             panel.label.bg.color = NA,
             #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt_max$cluster)),
@@ -587,7 +601,7 @@ tm_shape(study_area) +
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff
 
-if(save == TRUE){
+if (save_all){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -596,12 +610,13 @@ if(save == TRUE){
 # --- Map with clusters as polygons (convex_hull()) + WITHOUT lines in background - CROP TO AREAS NOT OVERLAPPING GTFS BUS
 
 
+
 tm_shape(study_area) +
-  tm_borders(col = "grey60",
-             alpha = 0.5) +
-  tm_shape(study_area) +
-  tm_fill(col = "grey95",
-          alpha = 0.5) +
+  tm_borders(col = "grey50",
+             alpha = 0.8,
+             lwd = 3) +
+tm_shape(study_area) +
+  tm_fill(col = "white") +
   # bus layer
   tm_shape(gtfs_bus %>%
              filter(scenario == day_time) %>%
@@ -627,7 +642,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # poly fill
   tm_shape(clusters_vis_mode_poly_filt_max %>%
@@ -643,7 +659,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows"),
@@ -655,6 +672,7 @@ tm_shape(study_area) +
             #legend.stack = "horizontal",
             # remove panel headers
             # panel.show = FALSE,
+            bg.color = "grey95",
             panel.label.size = 1,
             panel.label.bg.color = NA,
             #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt_max$cluster)),
@@ -664,7 +682,7 @@ tm_shape(study_area) +
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff
 
-if(save == TRUE){
+if (save_all){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -704,12 +722,13 @@ clusters_vis_mode_poly_filt2 <- clusters_vis_mode_poly_filt2 %>%
 
 
 
+
 tm_shape(study_area) +
-  tm_borders(col = "grey60",
-             alpha = 0.5) +
-  tm_shape(study_area) +
-  tm_fill(col = "grey95",
-          alpha = 0.5) +
+  tm_borders(col = "grey50",
+             alpha = 0.8,
+             lwd = 3) +
+tm_shape(study_area) +
+  tm_fill(col = "white") +
   # bus layer
   tm_shape(gtfs_bus %>%
              filter(scenario == day_time) %>%
@@ -746,7 +765,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # poly border
   tm_shape(clusters_vis_mode_poly  %>%
@@ -757,7 +777,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # poly fill
   tm_shape(clusters_vis_mode_poly_filt2 %>%
@@ -773,7 +794,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows (OD", scenario, ") - ", day_time),
@@ -785,6 +807,7 @@ tm_shape(study_area) +
             #legend.stack = "horizontal",
             # remove panel headers
             # panel.show = FALSE,
+            bg.color = "grey95",
             panel.label.size = 1,
             panel.label.bg.color = NA,
             #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt2$cluster)),
@@ -794,7 +817,7 @@ tm_shape(study_area) +
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave
 
-if(save == TRUE){
+if (save_all){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -806,12 +829,13 @@ if(save == TRUE){
 # --- Map with clusters as polygons (convex_hull()) + WITHOUT lines in background - CROP TO AREAS NOT OVERLAPPING GTFS BUS  ----- CONCAVE HULL
 
 
+
 tm_shape(study_area) +
-  tm_borders(col = "grey60",
-             alpha = 0.5) +
-  tm_shape(study_area) +
-  tm_fill(col = "grey95",
-          alpha = 0.5) +
+  tm_borders(col = "grey50",
+             alpha = 0.8,
+             lwd = 3) +
+tm_shape(study_area) +
+  tm_fill(col = "white") +
   # bus layer
   tm_shape(gtfs_bus %>%
              filter(scenario == day_time) %>%
@@ -837,7 +861,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # poly fill
   tm_shape(clusters_vis_mode_poly_filt2 %>%
@@ -853,7 +878,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows"),
@@ -865,6 +891,7 @@ tm_shape(study_area) +
             #legend.stack = "horizontal",
             # remove panel headers
             # panel.show = FALSE,
+            bg.color = "grey95",
             panel.label.size = 1,
             panel.label.bg.color = NA,
             #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt2$cluster)),
@@ -874,7 +901,7 @@ tm_shape(study_area) +
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave
 
-if(save == TRUE){
+if (save_all){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -904,12 +931,13 @@ clusters_vis_mode_poly_filt3 <- clusters_vis_mode_poly_filt3 %>%
 
 
 
+
 tm_shape(study_area) +
-  tm_borders(col = "grey60",
-             alpha = 0.5) +
-  tm_shape(study_area) +
-  tm_fill(col = "grey95",
-          alpha = 0.5) +
+  tm_borders(col = "grey50",
+             alpha = 0.8,
+             lwd = 3) +
+tm_shape(study_area) +
+  tm_fill(col = "white") +
   # bus layer
   tm_shape(gtfs_bus_freq %>%
              filter(scenario == day_time) %>%
@@ -949,7 +977,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # poly border
   tm_shape(clusters_vis_mode_poly %>%
@@ -960,7 +989,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # poly fill
   tm_shape(clusters_vis_mode_poly_filt3 %>%
@@ -976,7 +1006,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows"),
@@ -988,6 +1019,7 @@ tm_shape(study_area) +
             #legend.stack = "horizontal",
             # remove panel headers
             # panel.show = FALSE,
+            bg.color = "grey95",
             panel.label.size = 1,
             panel.label.bg.color = NA,
             #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt3$cluster)),
@@ -997,7 +1029,7 @@ tm_shape(study_area) +
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2
 
-if(save == TRUE){
+if (save_all){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -1009,11 +1041,11 @@ if(save == TRUE){
 
 
 tm_shape(study_area) +
-  tm_borders(col = "grey60",
-             alpha = 0.5) +
-  tm_shape(study_area) +
-  tm_fill(col = "grey95",
-          alpha = 0.5) +
+  tm_borders(col = "grey50",
+             alpha = 0.8,
+             lwd = 3) +
+tm_shape(study_area) +
+  tm_fill(col = "white") +
   # bus layer
   tm_shape(gtfs_bus_freq %>%
              filter(scenario == day_time) %>%
@@ -1042,7 +1074,7 @@ tm_shape(study_area) +
            col = "commute_all",
            scale = 5,
            # breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
-           palette = "RdYlGn", #Accent
+           palette = "RdYlBu", #Accent
            alpha = 0.4,
            title.col = "Travel demand",
            #title.lwd = "No. of commuters",
@@ -1053,7 +1085,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # START AND ENDPOINTS
   tm_shape(clusters_vis_mode %>%
@@ -1064,7 +1097,7 @@ tm_shape(study_area) +
              mutate(cluster = as.factor(cluster)) %>%
              mutate(geometry = st_startpoint(.)) %>%
              arrange(commuters_sum)) +
-  tm_dots(col = "darkgreen",
+  tm_dots(col = "blue",
           alpha = 0.6,
           jitter = 0.01,
           size = "commute_all",
@@ -1073,7 +1106,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   tm_shape(clusters_vis_mode %>%
              filter(size > 7, size < 5000) %>%
@@ -1092,7 +1126,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # poly border
   tm_shape(clusters_vis_mode_poly %>%
@@ -1103,13 +1138,14 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # poly fill
   tm_shape(clusters_vis_mode_poly_filt3 %>%
              st_buffer(1000)) +
   tm_polygons(col = "commuters_sum",
-              palette = "RdYlGn", #Accent
+              palette = "RdYlBu", #Accent
               # breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
               #style = "pretty",
               alpha = 0.2,
@@ -1119,24 +1155,26 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows"),
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
+            bg.color = "grey95",
             panel.label.size = 1,
             panel.label.bg.color = NA,
             frame = FALSE)  +
   # add a couple of legends
   tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed") +
-  tm_add_legend(type = "symbol", labels = 'OD Start', col = 'darkgreen') +
+  tm_add_legend(type = "symbol", labels = 'OD Start', col = 'blue') +
   tm_add_legend(type = "symbol", labels = 'OD End', col = 'darkred') -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints
 
-if(save == TRUE){
+if(save){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -1147,11 +1185,11 @@ rows_ppt = 3
 
 
 tm_shape(study_area) +
-  tm_borders(col = "grey60",
-             alpha = 0.5) +
-  tm_shape(study_area) +
-  tm_fill(col = "grey95",
-          alpha = 0.5) +
+  tm_borders(col = "grey50",
+             alpha = 0.8,
+             lwd = 3) +
+tm_shape(study_area) +
+  tm_fill(col = "white") +
   # bus layer
   tm_shape(gtfs_bus %>%
              filter(scenario == day_time) %>%
@@ -1180,7 +1218,7 @@ tm_shape(study_area) +
            col = "commute_all",
            scale = 5,
            # breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
-           palette = "RdYlGn", #Accent
+           palette = "RdYlBu", #Accent
            alpha = 0.4,
            title.col = "Travel demand",
            #title.lwd = "No. of commuters",
@@ -1202,7 +1240,7 @@ tm_shape(study_area) +
              mutate(cluster = as.factor(cluster)) %>%
              mutate(geometry = st_startpoint(.)) %>%
              arrange(commuters_sum)) +
-  tm_dots(col = "darkgreen",
+  tm_dots(col = "blue",
           alpha = 0.6,
           jitter = 0.01,
           size = "commute_all",
@@ -1247,7 +1285,7 @@ tm_shape(study_area) +
   tm_shape(clusters_vis_mode_poly_filt3 %>%
              st_buffer(1000)) +
   tm_polygons(col = "commuters_sum",
-              palette = "RdYlGn", #Accent
+              palette = "RdYlBu", #Accent
               # breaks = c(0, 0.25, 0.5, 0.75, 1, Inf),
               #style = "pretty",
               alpha = 0.2,
@@ -1264,17 +1302,18 @@ tm_shape(study_area) +
             main.title.size = 1.1,
             main.title.color = "azure4",
             main.title.position = "left",
+            bg.color = "grey95",
             panel.label.size = 1,
             panel.label.bg.color = NA,
             frame = FALSE)  +
   # add a couple of legends
   tm_add_legend(type = "line", labels = 'Cluster', col = 'black', lwd = 2, lty = "dashed") +
-  tm_add_legend(type = "symbol", labels = 'OD Start', col = 'darkgreen') +
+  tm_add_legend(type = "symbol", labels = 'OD Start', col = 'blue') +
   tm_add_legend(type = "symbol", labels = 'OD End', col = 'darkred') -> map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_ppt
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_ppt
 
-if(save == TRUE){
+if (save_all){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_ppt, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_ppt.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -1284,11 +1323,11 @@ if(save == TRUE){
 
 
 tm_shape(study_area) +
-  tm_borders(col = "grey60",
-             alpha = 0.5) +
-  tm_shape(study_area) +
-  tm_fill(col = "grey95",
-          alpha = 0.5) +
+  tm_borders(col = "grey50",
+             alpha = 0.8,
+             lwd = 3) +
+tm_shape(study_area) +
+  tm_fill(col = "white") +
   # bus layer
   tm_shape(gtfs_bus_freq %>%
              filter(scenario == day_time) %>%
@@ -1314,7 +1353,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # poly fill
   tm_shape(clusters_vis_mode_poly_filt3 %>%
@@ -1331,7 +1371,8 @@ tm_shape(study_area) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows"),
@@ -1343,6 +1384,7 @@ tm_shape(study_area) +
             #legend.stack = "horizontal",
             # remove panel headers
             # panel.show = FALSE,
+            bg.color = "grey95",
             panel.label.size = 1,
             panel.label.bg.color = NA,
             #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt3$cluster)),
@@ -1352,7 +1394,7 @@ tm_shape(study_area) +
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2
 
-if(save == TRUE){
+if(save){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave2, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave2.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -1430,7 +1472,8 @@ tm_shape(basemap_urban_rural) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   # poly fill
   # tm_shape(cluster_dbscan_res_mode_poly_filt_max %>%
@@ -1442,7 +1485,8 @@ tm_shape(basemap_urban_rural) +
   tm_facets(by = "cluster",
             #by = "commute_all",
             free.coords = FALSE,
-            nrow = rows,
+            # nrow = rows,
+            ncol = cols,
             showNA = FALSE) +
   tm_layout(fontfamily = 'Georgia',
             main.title = paste0("Clustered flows"),
@@ -1464,7 +1508,7 @@ tm_shape(basemap_urban_rural) +
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation
 
-if(save == TRUE){
+if(save_all){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -1478,14 +1522,13 @@ clusters_vis_mode_poly_filt3_all = clusters_vis_mode_poly_filt3 %>%
   mutate(area = st_area(.)) %>%
   filter(area > 0.2 * mean(area)) %>%
   st_union() %>%
-  st_make_valid() %>%
   st_as_sf() %>%
+  st_make_valid() %>%
+  st_transform(crs = st_crs(basemap_urban_rural)) %>%
   mutate(scenario = day_time)
 
 # Save to make temporal comparison plot
 st_write(clusters_vis_mode_poly_filt3_all, paste0(polygons_path, day_time, ".geojson"), delete_dsn = TRUE)
-
-
 
 
 tm_shape(basemap_urban_rural) +
@@ -1526,7 +1569,7 @@ tm_shape(clusters_vis_mode_poly_filt3_all) +
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP
 
-if(save == TRUE){
+if(save_all){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_one_map.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -1581,7 +1624,7 @@ tm_shape(basemap_urban_rural) +
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP_overline
 
-if(save == TRUE){
+if (save_all){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_ONE_MAP_overline, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation_one_map_overline.png"), width = 12, dpi = 1080, asp = 0)
 }
 
@@ -1631,7 +1674,7 @@ tm_shape(st_union(study_area)) +
 
 map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_pop_density_ONE_MAP_overline
 
-if(save == TRUE){
+if(save){
   tmap_save(tm = map_cluster_results_bus_frac_grouped_gtfs_poly_bus_diff_concave_pop_density_ONE_MAP_overline, filename = paste0(plots_path, "map_clusters_scenario_", scenario, "_", day_time, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_pop_density_one_map_overline.png"), width = 12, dpi = 1080, asp = 0)
 }
 

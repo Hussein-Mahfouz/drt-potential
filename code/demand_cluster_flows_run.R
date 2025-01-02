@@ -1,6 +1,6 @@
 
 
-# -------------------- Clusteting
+# -------------------- Clustering
 
 
 sensitivity = TRUE
@@ -88,48 +88,101 @@ dbscan_sensitivity_res_compare %>%
 
 ggsave(paste0("data/processed/plots/eda/od_clustering/temporal/sensitivity_analysis_eps_minpts_filtered_compare.png"), width = 14, height = 10)
 
-# minimum number of commuters in a cluster for it to be part of our analysis
-commuters_sum_minimum = 150
-
-# -------------- Plots
-day_time = "pt_wkday_06_30"
-source("code/demand_cluster_flows_maps_temporal.R")
-print(paste0("finished scenario: ", day_time))
-# clear environment
-rm(list = setdiff(ls(), "commuters_sum_minimum"))
-gc()
+rm(list = ls())
 
 
-day_time = "pt_wkday_09_30"
-source("code/demand_cluster_flows_maps_temporal.R")
-print(paste0("finished scenario: ", day_time))
-# clear environment
-rm(list = setdiff(ls(), "commuters_sum_minimum"))
-gc()
+# # minimum number of commuters in a cluster for it to be part of our analysis
+# commuters_sum_minimum = 50
+#
+# # -------------- Plots
+# day_time = "pt_wkday_06_30"
+# source("code/demand_cluster_flows_maps_temporal.R")
+# print(paste0("finished scenario: ", day_time))
+# # clear environment
+# rm(list = setdiff(ls(), "commuters_sum_minimum"))
+# gc()
+#
+#
+# day_time = "pt_wkday_09_30"
+# source("code/demand_cluster_flows_maps_temporal.R")
+# print(paste0("finished scenario: ", day_time))
+# # clear environment
+# rm(list = setdiff(ls(), "commuters_sum_minimum"))
+# gc()
+#
+#
+# day_time = "pt_wkday_12_30"
+# source("code/demand_cluster_flows_maps_temporal.R")
+# print(paste0("finished scenario: ", day_time))
+# # clear environment
+# rm(list = setdiff(ls(), "commuters_sum_minimum"))
+# gc()
+#
+#
+# day_time = "pt_wkday_15_30"
+# source("code/demand_cluster_flows_maps_temporal.R")
+# print(paste0("finished scenario: ", day_time))
+# # clear environment
+# rm(list = setdiff(ls(), "commuters_sum_minimum"))
+# gc()
+#
+#
+# day_time = "pt_wkday_18_30"
+# source("code/demand_cluster_flows_maps_temporal.R")
+# print(paste0("finished scenario: ", day_time))
+# # clear environment
+# rm(list = setdiff(ls(), "commuters_sum_minimum"))
+# gc()
 
+# Predefined list of values for commuters_sum_minimum
+commuters_sum_minimum_list <- c(50, 100, 150, 200)
 
-day_time = "pt_wkday_12_30"
-source("code/demand_cluster_flows_maps_temporal.R")
-print(paste0("finished scenario: ", day_time))
-# clear environment
-rm(list = setdiff(ls(), "commuters_sum_minimum"))
-gc()
+# Predefined list of day_time scenarios
+day_time_list <- c("pt_wkday_06_30", "pt_wkday_09_30", "pt_wkday_12_30",
+                   "pt_wkday_15_30", "pt_wkday_18_30")
 
+# Define scenario values
+scenario_list <- c(3, 2)
 
-day_time = "pt_wkday_15_30"
-source("code/demand_cluster_flows_maps_temporal.R")
-print(paste0("finished scenario: ", day_time))
-# clear environment
-rm(list = setdiff(ls(), "commuters_sum_minimum"))
-gc()
+# Loop through each scenario
+for (scenario in scenario_list) {
+  print(paste0("Running for scenario: ", scenario))
 
+  # Loop through each value of commuters_sum_minimum
+  for (commuters_sum_minimum in commuters_sum_minimum_list) {
+    print(paste0("Running for commuters_sum_minimum: ", commuters_sum_minimum))
 
-day_time = "pt_wkday_18_30"
-source("code/demand_cluster_flows_maps_temporal.R")
-print(paste0("finished scenario: ", day_time))
-# clear environment
-rm(list = setdiff(ls(), "commuters_sum_minimum"))
-gc()
+    # Loop through each day_time scenario
+    for (day_time in day_time_list) {
+      # These variables are available for the sourced script
+      source("code/demand_cluster_flows_maps_temporal.R")
+      print(paste0("Finished scenario: ", day_time,
+                   " with commuters_sum_minimum: ", commuters_sum_minimum,
+                   " in scenario: ", scenario))
+
+      # Clear environment except the required variables
+      rm(list = setdiff(ls(), c("commuters_sum_minimum",
+                                "commuters_sum_minimum_list",
+                                "day_time_list",
+                                "scenario",
+                                "scenario_list")))
+      gc()
+    }
+
+    # Clear all but commuters_sum_minimum_list, day_time_list, and scenario variables
+    rm(list = setdiff(ls(), c("commuters_sum_minimum_list",
+                              "day_time_list",
+                              "scenario",
+                              "scenario_list")))
+    gc()
+  }
+
+  # Clear all but scenario_list, day_time_list, and commuters_sum_minimum_list
+  rm(list = setdiff(ls(), c("scenario_list",
+                            "day_time_list",
+                            "commuters_sum_minimum_list")))
+  gc()
+}
 
 
 
