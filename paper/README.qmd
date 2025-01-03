@@ -139,7 +139,7 @@ For our analysis, we use trip records for 2019 derived from mobile phone data. T
 
 [^1]: <https://cp.catapult.org.uk/project/great-britain-trip-database-portal/>
 
-### Jittering
+### Disaggregating OD data
 
 Our OD data is aggregated at MSOA level which makes it too coarse for our clustering analysis. We apply jittering [@lovelace2022jittering] to disaggregate the data so that OD pairs with a high number of travelers are split into multiple OD pairs. The start and end points of the new ODs are constrained to their original MSOAs, but are snapped to locations probabilistically based on population and employment densities. A disaggregation threshold is also specified so that no OD pair has more than 100 people.
 
