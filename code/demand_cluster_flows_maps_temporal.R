@@ -1729,15 +1729,14 @@ od_demand_figures_filt <- od_demand_figures %>%
 # # ----- plots
 #
 # scatter plots with x: commute_all, y: fraction of bus commuters
-ggplot(od_demand_figures_filt %>% st_drop_geometry(), aes(y = commute_all, x = distance_m / 1000, color = commute_all)) +
+ggplot(od_demand_figures_filt %>% st_drop_geometry(), aes(y = commute_all, x = distance_m / 1000)) +
   # geom_point(data = transform(od_demand_figures, cluster = NULL), colour = "grey85") +
-  geom_point() +
+  geom_point(color = "grey30") +
   scale_color_distiller(palette= "RdYlBu", direction = 1) +
   labs( x = "Length of OD pair (Euclidian - km)",
-        y = "No. of trips on OD pair in cluster",
+        y = "No. of trips making up OD pair",
        title = "Composition of clusters",
-       subtitle = "Characteristics of OD pairs in each cluster (length + no. of trips)",
-       color = "No. of trips") +
+       subtitle = "Characteristics of OD pairs in each cluster (length + no. of trips)") +
   facet_wrap(facets = vars(cluster)) +
   theme_bw() +
   theme(legend.position = "bottom")
