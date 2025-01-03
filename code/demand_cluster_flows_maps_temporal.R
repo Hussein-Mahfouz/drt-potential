@@ -18,7 +18,7 @@ source("R/filter_od_matrix.R")
 
 # ------------------------- Define the scenario ------------------------- #
 
-scenario <- 3 # 3, 2
+# scenario <- 3 # 3, 2
 clustering <- "equal"
 distance_threshold <- 50000   # 10000
 
@@ -1528,7 +1528,7 @@ clusters_vis_mode_poly_filt3_all = clusters_vis_mode_poly_filt3 %>%
   mutate(scenario = day_time)
 
 # Save to make temporal comparison plot
-st_write(clusters_vis_mode_poly_filt3_all, paste0(polygons_path, day_time, ".geojson"), delete_dsn = TRUE)
+st_write(clusters_vis_mode_poly_filt3_all, paste0(polygons_path, day_time, "_scenario_", scenario, ".geojson"), delete_dsn = TRUE)
 
 
 tm_shape(basemap_urban_rural) +

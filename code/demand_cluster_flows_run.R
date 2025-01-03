@@ -1,42 +1,49 @@
-
+library(tidyverse)
+library(sf)
+library(tmap)
 
 # -------------------- Clustering
 
 
-sensitivity = TRUE
+sensitivity = FALSE
 day_time = "pt_wkday_06_30"
+scenario = 2
 source("code/demand_cluster_flows.R")
 print(paste0("finished scenario: ", day_time))
 # clear environment
 rm(list = ls())
 gc()
 
-sensitivity = TRUE
+sensitivity = FALSE
 day_time = "pt_wkday_09_30"
+scenario = 2
 source("code/demand_cluster_flows.R")
 print(paste0("finished scenario: ", day_time))
 # clear environment
 rm(list = ls())
 gc()
 
-sensitivity = TRUE
+sensitivity = FALSE
 day_time = "pt_wkday_12_30"
+scenario = 2
 source("code/demand_cluster_flows.R")
 print(paste0("finished scenario: ", day_time))
 # clear environment
 rm(list = ls())
 gc()
 
-sensitivity = TRUE
+sensitivity = FALSE
 day_time = "pt_wkday_15_30"
+scenario = 2
 source("code/demand_cluster_flows.R")
 print(paste0("finished scenario: ", day_time))
 # clear environment
 rm(list = ls())
 gc()
 
-sensitivity = TRUE
+sensitivity = FALSE
 day_time = "pt_wkday_18_30"
+scenario = 2
 source("code/demand_cluster_flows.R")
 print(paste0("finished scenario: ", day_time))
 # clear environment
@@ -136,6 +143,8 @@ rm(list = ls())
 
 # Predefined list of values for commuters_sum_minimum
 commuters_sum_minimum_list <- c(50, 100, 150, 200)
+# commuters_sum_minimum_list <- c(200)
+
 
 # Predefined list of day_time scenarios
 day_time_list <- c("pt_wkday_06_30", "pt_wkday_09_30", "pt_wkday_12_30",
@@ -143,6 +152,8 @@ day_time_list <- c("pt_wkday_06_30", "pt_wkday_09_30", "pt_wkday_12_30",
 
 # Define scenario values
 scenario_list <- c(3, 2)
+# scenario_list <- c(2)
+
 
 # Loop through each scenario
 for (scenario in scenario_list) {
@@ -222,102 +233,95 @@ oa_pop_density_crop <- st_crop(oa_pop_density, study_area)
 
 # -------- 4. DRT operating zone polygons
 
-# Specify the directory containing the GeoJSON files
-directory_path <- paste0("data/processed/plots/eda/od_clustering/MSOA/temporal/polygons_combined/", commuters_sum_minimum, "/")
+for (scenario in scenario_list) {
+  print(paste0("Plotting scenario: ", scenario))
 
-# Get the list of all GeoJSON files of DRT boundaries (1 file per scenario)
-geojson_files <- list.files(directory_path, pattern = "\\.geojson$", full.names = TRUE)
+  # Loop through each value of commuters_sum_minimum
+  for (commuters_sum_minimum in commuters_sum_minimum_list) {
+    print(paste0("Plotting commuters_sum_minimum: ", commuters_sum_minimum))
 
-# Read each GeoJSON file into a list of sf objects
-geojson_list <- purrr::map(geojson_files, st_read)
-# prepare for plotting
-combined_geojson <- do.call(rbind, geojson_list)
+    directory_path <- paste0("data/processed/plots/eda/od_clustering/MSOA/temporal/polygons_combined/min_commuters_", commuters_sum_minimum, "/")
 
-combined_geojson <- combined_geojson %>%
-  st_transform(st_crs(study_area)) %>%
-  st_make_valid()
+    # Get the list of all GeoJSON files of DRT boundaries (1 file per scenario)
+    geojson_files <- list.files(directory_path,    pattern = paste0("*", scenario, ".geojson$"), full.names = TRUE)
 
-# plot
-tm_shape(st_union(study_area)) +
-  tm_borders(lwd =2,
-             col = "grey15") +
-  tm_shape(oa_pop_density_crop) +
-  tm_raster(title = "People / Km2",
-            palette = "Blues",
-            alpha = 0.5,
-            style = "log10_pretty") +
-  # bus layer
-  tm_shape(gtfs_bus %>%
-             filter(startsWith(scenario, "pt_wkday")) %>%
-             mutate(headway_inv = (1/headway_secs) * 3600) %>%
-             filter(headway_secs < 7200)) +
-  tm_lines(col = "darkred",
-           lwd = "headway_inv",
-           scale = 5.5,
-           palette = "-YlOrRd",
-           style = "pretty",
-           legend.col.show = FALSE,
-           alpha = 0.1,
-           title.lwd = "Buses/Hour",
-           #legend.lwd.is.portrait = FALSE
-  ) +
-  tm_facets(by = "scenario",
-            #by = "commute_all",
-            free.coords = FALSE,
-            nrow = 2,
-            showNA = FALSE) +
-  # ---- clusters
-  # poly border
-  tm_shape(combined_geojson %>%
-             st_buffer(1000)) +
-  tm_borders(col = "darkgreen",
-             lwd = 3.5,
-             lty = "dashed") +
-  tm_facets(by = "scenario",
-            #by = "commute_all",
-            free.coords = FALSE,
-            nrow = 2,
-            showNA = FALSE) +
-  tm_layout(fontfamily = 'Georgia',
-            main.title = paste0("Potential DRT Operating Zones (Temporal Variation)"),
-            main.title.size = 1.1,
-            main.title.color = "azure4",
-            main.title.position = "left",
-            #legend.outside = TRUE,
-            #legend.outside.position = "bottom",
-            #legend.stack = "horizontal",
-            # remove panel headers
-            # panel.show = FALSE,
-            panel.label.size = 1,
-            panel.label.bg.color = NA,
-            #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt3$cluster)),
-            frame = FALSE)  +
-  # add a couple of legends
-  tm_add_legend(type = "line", labels = 'Potential DRT service area', col = 'darkgreen', lwd = 2) -> map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES
+    # Read each GeoJSON file into a list of sf objects
+    geojson_list <- purrr::map(geojson_files, st_read)
+    # prepare for plotting
+    combined_geojson <- do.call(rbind, geojson_list)
 
-map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES
+    combined_geojson <- combined_geojson %>%
+      st_transform(st_crs(study_area)) %>%
+      st_make_valid()
 
-plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/temporal/", "min_commuters_", commuters_sum_minimum)
+    # plot
+    tm_shape(st_union(study_area)) +
+      tm_borders(lwd =2,
+                 col = "grey15") +
+      tm_shape(oa_pop_density_crop) +
+      tm_raster(title = "People / Km2",
+                palette = "Blues",
+                alpha = 0.5,
+                style = "log10_pretty") +
+      # bus layer
+      tm_shape(gtfs_bus %>%
+                 filter(startsWith(scenario, "pt_wkday")) %>%
+                 mutate(headway_inv = (1/headway_secs) * 3600) %>%
+                 filter(headway_secs < 7200)) +
+      tm_lines(col = "darkred",
+               lwd = "headway_inv",
+               scale = 5.5,
+               palette = "-YlOrRd",
+               style = "pretty",
+               legend.col.show = FALSE,
+               alpha = 0.1,
+               title.lwd = "Buses/Hour",
+               #legend.lwd.is.portrait = FALSE
+      ) +
+      tm_facets(by = "scenario",
+                #by = "commute_all",
+                free.coords = FALSE,
+                nrow = 2,
+                showNA = FALSE) +
+      # ---- clusters
+      # poly border
+      tm_shape(combined_geojson %>%
+                 st_buffer(1000)) +
+      tm_borders(col = "darkgreen",
+                 lwd = 3.5,
+                 lty = "dashed") +
+      tm_facets(by = "scenario",
+                #by = "commute_all",
+                free.coords = FALSE,
+                nrow = 2,
+                showNA = FALSE) +
+      tm_layout(fontfamily = 'Georgia',
+                main.title = paste0("Potential DRT Operating Zones (Temporal Variation)"),
+                main.title.size = 1.1,
+                main.title.color = "azure4",
+                main.title.position = "left",
+                #legend.outside = TRUE,
+                #legend.outside.position = "bottom",
+                #legend.stack = "horizontal",
+                # remove panel headers
+                # panel.show = FALSE,
+                panel.label.size = 1,
+                panel.label.bg.color = NA,
+                #panel.labels = 1:length(unique(clusters_vis_mode_poly_filt3$cluster)),
+                frame = FALSE)  +
+      # add a couple of legends
+      tm_add_legend(type = "line", labels = 'Potential DRT service area', col = 'darkgreen', lwd = 2) -> map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES
 
+    map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES
 
-tmap_save(tm = map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES, filename = paste0(plots_path, "map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES.png"), width = 12, dpi = 1080, asp = 0)
-
-
-
-
-
+    plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/temporal/", "min_commuters_", commuters_sum_minimum)
 
 
+    tmap_save(tm = map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES, filename = paste0(plots_path, "/map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES_", "scenario_", scenario, ".png"), width = 12, dpi = 1080, asp = 0)
 
 
-
-
-
-
-
-
-
-
+  }
+}
 
 
 
