@@ -391,7 +391,7 @@ Noticeably, clusters made up of longer distance OD flows show more variance in t
 Cluster statistics
 :::
 
-@fig-zones-one-map shows how the potential DRT zones could like if combined after step 3 in @fig-workflow. It becomes more clear that the zones are predominantly in the outskirts and in areas with relatively low population densities. Zones in more urbanised areas, such as that in the South West covers an area with no public transport.
+@fig-zones-one-map shows how the potential DRT zones could like if combined after step 3 in @fig-workflow. We show this for 5 different times of day to show variation resulting from the combined effect of transport supply and travel demand. It becomes more clear that the zones are predominantly in the outskirts and in areas with relatively low population densities. Zones in more urbanised areas, such as that in the South West covers an area with no public transport.
 
 ![Potential DRT zones](images/map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES_scenario_3.png){#fig-zones-one-map fig-align="center"}
 
