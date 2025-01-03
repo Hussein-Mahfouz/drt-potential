@@ -133,9 +133,19 @@ Following the new powers given to local transport authorities under the bus serv
 
 ![Urban Rural Classification - 1: most rural, 10: most urban](images/rural_urban_bus.png){#fig-rural-urban fig-align="center" width="80%"}
 
-## Preparing input data for clustering {#sec-methods-preparing-data}
+## Demand data {#sec-methods-preparing-data}
 
-For our analysis, we use OD commuting (flow) data from the 2021 UK census to represent travel demand [@ons2023flow]. Before attempting to cluster our OD data, we need to decide which OD pairs to use. If we were to pass all OD pairs to the algorithm, then our clusters may include noise from OD pairs that are well served by public transport. We would also generate DRT zones that serve all demand, whereas our objective is to propose DRT zones that complement FRT and fill the gaps in the network, as explained in @sec-lit-service-areas. We identify gaps by trying two different inputs: (1) OD pairs with poor public transport supply ($OD_s$) , and (2) OD pairs with poor public transport supply and low potential demand ($OD_{sd}$).
+For our analysis, we use trip records for 2019 derived from mobile phone data. The data is provided by Connected Places Catapult[^1] and covers all motorised road and rail trips throughout Great Britain (see @franco2020demand for a description of the data preparation). A data request includes a date range, and a zoning system (with a cap on the number of zones permitted), and the output is the average number of trips between OD pairs in the zone system, disaggregated by hour of day and weekday / weekend.
+
+[^1]: <https://cp.catapult.org.uk/project/great-britain-trip-database-portal/>
+
+### Jittering
+
+Our OD data is aggregated at MSOA level which makes it too coarse for our clustering analysis. We apply jittering [@lovelace2022jittering] to disaggregate the data so that OD pairs with a high number of travelers are split into multiple OD pairs. The start and end points of the new ODs are constrained to their original MSOAs, but are snapped to locations probabilistically based on population and employment densities. A disaggregation threshold is also specified so that no OD pair has more than 100 people.
+
+## Preparing input data for clustering
+
+After jittering the data, we need to decide which OD pairs to use for clustering. If we were to pass all OD pairs to the algorithm, then our clusters may include noise from OD pairs that are well served by public transport. We would also generate DRT zones that serve all demand, whereas our objective is to propose DRT zones that complement FRT and fill the gaps in the network, as explained in @sec-lit-service-areas. We identify gaps by trying two different inputs: (1) OD pairs with poor public transport supply ($OD_s$) , and (2) OD pairs with poor public transport supply and low potential demand ($OD_{sd}$).
 
 $OD_s$ is meant to suggest DRT zones that complement FRT by only including the OD demand that is not well served by FRT, as explained in @sec-method-transport-supply. $OD_{sd}$ is similar, but also excludes OD pairs that could be served by a better FRT service. This exclusion is based on criteria explained in @sec-method-transport-demand. The workflow for the supply and demand analysis is shown in @fig-flowchart-scenarios. The number of OD pairs in each approach is shown in @tbl-od_pairs_scenarios.
 
@@ -143,11 +153,11 @@ $OD_s$ is meant to suggest DRT zones that complement FRT by only including the O
 
 ### Supply analysis {#sec-method-transport-supply}
 
-A supply analysis is carried out to determine the OD pairs that are included in $OD_{s}$. The main components of transport supply are the road network, and the public transport timetables for buses and rail. We get the updated road network from OpenStreetMap. Bus timetable data is obtained in GTFS format from the Bus Open Data Service (BODS)[^1] and rail data is obtained from the Rail Delivery Group[^2].
+A supply analysis is carried out to determine the OD pairs that are included in $OD_{s}$. The main components of transport supply are the road network, and the public transport timetables for buses and rail. We get the updated road network from OpenStreetMap. Bus timetable data is obtained in GTFS format from the Bus Open Data Service (BODS)[^2] and rail data is obtained from the Rail Delivery Group[^3].
 
-[^1]: https://data.bus-data.dft.gov.uk/
+[^2]: https://data.bus-data.dft.gov.uk/
 
-[^2]: https://data.atoc.org/
+[^3]: https://data.atoc.org/
 
 The OSM road network and timetable data are fed into a multimodal routing engine [@pereira2021r5r] to calculate travel time between zones. Euclidean distance between an OD pair is used to calculate travel speed. OD pairs with speed below the 50th percentile or that require more than one transfer to be reached by public transport are considered to have poor supply.
 
@@ -159,13 +169,13 @@ To calculate potential demand on all routes, we do the following:
 
 1.  *Determine which public transport routes directly serve each OD pair*: A route that directly serves an OD pair is a route that passes through both the origin and the destination zones associated with the OD pair. There can be multiple routes (common lines) serving each OD pair
 
-2.  *Assign demand from OD pairs onto the bus routes*: Our flow data has commuting flows by mode for all Middle Super Output Area (MSOA[^3]) pairs. We distribute demand from each OD pair onto its common lines (see @de2024modelling10 for overview of methods). We split the demand equally between common lines. Frequency-based assignment[^4] may better represent the status quo, but we chose to split the demand equally as our goal is to represent what the demand could be if route frequencies were improved.
+2.  *Assign demand from OD pairs onto the bus routes*: Our flow data has commuting flows by mode for all Middle Super Output Area (MSOA[^4]) pairs. We distribute demand from each OD pair onto its common lines (see @de2024modelling10 for overview of methods). We split the demand equally between common lines. Frequency-based assignment[^5] may better represent the status quo, but we chose to split the demand equally as our goal is to represent what the demand could be if route frequencies were improved.
 
 3.  Get total potential demand on each route by summing the demand assigned from each OD pair
 
-[^3]: MSOAs are geographical areas created by the Office for National Statistics (ONS). Each MSOA has between 5,000 - 15,000 people
+[^4]: MSOAs are geographical areas created by the Office for National Statistics (ONS). Each MSOA has between 5,000 - 15,000 people
 
-[^4]: Demand is distributed between the common lines (routes) in proportion to the frequency of each route
+[^5]: Demand is distributed between the common lines (routes) in proportion to the frequency of each route
 
 To determine which OD pairs we want in our analysis ($OD_{sd}$), we compare the potential demand on all routes. For each OD, we (a) get potential demand on all routes directly serving it. If potential demand on the busiest direct route serving OD \> 75th percentile of route demand, we do not include it in $OD_{sd}$ (see @fig-flowchart-scenarios).
 
@@ -293,10 +303,6 @@ Setting the threshold at $p75$ implies that service on the top 25% of routes in 
 
 <!-- ``` -->
 
-### Jittering
-
-Our OD data is aggregated at MSOA level which makes it too coarse for our clustering analysis. We apply jittering [@lovelace2022jittering] to disaggregate the data so that OD pairs with a high number of commuters are split into multiple OD pairs. The start and end points of the new ODs are constrained to their original MSOAs, but are snapped to locations probabilistically based on population and employment densities. A disaggregation threshold is also specified so that no OD pair has more than 100 commuters.
-
 ## Clustering flow data {#sec-method-clustering-flow-data}
 
 We apply a spatial clustering approach to flow data to identify spatial concentrations in travel demand. Spatial statistics methods for cluster detection --- such as DBSCAN [@ester1996density] --- have mainly been developed for point data. Recently custom distance metrics that account for the multilocation nature of line data have allowed these methods to extend to flow data [@tao2016spatial].
@@ -349,9 +355,9 @@ Cluster 9 and 10 are very similar. The former contains trips that start further 
 
 ![Clustering results - OD pairs with poor PT supply ($OD_{s}$)](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_crop.png){#fig-cluster-scenario-2 width="95%"}
 
-Comparing the clusters to the spatial distribution of urbanisation (@fig-rural-urban), we find that most of the clusters are connecting areas with different levels of urbanisation, and that an area with high levels of urbanisation is always involved. For example clusters 1, 5, and 8 connect somewhat rural areas in the North East (such as Wetherby and Boston Spa) to the urban major conurbation[^5]. Clusters 7, 11 and 12 do the same in the South East, connecting the towns such as Garforth, Rothwell, and Allerton Bywater to the urban core. Other clusters, such as 3, 9, and 10 are mainly inside the most urbanised areas. Trips in cluster 9 start around Pudsey, a relatively large town, while those in cluster 10 are slightly further North around Calverley and Farsley. There are also clear similarities between some of the clusters, with the main difference being the direction of travel (e.g. cluster 9 and 10, or cluster 1, 5 and 8).
+Comparing the clusters to the spatial distribution of urbanisation (@fig-rural-urban), we find that most of the clusters are connecting areas with different levels of urbanisation, and that an area with high levels of urbanisation is always involved. For example clusters 1, 5, and 8 connect somewhat rural areas in the North East (such as Wetherby and Boston Spa) to the urban major conurbation[^6]. Clusters 7, 11 and 12 do the same in the South East, connecting the towns such as Garforth, Rothwell, and Allerton Bywater to the urban core. Other clusters, such as 3, 9, and 10 are mainly inside the most urbanised areas. Trips in cluster 9 start around Pudsey, a relatively large town, while those in cluster 10 are slightly further North around Calverley and Farsley. There are also clear similarities between some of the clusters, with the main difference being the direction of travel (e.g. cluster 9 and 10, or cluster 1, 5 and 8).
 
-[^5]: The classifications are explained in the [2011 Rural Urban Classification User Guide](https://www.gov.uk/government/statistics/2011-rural-urban-classification)
+[^6]: The classifications are explained in the [2011 Rural Urban Classification User Guide](https://www.gov.uk/government/statistics/2011-rural-urban-classification)
 
 ## Clustering based on transport supply and demand {#sec-results-transport-demand}
 
@@ -463,9 +469,9 @@ The need to decarbonise the transport sector, improvements in real-time routing 
 
 Strategic planning of DRT that accounts for its integration with more traditional public transport systems presents a promising avenue for improved mobility in areas with pockets of concentrated travel demand that are difficult to serve cost-effectively by fixed-route transit. The approach presented in this paper offers both conceptual and methodological contributions that can help realise this promise. Conceptually, we borrow methods from spatial data mining and argue that they are well suited to filling gaps in the current approaches for strategic planning of DRT services. We build on this concept methodologically by embedding a clustering algorithm into a larger transport planning pipeline with more traditional supply and demand components. Our findings show that spatial clustering of OD flow data can contribute to delineating operating zones in strategic DRT planning, but that more research should be done on improving distance metrics that are core to clustering and on refining the supply and demand analysis used to extract the OD flows to be clustered.
 
-The approach can be adopted by practitioners in early stage strategic planning of DRT, and the outputs can be tested in agent-based simulations to understand how a service could perform in one of the suggested zones, the operational characteristics required, and the associated mode shift and VMT on the network under different scenarios. While we have used Leeds as a case study, the approach can be reproduced for any area given public transport data (ideally in GTFS format) and travel demand matrices. We provide the code in a public repository[^6] to facilitate reproducibility and extension of the work.
+The approach can be adopted by practitioners in early stage strategic planning of DRT, and the outputs can be tested in agent-based simulations to understand how a service could perform in one of the suggested zones, the operational characteristics required, and the associated mode shift and VMT on the network under different scenarios. While we have used Leeds as a case study, the approach can be reproduced for any area given public transport data (ideally in GTFS format) and travel demand matrices. We provide the code in a public repository[^7] to facilitate reproducibility and extension of the work.
 
-[^6]: link to repository will be added if paper is accepted
+[^7]: link to repository will be added if paper is accepted
 
 \pagebreak
 
