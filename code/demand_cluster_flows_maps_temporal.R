@@ -23,7 +23,7 @@ clustering <- "equal"
 distance_threshold <- 50000   # 10000
 
 # save plots?
-save = TRUE
+save = FALSE
 # save only specific plots (set to TRUE if we only want some of the plots)
 save_all = FALSE
 
@@ -1683,370 +1683,295 @@ if(save){
 # ##### ---------- FIGURES ---------- #####
 #
 # ### ---------- 1. Get unjittered OD data (code from code/demand_cluster_flows_prep.R) - travel times haven't been affected by jittering
-#
-# # is the data disaggregated by mode?
-# mode <- TRUE
-# #mode <- FALSE
-#
-# # Demand (census) + supply (travel time) data
-#
-# if(mode == FALSE){
-#   # data with "commute_all" only
-#   #od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), ".parquet"))
-#   od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_with_speed_and_pd.parquet"))
-# } else{
-#   # data with modes
-#   #od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode.parquet"))
-#   od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/od_census_2021/demand_study_area_", tolower(geography), "_mode_with_speed_and_pd.parquet"))
-# }
-#
-# # filter to specific combination
-# # TODO: get seperate flows for car and pt, and keep two combinations
-# od_demand <- od_demand %>%
-#   filter(combination == "pt_wkday_morning")
-#
-# od_demand <- od_demand %>%
-#   select(-distance_m)
-#
-# # --- create desire lines and remove od pairs with very short distance
-#
-# # TODO: edit this to avoid clusters of very short flows
-# # "Density-based clustering for bivariate-flow data" (section 5.2): preprocessing step to avoid
-# # clusters of very short flows. this involves splitting the data into 3 chunks
-# # based on length (
-# od_demand_filtered = filter_matrix_by_distance(zones = study_area,
-#                                                od_matrix = od_demand,
-#                                                dist_threshold = 1000)
-#
-# # add unique id for each row
-# od_demand_filtered <- od_demand_filtered %>%
-#   mutate(od_id = paste0(Origin, "-", Destination, "-", combination))
-#
-#
-#
-#
+
+# Demand (census) + supply (travel time) data
+
+od_demand <- arrow::read_parquet(paste0("data/raw/travel_demand/cpc_matrices_2019/demand_study_area_msoa_with_speed_and_pd.parquet"))
+
+
+# filter to specific combination
+# TODO: get seperate flows for car and pt, and keep two combinations
+od_demand <- od_demand %>%
+  filter(combination == "pt_wkday_06_30")
+
+# add unique id for each row
+od_demand_filtered <- od_demand %>%
+  mutate(od_id = paste0(Origin, "-", Destination, "-", combination))
+
 # # ----- add the clustering results to the unjittered demand
-# od_demand_figures <- cluster_dbscan_res %>%
-#   select(Origin, Destination, starts_with("commute_"), od_id, flow_ID, cluster, size, commute_all) %>%
-#   left_join(od_demand_filtered %>%
-#               st_drop_geometry() %>%
-#               distinct(od_id, .keep_all = TRUE) %>%
-#               # travel times before being ruined by od_jitter()
-#               select(od_id, ends_with("_time"), n_rides, starts_with("speed_"), starts_with("ride_time_")),
-#             by = "od_id")
-#
-# # match existing clusters
-# # od_demand_figures_filt <- od_demand_figures %>%
-# #   filter(size > 7, size < 5000) %>%
-# #   filter(commute_all > 200) %>%
-# #   filter(cluster != 0)
-#
+od_demand_figures <- cluster_dbscan_res %>%
+  select(Origin, Destination, starts_with("commute_"), od_id, flow_ID, cluster, size, commute_all, distance_m) %>%
+  left_join(od_demand_filtered %>%
+              st_drop_geometry() %>%
+              distinct(od_id, .keep_all = TRUE) %>%
+              # travel times before being ruined by od_jitter()
+              select(od_id, ends_with("_time"), n_rides, starts_with("speed_"), starts_with("ride_time_")),
+            by = "od_id")
+
+# match existing clusters
 # od_demand_figures_filt <- od_demand_figures %>%
-#   rename(cluster_orig = cluster) %>%
-#   inner_join(clusters_vis %>%
-#                st_drop_geometry() %>%
-#                select(flow_ID, cluster),
-#              by = "flow_ID") %>%
-#   # keep only the clusters after intersection with gtfs
-#   filter(cluster %in% clusters_vis_mode_poly_filt3$cluster)
+#   filter(size > 7, size < 5000) %>%
+#   filter(commute_all > 200) %>%
+#   filter(cluster != 0)
+
+od_demand_figures_filt <- od_demand_figures %>%
+  rename(cluster_orig = cluster) %>%
+  inner_join(clusters_vis %>%
+               st_drop_geometry() %>%
+               select(flow_ID, cluster),
+             by = "flow_ID") %>%
+  # keep only the clusters after intersection with gtfs
+  filter(cluster %in% clusters_vis_mode_poly_filt3$cluster)
 #
 
 
 #
 # # ----- plots
 #
-# # scatter plots with x: commute_all, y: fraction of bus commuters
-# ggplot(od_demand_figures_filt %>% st_drop_geometry(), aes(x = commute_all, y = commute_bus / commute_car, color = commute_bus)) +
-#   geom_point(data = transform(od_demand_figures, cluster = NULL), colour = "grey85") +
-#   geom_point() +
-#   ylim(0, 5) +
-#   scale_color_distiller(palette= "RdYlGn", direction = 1) +
-#   labs(x = "total no. of commuters",
-#        y = "Bus / Car commuters (fraction)",
-#        title = "Composition of clusters",
-#        subtitle = "No. of commuters",
-#        color = "Commuters (bus)") +
-#   facet_wrap(facets = vars(cluster)) +
-#   theme_bw() +
-#   theme(legend.position = "bottom")
-#
-# ggsave(paste0(plots_path, "figure_scatter_commuters_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
-#
-# # paste0(plots_path, "map_clusters_scenario_", scenario, "_", clustering, "_length_", distance_threshold, "_bus_frac_grouped_gtfs_poly_bus_diff_concave_urbanisation.png"), width = 12, dpi = 1080, asp = 0)
-#
-#
-# ggplot(od_demand_figures_filt %>% st_drop_geometry(), aes(x = commute_all, y = commute_bus / commute_car, color = speed_kph)) +
-#   geom_point(data = transform(od_demand_figures, cluster = NULL), colour = "grey85") +
-#   geom_point() +
-#   ylim(0, 5) +
-#   scale_color_distiller(palette= "RdYlGn", direction = 1) +
-#   labs(x = "total no. of commuters",
-#        y = "Bus / Car commuters (fraction)",
-#        color = "Average speed of \nbus commute (kph)",
-#        title = "Composition of clusters: \nNo. of commuters in each OD pair") +
-#   facet_wrap(facets = vars(cluster)) +
-#   theme_bw() +
-#   theme(legend.position = "bottom")
-#
-# ggsave(paste0(plots_path, "figure_scatter_commuters_color_speed_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
-#
-# # same but replacing NA speed for min speed
-# ggplot(od_demand_figures_filt %>%
-#          st_drop_geometry() %>%
-#          mutate(speed_kph = replace_na(speed_kph, min(speed_kph, na.rm = TRUE))),
-#        aes(x = commute_all, y = commute_bus / commute_car, color = speed_kph)) +
-#   geom_point(data = transform(od_demand_figures, cluster = NULL), colour = "grey85") +
-#   geom_point() +
-#   ylim(0, 5) +
-#   scale_color_distiller(palette= "RdYlGn", direction = 1) +
-#   labs(x = "total no. of commuters",
-#        y = "Bus / Car commuters (fraction)",
-#        color = "Average speed of \nbus commute (kph)",
-#        title = "Composition of clusters: \nNo. of commuters in each OD pair") +
-#   facet_wrap(facets = vars(cluster)) +
-#   theme_bw() +
-#   theme(legend.position = "bottom")
-#
-# ggsave(paste0(plots_path, "figure_scatter_commuters_color_speed_facet_cluster_scenario_", scenario, "_length_", distance_threshold, "_no_NA.png"), height = 8, width = 6)
-#
+# scatter plots with x: commute_all, y: fraction of bus commuters
+ggplot(od_demand_figures_filt %>% st_drop_geometry(), aes(y = commute_all, x = distance_m / 1000, color = commute_all)) +
+  # geom_point(data = transform(od_demand_figures, cluster = NULL), colour = "grey85") +
+  geom_point() +
+  scale_color_distiller(palette= "RdYlBu", direction = 1) +
+  labs( x = "Length of OD pair (Euclidian - km)",
+        y = "No. of trips on OD pair in cluster",
+       title = "Composition of clusters",
+       subtitle = "Characteristics of OD pairs in each cluster (length + no. of trips)",
+       color = "No. of trips") +
+  facet_wrap(facets = vars(cluster)) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+ggsave(paste0(plots_path, "figure_scatter_commuters_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
+
+
+
 # # ----- Get the spatial coverage of each cluster (what portion is in urban / rural etc?)
 #
 # # get intersection
-# clusters_vis_mode_poly %>%
-#   st_intersection(basemap_urban_rural %>%
-#                     st_transform(st_crs(clusters_vis_mode_poly))) %>%
-#   # get area
-#   mutate(area_km = as.numeric(st_area(.) / 1000000))  %>%
-#   # area by cluster
-#   st_drop_geometry() %>%
-#   group_by(cluster, RUC11, RUC11CD_NM_FCT) %>%
-#   summarise(area_km = sum(area_km)) %>%
-#   # keep only the clusters after intersection with gtfs
-#   filter(cluster %in% clusters_vis_mode_poly_filt3$cluster) -> clusters_ur_poly
-#
-# # define custom color paletter
-# colors_urban_rural <- (c("#01665E", "#35978F", "#80CDC1", "#DFC27D", "#8C510A"))
-# # order column based on the RUC11CD_NM_FCT column (degree of urbanisation)
-# clusters_ur_poly$RUC11 <- factor(clusters_ur_poly$RUC11, levels = unique(clusters_ur_poly$RUC11)[order(clusters_ur_poly$RUC11CD_NM_FCT)])
-#
-# ggplot(clusters_ur_poly, aes(x = RUC11, y = area_km, fill = RUC11)) +
-#   geom_col(color = "grey60") +
-#   scale_fill_manual(values = colors_urban_rural,
-#                     labels = function(x) str_wrap(x, width = 25)) +
-#   labs(x = "",
-#        y = "Area covered by cluster (km2)",
-#        color = "Rural / Urban Classification",
-#        title = "Composition of clusters: Rural / Urban") +
-#   theme_bw() +
-#   theme(axis.text.x = element_blank(),
-#         axis.ticks.x=element_blank(),
-#         legend.position = "bottom",
-#         legend.title = element_blank()) +
-#   guides(fill = guide_legend(nrow = 3)) +
-#   facet_wrap(facets = vars(cluster))
-#
-# ggsave(paste0(plots_path, "figure_bar_urban_rural_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
-#
-#
-# # Same but for filtered polygon
-#
-# clusters_vis_mode_poly_filt3 %>%
-#   st_intersection(basemap_urban_rural %>%
-#                     st_transform(st_crs(clusters_vis_mode_poly))) %>%
-#   # get area
-#   mutate(area_km = as.numeric(st_area(.) / 1000000))  %>%
-#   # area by cluster
-#   st_drop_geometry() %>%
-#   group_by(cluster, RUC11, RUC11CD_NM_FCT) %>%
-#   summarise(area_km = sum(area_km))  %>%
-#   # keep only the clusters after intersection with gtfs
-#   filter(cluster %in% clusters_vis_mode_poly_filt3$cluster) -> clusters_ur_poly_filt
-#
-# clusters_ur_poly_filt$RUC11 <- factor(clusters_ur_poly_filt$RUC11, levels = unique(clusters_ur_poly_filt$RUC11)[order(clusters_ur_poly_filt$RUC11CD_NM_FCT)])
-#
-#
-# ggplot(clusters_ur_poly_filt, aes(x = RUC11, y = area_km, fill = RUC11)) +
-#   geom_col(color = "grey60") +
-#   scale_fill_manual(values = colors_urban_rural,
-#                     #direction = -1,
-#                     labels = function(x) str_wrap(x, width = 25)) +
-#   labs(x = "",
-#        y = "Area covered by cluster (km2)",
-#        color = "Rural / Urban Classification",
-#        title = "Composition of clusters: Rural / Urban") +
-#   theme_bw() +
-#   theme(axis.text.x = element_blank(),
-#         axis.ticks.x=element_blank(),
-#         legend.position = "bottom",
-#         legend.title = element_blank()) +
-#   guides(fill = guide_legend(nrow = 3)) +
-#   facet_wrap(facets = vars(cluster))
-#
-# ggsave(paste0(plots_path, "figure_bar_urban_rural_filtered_by_gtfs_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
-#
-#
-#
-#
-# ### ---- join the data to plot together
-# clusters_ur_poly %>%
-#   left_join(clusters_ur_poly_filt %>%
-#               rename(area_km_filt = area_km),
-#             by = c("cluster", "RUC11")) -> clusters_ur_poly_combined
-#
-#
-#
-# # --- plot both together
-# ggplot(clusters_ur_poly_combined) +
-#   geom_col(aes(x = RUC11, y = area_km, color = RUC11, alpha = 0.01)) +
-#   geom_col(aes(x = RUC11, y = area_km_filt, fill = RUC11)) +
-#   scale_fill_manual(values = colors_urban_rural,
-#                     #direction = -1,
-#                     labels = function(x) str_wrap(x, width = 25)) +
-#   scale_color_manual(values = colors_urban_rural,
-#                      #direction = -1,
-#                      labels = function(x) str_wrap(x, width = 25)) +
-#   labs(x = "",
-#        y = "Area covered by cluster (km2)",
-#        fill = "Rural / Urban Classification",
-#        title = "Composition of clusters: Rural / Urban",
-#        subtitle = "Before and after intersecting with bus network",
-#        caption = "border: area covered by entire cluster \nfill: area covered by cluster after intersection with bus network ") +
-#   guides(color = "none", alpha = "none") +
-#   scale_alpha_identity() +  # Maintain alpha value
-#   theme_bw() +
-#   theme(axis.text.x = element_blank(),
-#         axis.ticks.x=element_blank(),
-#         legend.position = "bottom",
-#         legend.title = element_blank(),
-#         plot.caption = element_text(hjust = 0)) +
-#   guides(fill = guide_legend(nrow = 3)) +
-#   facet_wrap(facets = vars(cluster))
-#
-# ggsave(paste0(plots_path, "figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
-#
-#
-#
-#
-#
-# # ---------- PLots of line bearings in each cluster
-#
-# # --- calculate bearings
-#
-# od_demand_figures_bearings <- od_demand_figures_filt %>%
-#   mutate(bearing = stplanr::line_bearing(.),
-#          bearing_adjusted = case_when(bearing < 0 ~ bearing + 360,
-#                                       .default =  bearing),
-#          bearing_180 = case_when(bearing < 0 ~ bearing * -1,
-#                                  .default =  bearing))
-#
-#
-#
-# # add length column
-# od_demand_figures_bearings <- od_demand_figures_bearings %>%
-#   mutate(distance_m =  units::drop_units(sf::st_length(.)))
-#
-# # --- get columns for distance and bearing "groups" - for facet plots cut distance angle groups for plots
-#
-#
-# # Define the breaks for the buckets
-# #breaks_angle <- seq(-10, 370, by = 20)
-# breaks_angle <- seq(0, 360, by = 30)
-# #breaks_angle <- seq(0, 180, by = 15)
-# breaks_distance <- seq(0, 50, by = 10)
-#
-# od_demand_figures_bearings <- od_demand_figures_bearings %>%
-#   mutate(bucket = cut(bearing_adjusted, breaks = breaks_angle, right = FALSE, include.lowest = TRUE),
-#          # mutate(bucket = cut(bearing_180, breaks = breaks_angle, right = FALSE, include.lowest = TRUE),
-#          bucket_distance = cut(distance_m / 1000, breaks = breaks_distance, right = FALSE, include.lowest = TRUE)) %>%
-#   mutate(bucket_distance = fct_rev(bucket_distance))
-#
-# # Ensure the bucket factor levels are ordered correctly
-# #bearings_cat$bucket <- factor(bearings_cat$bucket, levels = unique(bearings_cat$bucket), ordered = TRUE)
-#
-#
-# # --- Plot with no of lines only (geom_bar())
-#
-#
-# # bar
-# ggplot(od_demand_figures_bearings, aes(x = bucket, fill = bucket_distance)) +
-#   geom_bar() +
-#   facet_wrap(facets = "cluster") +
-#   labs(x = "Bearing", y = "OD pairs", fill = "OD Pair Length") +
-#   scale_x_discrete(labels = breaks_angle) +
-#   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-#         legend.position = "bottom")
-#
-# ggsave(paste0(plots_path, "figure_bar_bearing_y_ods_facet_cluster_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 8)
-#
-#
-# # circle
-# ggplot(od_demand_figures_bearings, aes(x = bucket, fill = bucket_distance)) +
-#   geom_bar() +
-#   coord_polar(start = -0.1) +
-#   facet_wrap(facets = "cluster") +
-#   labs(x = "Bearing", y = "OD pairs", fill = "OD Pair Length") +
-#   #scale_x_discrete(labels = breaks_angle) +
-#   scale_x_discrete(labels = breaks_angle) +
-#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#
-#
-#
-# # --- Plot with total commuters geom_col()
-#
-#
-# # bar
-# ggplot(od_demand_figures_bearings, aes(x = bucket, y = commute_all, fill = bucket_distance)) +
-#   geom_col() +
-#   #coord_polar() +
-#   facet_wrap(facets = "cluster") +
-#   labs(x = "Bearing", y = "Commuters", fill = "OD Pair Length") +
-#   scale_x_discrete(labels = breaks_angle) +
-#   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-#         legend.position = "bottom")
-#
-# ggsave(paste0(plots_path, "figure_bar_bearing_y_commuters_facet_cluster_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 8)
-#
-# # circle
-# ggplot(od_demand_figures_bearings, aes(x = bucket, y = commute_all, fill = bucket_distance)) +
-#   geom_col() +
-#   coord_radial(rotate.angle = TRUE) +
-#   facet_wrap(facets = "cluster") +
-#   labs(x = "Bearing", y = "Commuters", fill = "OD Pair Length") +
-#   #scale_x_discrete(labels = breaks_angle) +
-#   scale_x_discrete(labels = breaks_angle) +
-#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#
-#
-#
-#
-# # TESTING FACET GRID
-#
-# # Select labels to print (one in every three)
-# labels_to_print <- levels(od_demand_figures_bearings$bucket)[seq(1, length(levels(od_demand_figures_bearings$bucket)), by = 3)]
-#
-#
-# ggplot(od_demand_figures_bearings, aes(x = bucket, y = commute_all, fill = bucket_distance)) +
-#   geom_col() +
-#   #coord_polar() +
-#   facet_grid(bucket_distance ~ cluster,
-#              drop = TRUE) +
-#   labs(x = "Bearing", y = "Total Commuters", fill = "OD Pair Length") +
-#   # scale_x_discrete(labels = breaks_angle) +
-#   scale_x_discrete(labels = function(x) ifelse(x %in% labels_to_print, x, "")) + # Print one in every three labels # theme_minimal() +
-#   theme_bw() +
-#   theme(axis.text.x = element_text(angle = 60, hjust = 1),
-#         legend.position = "bottom")
-#
-#
-# ggsave(paste0(plots_path, "figure_bar_bearing_y_commuters_facet_grid_cluster_distance_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 10)
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
+clusters_vis_mode_poly %>%
+  st_intersection(basemap_urban_rural %>%
+                    st_transform(st_crs(clusters_vis_mode_poly))) %>%
+  # get area
+  mutate(area_km = as.numeric(st_area(.) / 1000000))  %>%
+  # area by cluster
+  st_drop_geometry() %>%
+  group_by(cluster, RUC11, RUC11CD_NM_FCT) %>%
+  summarise(area_km = sum(area_km)) %>%
+  # keep only the clusters after intersection with gtfs
+  filter(cluster %in% clusters_vis_mode_poly_filt3$cluster) -> clusters_ur_poly
+
+# define custom color paletter
+colors_urban_rural <- (c("#01665E", "#35978F", "#80CDC1", "#DFC27D", "#8C510A"))
+# order column based on the RUC11CD_NM_FCT column (degree of urbanisation)
+clusters_ur_poly$RUC11 <- factor(clusters_ur_poly$RUC11, levels = unique(clusters_ur_poly$RUC11)[order(clusters_ur_poly$RUC11CD_NM_FCT)])
+
+ggplot(clusters_ur_poly, aes(x = RUC11, y = area_km, fill = RUC11)) +
+  geom_col(color = "grey60") +
+  scale_fill_manual(values = colors_urban_rural,
+                    labels = function(x) str_wrap(x, width = 25)) +
+  labs(x = "",
+       y = "Area covered by cluster (km2)",
+       color = "Rural / Urban Classification",
+       title = "Composition of clusters: Rural / Urban") +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank(),
+        legend.position = "bottom",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 3)) +
+  facet_wrap(facets = vars(cluster))
+
+ggsave(paste0(plots_path, "figure_bar_urban_rural_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
+
+#
+# Same but for filtered polygon
+
+clusters_vis_mode_poly_filt3 %>%
+  st_intersection(basemap_urban_rural %>%
+                    st_transform(st_crs(clusters_vis_mode_poly))) %>%
+  # get area
+  mutate(area_km = as.numeric(st_area(.) / 1000000))  %>%
+  # area by cluster
+  st_drop_geometry() %>%
+  group_by(cluster, RUC11, RUC11CD_NM_FCT) %>%
+  summarise(area_km = sum(area_km))  %>%
+  # keep only the clusters after intersection with gtfs
+  filter(cluster %in% clusters_vis_mode_poly_filt3$cluster) -> clusters_ur_poly_filt
+
+clusters_ur_poly_filt$RUC11 <- factor(clusters_ur_poly_filt$RUC11, levels = unique(clusters_ur_poly_filt$RUC11)[order(clusters_ur_poly_filt$RUC11CD_NM_FCT)])
+
+
+ggplot(clusters_ur_poly_filt, aes(x = RUC11, y = area_km, fill = RUC11)) +
+  geom_col(color = "grey60") +
+  scale_fill_manual(values = colors_urban_rural,
+                    #direction = -1,
+                    labels = function(x) str_wrap(x, width = 25)) +
+  labs(x = "",
+       y = "Area covered by cluster (km2)",
+       color = "Rural / Urban Classification",
+       title = "Composition of clusters: Rural / Urban") +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank(),
+        legend.position = "bottom",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 3)) +
+  facet_wrap(facets = vars(cluster))
+
+ggsave(paste0(plots_path, "figure_bar_urban_rural_filtered_by_gtfs_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
+
+#
+#
+#
+### ---- join the data to plot together
+clusters_ur_poly %>%
+  left_join(clusters_ur_poly_filt %>%
+              rename(area_km_filt = area_km),
+            by = c("cluster", "RUC11")) -> clusters_ur_poly_combined
+
+
+
+# --- plot both together
+ggplot(clusters_ur_poly_combined) +
+  geom_col(aes(x = RUC11, y = area_km, color = RUC11, alpha = 0.01)) +
+  geom_col(aes(x = RUC11, y = area_km_filt, fill = RUC11)) +
+  scale_fill_manual(values = colors_urban_rural,
+                    #direction = -1,
+                    labels = function(x) str_wrap(x, width = 25)) +
+  scale_color_manual(values = colors_urban_rural,
+                     #direction = -1,
+                     labels = function(x) str_wrap(x, width = 25)) +
+  labs(x = "",
+       y = "Area covered by cluster (km2)",
+       fill = "Rural / Urban Classification",
+       title = "Composition of clusters: Rural / Urban",
+       subtitle = "Before and after intersecting with bus network",
+       caption = "border: area covered by entire cluster \nfill: area covered by cluster after intersection with bus network ") +
+  guides(color = "none", alpha = "none") +
+  scale_alpha_identity() +  # Maintain alpha value
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank(),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        plot.caption = element_text(hjust = 0)) +
+  guides(fill = guide_legend(nrow = 3)) +
+  facet_wrap(facets = vars(cluster))
+
+ggsave(paste0(plots_path, "figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
+
+#
+#
+#
+#
+# ---------- PLots of line bearings in each cluster
+
+# --- calculate bearings
+
+od_demand_figures_bearings <- od_demand_figures_filt %>%
+  mutate(bearing = stplanr::line_bearing(.),
+         bearing_adjusted = case_when(bearing < 0 ~ bearing + 360,
+                                      .default =  bearing),
+         bearing_180 = case_when(bearing < 0 ~ bearing * -1,
+                                 .default =  bearing))
+
+
+
+# add length column
+od_demand_figures_bearings <- od_demand_figures_bearings %>%
+  mutate(distance_m =  units::drop_units(sf::st_length(.)))
+
+# --- get columns for distance and bearing "groups" - for facet plots cut distance angle groups for plots
+
+
+# Define the breaks for the buckets
+#breaks_angle <- seq(-10, 370, by = 20)
+breaks_angle <- seq(0, 360, by = 30)
+#breaks_angle <- seq(0, 180, by = 15)
+breaks_distance <- seq(0, 50, by = 10)
+
+od_demand_figures_bearings <- od_demand_figures_bearings %>%
+  mutate(bucket = cut(bearing_adjusted, breaks = breaks_angle, right = FALSE, include.lowest = TRUE),
+         # mutate(bucket = cut(bearing_180, breaks = breaks_angle, right = FALSE, include.lowest = TRUE),
+         bucket_distance = cut(distance_m / 1000, breaks = breaks_distance, right = FALSE, include.lowest = TRUE)) %>%
+  mutate(bucket_distance = fct_rev(bucket_distance))
+
+# Ensure the bucket factor levels are ordered correctly
+#bearings_cat$bucket <- factor(bearings_cat$bucket, levels = unique(bearings_cat$bucket), ordered = TRUE)
+
+
+# --- Plot with no of lines only (geom_bar())
+
+
+# bar
+ggplot(od_demand_figures_bearings, aes(x = bucket, fill = bucket_distance)) +
+  geom_bar() +
+  facet_wrap(facets = "cluster") +
+  labs(x = "Bearing", y = "OD pairs", fill = "OD Pair Length") +
+  scale_x_discrete(labels = breaks_angle) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
+
+ggsave(paste0(plots_path, "figure_bar_bearing_y_ods_facet_cluster_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 8)
+
+
+# circle
+ggplot(od_demand_figures_bearings, aes(x = bucket, fill = bucket_distance)) +
+  geom_bar() +
+  coord_polar(start = -0.1) +
+  facet_wrap(facets = "cluster") +
+  labs(x = "Bearing", y = "OD pairs", fill = "OD Pair Length") +
+  #scale_x_discrete(labels = breaks_angle) +
+  scale_x_discrete(labels = breaks_angle) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#
+#
+# --- Plot with total commuters geom_col()
+
+
+# bar
+ggplot(od_demand_figures_bearings, aes(x = bucket, y = commute_all, fill = bucket_distance)) +
+  geom_col() +
+  #coord_polar() +
+  facet_wrap(facets = "cluster") +
+  labs(x = "Bearing", y = "No. of trips", fill = "OD Pair Length") +
+  scale_x_discrete(labels = breaks_angle) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
+
+ggsave(paste0(plots_path, "figure_bar_bearing_y_commuters_facet_cluster_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 8)
+
+# circle
+ggplot(od_demand_figures_bearings, aes(x = bucket, y = commute_all, fill = bucket_distance)) +
+  geom_col() +
+  coord_radial(rotate.angle = TRUE) +
+  facet_wrap(facets = "cluster") +
+  labs(x = "Bearing", y = "No. of trips", fill = "OD Pair Length") +
+  #scale_x_discrete(labels = breaks_angle) +
+  scale_x_discrete(labels = breaks_angle) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#
+# TESTING FACET GRID
+
+# Select labels to print (one in every three)
+labels_to_print <- levels(od_demand_figures_bearings$bucket)[seq(1, length(levels(od_demand_figures_bearings$bucket)), by = 3)]
+
+
+ggplot(od_demand_figures_bearings, aes(x = bucket, y = commute_all, fill = bucket_distance)) +
+  geom_col() +
+  #coord_polar() +
+  facet_grid(bucket_distance ~ cluster,
+             drop = TRUE) +
+  labs(x = "Bearing", y = "Total no. of trips", fill = "OD Pair Length", title = "Bearings and lengths of trips in each cluster") +
+  # scale_x_discrete(labels = breaks_angle) +
+  scale_x_discrete(labels = function(x) ifelse(x %in% labels_to_print, x, "")) + # Print one in every three labels # theme_minimal() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1),
+        legend.position = "bottom")
+
+
+ggsave(paste0(plots_path, "figure_bar_bearing_y_commuters_facet_grid_cluster_distance_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 10)
+

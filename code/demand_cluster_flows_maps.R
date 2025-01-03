@@ -1507,3 +1507,6 @@ ggplot(clusters_ur_poly_combined) +
   facet_wrap(facets = vars(cluster))
 
 ggsave(paste0(plots_path, "figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_", scenario, "_length_", distance_threshold, ".png"), height = 8, width = 6)
+
+
+
