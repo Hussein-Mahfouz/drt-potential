@@ -187,9 +187,9 @@ Setting the threshold at $p75$ implies that service on the top 25% of routes in 
 ::: {#tbl-od_pairs_scenarios .column width="90%"}
 | Name | No. of OD pairs | Description |
 |------------------------|------------------------|------------------------|
-| $OD_{all}$ | 10,506 (100%) | All OD pairs in the study area that have people commuting between them |
-| $OD_{s}$ | 10,130 (96%) | OD pairs with poor public transport supply (see @fig-flowchart-scenarios) |
-| $OD_{sd}$ | 7,876 (75%) | OD pairs with poor public transport supply and low potential demand (see @fig-flowchart-scenarios) |
+| $OD_{all}$ | 50,301 (100%) | All OD pairs in the study area that have people commuting between them |
+| $OD_{s}$ | 40,183 (80%) | OD pairs with poor public transport supply (see @fig-flowchart-scenarios) |
+| $OD_{sd}$ | 34,837 (68%) | OD pairs with poor public transport supply and low potential demand (see @fig-flowchart-scenarios) |
 
 : Number of OD pairs in after each step
 :::
