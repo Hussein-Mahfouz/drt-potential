@@ -223,6 +223,33 @@ study_area <- study_area %>%
 # -------- 2. gtfs
 gtfs_bus <- st_read("data/interim/gtfs_freq/gtfs_bus_sf_temporal.geojson")
 
+# keep only times of day that we are analysing
+gtfs_bus = gtfs_bus %>%
+  filter(scenario %in% day_time_list)
+
+# add headway
+gtfs_bus = gtfs_bus %>%
+  mutate(headway_inv = (1/headway_secs) * 3600) %>%
+  filter(headway_secs < 7200)
+
+# apply overline to all scenarios seperately to get total no. of buses on each road segment
+gtfs_bus_day_time = gtfs_bus %>%
+  group_by(scenario) %>%
+  group_split() %>%
+  setNames(unique(gtfs_bus$scenario))
+
+# Apply overline function to each grouped sf object
+gtfs_bus_day_time_overline <- lapply(names(gtfs_bus_day_time), function(scenario_name) {
+  gtfs_sf <-   gtfs_sf <- stplanr::overline(gtfs_bus_day_time[[scenario_name]], attrib = "headway_inv", fun = sum)
+  gtfs_sf <- gtfs_sf %>%
+    mutate(headway_inv = round(headway_inv),
+           scenario = scenario_name) # Add scenario column for facet mapping
+  return(gtfs_sf)
+})
+
+# one sf for facet map
+gtfs_bus_map = bind_rows(gtfs_bus_day_time_overline)
+
 
 # -------- 3. Pop density base layer
 
@@ -264,17 +291,14 @@ for (scenario in scenario_list) {
                 alpha = 0.5,
                 style = "log10_pretty") +
       # bus layer
-      tm_shape(gtfs_bus %>%
-                 filter(startsWith(scenario, "pt_wkday")) %>%
-                 mutate(headway_inv = (1/headway_secs) * 3600) %>%
-                 filter(headway_secs < 7200)) +
+      tm_shape(gtfs_bus_map) +
       tm_lines(col = "darkred",
                lwd = "headway_inv",
-               scale = 5.5,
+               scale = 10,
                palette = "-YlOrRd",
                style = "pretty",
                legend.col.show = FALSE,
-               alpha = 0.1,
+               alpha = 0.5,
                title.lwd = "Buses/Hour",
                #legend.lwd.is.portrait = FALSE
       ) +
@@ -322,12 +346,6 @@ for (scenario in scenario_list) {
 
   }
 }
-
-
-
-
-
-
 
 
 
