@@ -5,22 +5,22 @@ abstract: "Demand-Responsive Transport (DRT) has emerged as a mobility option fo
 #date: "`r format(Sys.time(), '%d %m %y')`"
 format:
   #gfm: default
-  html:
-    toc: true
+  # html:
+  #   toc: true
   # docx:
   #   toc: false
   #   number-sections: true
   #   fig-pos: 'H'
-  # pdf:
-  #   toc: false
-  #   number-sections: true
-  #   extra_dependencies: ["float"]
-  #   pdf-engine: xelatex #pdflatex # xelatex
-  #   geometry:
-  #        - left=15.0mm
-  #        - right=15.0mm
-  #        - top=15mm
-  #   fig-pos: 'H'
+  pdf:
+    toc: false
+    number-sections: true
+    extra_dependencies: ["float"]
+    pdf-engine: xelatex #pdflatex # xelatex
+    geometry:
+         - left=15.0mm
+         - right=15.0mm
+         - top=15mm
+    fig-pos: 'H'
     keep-tex: true
 bibliography: lit-review.bib
 # elsevier style for referencing (from https://github.com/citation-style-language/styles)
@@ -384,9 +384,9 @@ Noticeably, clusters made up of longer distance OD flows show more variance in t
 <!-- ::: -->
 
 ::: {#fig-cluster-stats layout="[[1,1], [1]]"}
-![Classification of areas covered by each cluster and the DRT zone extracted from it](images/figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_3_length_50000.png){#fig-cluster-stats-1 width="35%"}
+![Classification of areas covered by each cluster and the DRT zone extracted from it](images/figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_3_length_50000.png){#fig-cluster-stats-1 width="40%"}
 
-![Total trips on the different OD pairs making up each cluster](images/figure_scatter_commuters_facet_cluster_scenario_3_length_50000.png){#fig-cluster-stats-2 width="35%"}
+![Total trips on the different OD pairs making up each cluster](images/figure_scatter_commuters_facet_cluster_scenario_3_length_50000.png){#fig-cluster-stats-2 width="40%"}
 
 ![Distribution of trips (weighted OD pairs) in each cluster. Trips are faceted by the angle of their trajectory (x axis) and their euclidian travel distance in km (y axis - right side)](images/figure_bar_bearing_y_commuters_facet_grid_cluster_distance_3_length_50000.png){#fig-cluster-stats-3 width="75%"}
 
