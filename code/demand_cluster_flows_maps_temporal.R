@@ -60,6 +60,13 @@ polygons_path <-paste0("data/processed/plots/eda/od_clustering/", geography, "/t
 if (!dir.exists(polygons_path)) {
   dir.create(polygons_path, recursive = TRUE)
 }
+# for individual polygons (one for each cluster) instead of combined ones
+polygons_separate_path <-paste0("data/processed/plots/eda/od_clustering/", geography, "/temporal/polygons_separate/", "min_commuters_", commuters_sum_minimum, "/")
+if (!dir.exists(polygons_separate_path)) {
+  dir.create(polygons_separate_path, recursive = TRUE)
+}
+
+
 plots_path <- paste0("data/processed/plots/eda/od_clustering/", geography, "/temporal/", "min_commuters_", commuters_sum_minimum, "/")
 # Check if the directory exists, and if not, create it
 if (!dir.exists(plots_path)) {
@@ -1034,6 +1041,25 @@ if (save_all){
 }
 
 
+# --- Save the cluster polygons for downsteam analysis
+
+# - Entire polygon
+cluster_polygons = clusters_vis_mode_poly %>%
+  filter(cluster %in% clusters_vis_mode_poly_filt3$cluster) %>%
+  st_transform(3857)
+
+st_write(cluster_polygons, paste0(polygons_separate_path, day_time, "_scenario_", scenario, "_cluster_poly.geojson"), delete_dsn = TRUE)
+st_write(cluster_polygons, paste0(polygons_separate_path, day_time, "_scenario_", scenario, "_cluster_poly.shp"), append = FALSE)
+
+
+# - DRT zones (after intersection with PT)
+cluster_drt_zones = clusters_vis_mode_poly_filt3 %>%
+  st_buffer(1000)
+
+st_write(cluster_drt_zones, paste0(polygons_separate_path, day_time, "_scenario_", scenario, "_cluster_drt_zones.geojson"), delete_dsn = TRUE)
+
+st_write(cluster_drt_zones, paste0(polygons_separate_path, day_time, "_scenario_", scenario, "_cluster_drt_zones.geojson"), append = FALSE)
+
 
 
 # --- Same as above but with startpoint and endpoint labelled
@@ -1529,6 +1555,8 @@ clusters_vis_mode_poly_filt3_all = clusters_vis_mode_poly_filt3 %>%
 
 # Save to make temporal comparison plot
 st_write(clusters_vis_mode_poly_filt3_all, paste0(polygons_path, day_time, "_scenario_", scenario, ".geojson"), delete_dsn = TRUE)
+st_write(clusters_vis_mode_poly_filt3_all %>% st_transform(3857), paste0(polygons_path, day_time, "_scenario_", scenario, ".shp"), append = FALSE)
+
 
 
 tm_shape(basemap_urban_rural) +

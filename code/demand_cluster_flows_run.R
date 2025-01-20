@@ -142,8 +142,8 @@ rm(list = ls())
 # gc()
 
 # Predefined list of values for commuters_sum_minimum
-commuters_sum_minimum_list <- c(50, 100, 150, 200)
-# commuters_sum_minimum_list <- c(200)
+# commuters_sum_minimum_list <- c(50, 100, 150, 200)
+commuters_sum_minimum_list <- c(100)
 
 
 # Predefined list of day_time scenarios
@@ -151,8 +151,8 @@ day_time_list <- c("pt_wkday_06_30", "pt_wkday_09_30", "pt_wkday_12_30",
                    "pt_wkday_15_30", "pt_wkday_18_30")
 
 # Define scenario values
-scenario_list <- c(3, 2)
-# scenario_list <- c(2)
+# scenario_list <- c(3, 2)
+scenario_list <- c(3)
 
 
 # Loop through each scenario
