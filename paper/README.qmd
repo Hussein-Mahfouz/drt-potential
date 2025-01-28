@@ -319,9 +319,9 @@ We therefore propose a subsequent step to extract potential DRT zones from the o
 
 # Results
 
-The anlaysis is carried out for all periods of time mentioned above. However, we focus on the morning peak period for most of the results section for demonstration purposes. The only exception is in @fig-zones-one-map, where we show a map of the aggregated result for different times of day.
+In this section we present the results for the morning peak period. As described in @sec-methods-preparing-data, the analysis was doe for all time periods. @fig-zones-one-map shows the aggregate results for different times of the day.
 
-In this section we look at the clustering output of $OD_s$ and $OD_{sd}$. @fig-cluster-scenario-2 and @fig-cluster-scenario-3 presents the results for each respectively. In both of these plots, each facet in the plot represents one of the main clusters produced by the DBSCAN algorithm. The components of the visual are:
+@fig-cluster-scenario-2 and @fig-cluster-scenario-3 present the results of the clustering output of $OD_s$ and $OD_{sd}$ respectively. In these plots, each facet in the plot represents one of the main clusters produced by the DBSCAN algorithm. The components of the visual include:
 
 a\) OD pairs: these are the straight lines with different colors. The different colors represent the number of trips represented by that OD pair. The endpoints of the OD pairs are also shown, with size corresponding to the number of trips.
 
@@ -345,7 +345,7 @@ d\) Potential DRT zones: These are created by getting the spatial difference bet
 
 In this section we look at the results of clustering OD pairs remaining after doing the supply analysis (but not the demand analysis) in @fig-flowchart-scenarios ($OD_{s}$).
 
-Examining the cluster areas in @fig-cluster-scenario-2, we see some interesting geographical patterns in both the outskirts and closer to the urban core.
+Examining the cluster areas in @fig-cluster-scenario-2, we see some geographical patterns in both the outskirts and closer to the urban core. We discuss these patterns by region:
 
 -   **South and South West:** Clusters 8 and 10 represent trips connecting areas like Batley and Kirkhamgate to the urban core. These regions have poor public transport connections, with almost no high frequency bus routes extending from the center all the way out there. Cluster 6 connects the South to a location slightly north of the urban core. The Southern area is not served by high frequency bus routes, and even the routes that extend to the South only connect to the city center, and travelers are prone to long waiting times at the center.
 
@@ -367,7 +367,7 @@ The clustering analysis highlights several significant transport challenges acro
 
 4.  **Transfer time as part of cross-city travel**: Part of the unmet demand in the clusters could be due to long transfer times. This could be the case for cluster 7, which connects the South East to Horsforth in the North West. While some of the unmet demand is due to no high frequency bus routes extending into the South East, some origins in the South east that are along bus routes may suffer from long transfer times at the center. Long transfer times could also explain part of the unmet demand in cluster 6.
 
-These issues reveal gaps in the current public transport network, especially for rural areas in the outskirts and trips not going from/to the center. DRT services could address these challenges by offering flexible, demand-responsive connections where high-frequency bus routes are impractical. This could take many forms, such as:
+These 4 challenges reveal gaps in the current public transport network, especially for rural areas in the outskirts and trips not going from/to the center. DRT services could address these challenges by offering flexible, demand-responsive connections where high-frequency bus routes are impractical. This could take many forms, such as:
 
 -   **DRT service to address entire trips:** DRT could serve as a standalone mode along the Western North-South axis, providing direct trips along the Guiseley/Yeadon-Pudsey axis in the North (Cluster 3), as well as the Morley-Pudsey axis in the South (Cluster 9).
 
@@ -383,7 +383,7 @@ In this section we look at the results of clustering OD pairs remaining after we
 
 The clustering results are similar to those of $OD_s$ (presented in @sec-results-transport-supply), with some notable differences. Cluster 9 in @fig-cluster-scenario-3 appears to be a combination of cluster 8 and 10 in @fig-cluster-scenario-2. $OD_{sd}$ has fewer origin-destination pairs (@tbl-od_pairs_scenarios) as we exclude all OD pairs that have sufficient demand to warrant a bus service (see @sec-method-transport-demand). Our clustering algorithm finds clusters based on a minimum threshold of OD flows, and so fewer overall OD pairs means that a larger spatial coverage is required to obtain the same minimum threshold.
 
-Another important difference is that cluster 5 in @fig-cluster-scenario-2 is not present here. Given the high demand from the urban core to the North East, the demand analysis (@sec-method-transport-demand) removed many of the OD pairs that were in that cluster, as they can be served by improved headway on existing pt services. The remaining unserved OD pairs do not have enough concentrated demand to form a cluster on their own.
+Another important difference is that cluster 5 in @fig-cluster-scenario-2 does not reappear here. Given the high demand from the urban core to the North East, the demand analysis (@sec-method-transport-demand) removed many of the OD pairs that were in that cluster, as they can be served by improved headway on existing pt services. The remaining unserved OD pairs do not have enough concentrated demand to form a cluster on their own.
 
 ![Clustering results - OD pairs with poor PT supply and low potential demand ($OD_{sd}$) - Desire lines represent OD pairs making up each cluster, dashed black lines represent convex hull around desire lines, colored polygons represent part of cluster that does not overlap with existing high frequency bus routes (see @sec-methods-clusters-to-zones)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_crop.png){#fig-cluster-scenario-3 width="95%"}
 
@@ -433,7 +433,7 @@ The success of DRT schemes is conditional on such integration and on their abili
 
 Our clustering results help highlight the different DRT services that could operate across a study area. In some areas, such as along the North-South axes in the West, DRT could serve as a standalone mode, providing direct trips where fixed-route transit is unavailable. In sparsely populated rural areas in the periphery, DRT is better suited as a first/last-mile feeder service, connecting dispersed travelers to high-frequency public transport routes and thereby improving the accessibility and usability of the public transport system. Previous research has highlighted the potential of DRT feeders that extend bus services to rural areas [@sorensen2021much; @schluter2021impact]. However, DRT on its own is insufficient to improve the public transport offering in some cases. Clusters that traverse the city center are made up of trips that may require a bus transfer, and the attractiveness of such trips largely depends on improvements in transit headways and schedule synchronization.
 
-The representation of the aggregated results at different times of day (@sec-clusters-temporal) is meant to demonstrate conceptually that a temporal dimension can be added to the analysis, and that temporal variations do exist. It is important to note that while there may be little temporal variation in these aggregated zones, this does not mean that the exact same services are required throughout the day. The specific clusters that make up each temporal snapshot will vary, and such variation should inform the number of services and the operational characteristics of each service.
+The representation of the aggregated results at different times of day (@sec-clusters-temporal) demonstrates conceptually that a temporal dimension can be added to the analysis, and that temporal variations do exist. It is important to note that while there may be little temporal variation in these aggregated zones, this does not mean that the exact same services are required throughout the day. The disaggregate results (@fig-cluster-scenario-2 and @fig-cluster-scenario-3) are essential for understanding the variation in the specific clusters that make up each temporal snapshot. Such variation should inform the number of services and the operational characteristics of each service.
 
 ## Comparison with alternative methods
 
