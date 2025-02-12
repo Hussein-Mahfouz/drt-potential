@@ -5,12 +5,12 @@ abstract: "Investment in Demand-Responsive Transport (DRT) has emerged as a sust
 #date: "`r format(Sys.time(), '%d %m %y')`"
 format:
   #gfm: default
-  # html:
-  #   toc: true
-  docx:
-    toc: false
-    number-sections: true
-    fig-pos: 'H'
+  html:
+    toc: true
+  # docx:
+  #   toc: false
+  #   number-sections: true
+  #   fig-pos: 'H'
   # pdf:
   #   toc: false
   #   number-sections: true
@@ -135,11 +135,9 @@ The overall workflow is illustrated in @fig-workflow. Our approach is applied to
 
 ## Case Study {#sec-case-study}
 
-The research will focus on the city of Leeds, UK as a case study. Leeds is the biggest city in West Yorkshire, and one of the largest European cities without rapid transit, making it heavily dependent on buses (the extent of the bus service can be seen in @fig-rural-urban). The regional authority in charge of transport, the West Yorkshire Combined Authority (WYCA), has declared a climate emergency, and has put a target to reach net-zero by 2038. It has estimated that a significant mode shift will be needed to achieve this target, and has set a target of 52% increase in bus mode share [@wyca2021connectivity]. This is an ambitious target seeing as the decade between 2009-2019 saw a decrease of 15% (from 170 million to 144 million) in annual bus trips in the region. [@wyca2021improvement].
+This research uses Leeds, UK, as a case study. As one of the largest European cities without rapid transit, Leeds relies heavily on buses (@fig-rural-urban). The regional transport authority, West Yorkshire Combined Authority (WYCA), has set a net-zero target for 2038, requiring a 52% increase in bus mode share [@wyca2021connectivity] —an ambitious goal given the 15% decline in annual bus trips from 2009 to 2019 [@wyca2021improvement].
 
-<!--# A recent report on bus services in Leeds highlighted that they were concentrated between two main operators, FirstBus (65.6%) and Arriva (26.1%), and that over 50% of routes in the city are likely to experience adverse effects of (a lack of) competition [@wyca2017bus]. The report highlights that bus operators are not a homogeneous group, and that there was no formal process for them to coordinate on plans and policies. In the Leeds Bradford area, 40% of population have access to only 1 bus per hour outside peak hours, and many areas have poor or non-existent access to rail [@wyca2021connectivity]. -->
-
-Following the new powers given to local transport authorities under the bus services act [@uk2017busact], the West Yorkshire Bus Service Improvement Plan [@wyca2021improvement] has set ambitious targets for bus mode share, patronage, service provision (bus miles), journey times, as well as accessibility. The plan acknowledges that changes will need to be made to the network, which currently fails to meet user needs (due to a reduction in services and to routes being based on historic travel patterns) and is heavily subsidized [@wyca2021improvement]. A big part of the ambition is better integration of buses as part of a multimodal public transport offer. DRT is also seen as a means of providing more efficient access than traditional public transport to low-density areas; WYCA has already piloted such a service (Flexibus) in East Leeds [@wyca2021improvement], but during the 18 month pilot phase, the service was struggling to attract ridership and was only covering 5% of its operating costs [@wyca2022drtflexibusreview]. An average number of customers per trip of 1.38 was in large part due to an inflexible service that only pooled people doing almost exactly the same route. More flexible services, along with an identification of spatial concentrations in travel demand, can help improve viability of DRT services.
+Under the Bus Services Act [@uk2017busact], WYCA’s Bus Service Improvement Plan aims to enhance bus services and better integrate multimodal transport [@wyca2021improvement]. DRT is considered a means to improve access in low-density areas, and a pilot service (Flexibus) was trialed in East Leeds. However, during its 18-month pilot phase, it struggled with low ridership, covering only 5% of operating costs [@wyca2022drtflexibusreview]. Its average of 1.38 passengers per trip reflected a service design that failed to effectively pool demand. Services that are informed by spatial concentrations in travel demand could improve DRT viability.
 
 ![Urban Rural Classification: Explained in the 2011 Rural-Urban Classification User Guide](images/rural_urban_bus.png){#fig-rural-urban fig-align="center" width="80%"}
 
@@ -194,7 +192,7 @@ Setting the threshold at $p75$ implies that service on the top 25% of routes in 
 :::: columns
 ::: {#tbl-od_pairs_scenarios .column width="90%"}
 | Name | No. of OD pairs | Description |
-|---------|-----------------|-------------------------------------------|
+|----------------|----------------|-----------------------------------------|
 | $OD_{all}$ | 50,301 (100%) | All OD pairs in the study area that have people travelling between them |
 | $OD_{s}$ | 40,183 (80%) | OD pairs with poor public transport supply (see @fig-flowchart-scenarios) |
 | $OD_{sd}$ | 34,837 (68%) | OD pairs with poor public transport supply and low potential demand (see @fig-flowchart-scenarios) |
@@ -471,7 +469,7 @@ Optimization models typically start with an existing public transport network an
 
 ### Input data and demand analysis
 
-In the approach outlined in this paper, we conduct a supply and demand analysis to ensure that we focus only on OD flows that are not, or do not have the necessary demand to be, served by a high frequency bus route. Our demand analysis is based on splitting OD demand equally between its common lines. While this is justified by our need to represent route demand given hypothetical improvements in headway, more robust methods can be used for scenario modelling of such improvements. Our results can be used as input for an optimisation frameworks that adjust route headways and DRT fleet sizes, given pre-defined DRT service areas \[@pinto2020joint\]. They could also be used as an initial solution for optimisation frameworks that simultaneously modify public transport routes and DRT service areas \[@zhao2021joint\]. Since the core novelty of our approach is the identification of spatial concentrations in travel demand, we deliberately avoid adding further layers of complexity. This allows the results to be useful as an output in themselves, or as input to optimisation and agent-based simulation frameworks for further refinements.
+In the approach outlined in this paper, we conduct a supply and demand analysis to ensure that we focus only on OD flows that are not, or do not have the necessary demand to be, served by a high frequency bus route. Our demand analysis is based on splitting OD demand equally between its common lines. While this is justified by our need to represent route demand given hypothetical improvements in headway, more robust methods can be used for scenario modelling of such improvements. Our results can be used as input for an optimisation frameworks that adjust route headways and DRT fleet sizes, given pre-defined DRT service areas [@pinto2020joint]. They could also be used as an initial solution for optimisation frameworks that simultaneously modify public transport routes and DRT service areas [@zhao2021joint]. Since the core novelty of our approach is the identification of spatial concentrations in travel demand, we deliberately avoid adding further layers of complexity. This allows the results to be useful as an output in themselves, or as input to optimisation and agent-based simulation frameworks for further refinements.
 
 Moreover, our current method is based on trip matrices at MSOA level with little information besides number of people. Datasets that have complete travel patterns of a population, such as activity-based models [@rasouli2014activity] would give us a more representative picture of travel demand and trip chains throughout the day. They would also enable linking travel patterns to sociodemographic characteristics and analysing for which categories of people and trip purposes DRT can improve accessibility.
 
