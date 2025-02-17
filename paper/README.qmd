@@ -5,23 +5,23 @@ abstract: "Investment in Demand-Responsive Transport (DRT) has emerged as a sust
 #date: "`r format(Sys.time(), '%d %m %y')`"
 format:
   #gfm: default
-  html:
-    toc: true
+  # html:
+  #   toc: true
   # docx:
   #   toc: false
   #   number-sections: true
   #   fig-pos: 'H'
-  # pdf:
-  #   toc: false
-  #   number-sections: true
-  #   extra_dependencies: ["float"]
-  #   pdf-engine: xelatex #pdflatex # xelatex
-  #   geometry:
-  #        - left=15.0mm
-  #        - right=15.0mm
-  #        - top=15mm
-  #   fig-pos: 'H'
-  #   keep-tex: true
+  pdf:
+    toc: false
+    number-sections: true
+    extra_dependencies: ["float"]
+    pdf-engine: xelatex #pdflatex # xelatex
+    geometry:
+         - left=15.0mm
+         - right=15.0mm
+         - top=15mm
+    fig-pos: 'H'
+    keep-tex: true
 bibliography: lit-review.bib
 # elsevier style for referencing (from https://github.com/citation-style-language/styles)
 csl: elsevier-harvard.csl
@@ -343,7 +343,7 @@ We therefore propose a subsequent step to extract potential DRT zones from the o
 
 # Results
 
-In this section we present the clustering results for the morning peak period. As described in @sec-methods-preparing-data, the analysis was done for all time periods. @sec-results-transport-supply and @sec-results-transport-demand include the clustering results based on transport supply and transport supply + demand respectively. In the latter, we present more detailed examination of individual cluster composition. @sec-cluster-examination compares (a) how each cluster overlaps with different land-use classifications, (b) the number and length of the trips making up each cluster, and (c) the internal homogeneity of each cluster (in terms of the length and directionality of the trips make up the clusters). @sec-clusters-temporal shows the aggregate clustering results for different times of the day.
+In this section we present the clustering results for the morning peak period. As described in @sec-methods-preparing-data, the analysis was done for all time periods. @sec-results-transport-supply focuses on clustering based on transport supply, while @sec-results-transport-demand integrates transport demand. In the latter, we present more detailed examination of individual cluster composition. @sec-cluster-examination compares (a) the overlap between clusters and rural-urban classifications, (b) the number and length of the trips making up each cluster, and (c) cluster homogeneity in terms of length and directionality of the trips make up the clusters. @sec-clusters-temporal presents aggregate clustering results across different times of the day.
 
 ## Clustering based on transport supply only {#sec-results-transport-supply}
 
@@ -357,13 +357,13 @@ In this section we present the clustering results for the morning peak period. A
 
 <!-- ::: -->
 
-@fig-cluster-scenario-2 and @fig-cluster-scenario-3 present the results of the clustering output of $OD_s$ and $OD_{sd}$ respectively. In these plots, each facet in the plot represents one of the main clusters produced by the DBSCAN algorithm. The components of the visual include:
+@fig-cluster-scenario-2 and @fig-cluster-scenario-3 present the clustering results based on $OD_s$ and $OD_{sd}$ respectively. Each facet in the plots represents a cluster, with the following components:
 
-a\) OD pairs: Represented as straight lines, with colours indicating trip volume. The endpoints are also shown, scaled by the number of trips.
+a\) OD pairs: Represented as straight lines, with colour indicating trip volume. Endpoints are shown, scaled by the number of trips.
 
-b\) Cluster areas: Defined by a concave hull around OD pairs, shown with a black dotted border to indicate the spatial extent of the OD pairs that have been grouped together.
+b\) Cluster areas: Defined by a concave hull around OD pairs, shown with a black dotted border.
 
-c\) Bus routes: High-frequency services (≥1 bus/hour during the morning peak) are included as a background layer, extracted from GTFS data (@sec-method-transport-supply).
+c\) Bus routes: High-frequency services (≥1 bus/hour during the morning peak) are overlaid for reference (@sec-method-transport-supply).
 
 d\) Potential DRT zones: Areas within each cluster not covered by high-frequency bus routes, visualised using the spatial difference between cluster areas and bus routes. Colours indicate the total trip volume of OD pairs making up the cluster.
 
@@ -371,55 +371,53 @@ Distinct spatial patterns are present in both the outskirts and closer to the ur
 
 -   **South and South West:** Clusters 8 and 10 represent trips from Batley and Kirkhamgate, where high-frequency public transport is largely absent, to the urban core. Cluster 6 connects the south to a location slightly north of the urban core. The southern area is not served by high frequency bus routes, and even the routes that extend to the south only connect to the city centre, and travellers are prone to long transfer times at the centre.
 
--   **West:** Clusters 3 and 9 show vertical travel demand from the North (e.g., Guiseley/Yeadon) and the South to Pudsey. Public transport options for these trips require a big detour through the city centre due to a lack of direct North-South routes.
+-   **West:** Clusters 3 and 9 show vertical travel demand from the North (e.g., Guiseley/Yeadon) and the South (Morley) to Pudsey. Due to the absence of direct North-South routes, public transport trips require detours and transfers through the city centre.
 
--   **North East:** Clusters 1 and 5 capture scattered travel demand between the rural North East and the urban core. Only one high-frequency bus route serves this area, limiting viable public transport options. Even trips that do start or end near that route but do not end at the centre face potentially long transfer times.
+-   **North East:** Clusters 1 and 5 capture scattered travel demand between the rural North East and the urban core. Only one high-frequency bus route serves this area, limiting viable public transport options. For most trips, using public transport would require either a first-/last-mile drop-off, a transfer in the city centre, or both.
 
--   **North:** Cluster 2 includes rural areas with dispersed travel origins and limited bus services, particlularly along the northern edges of the cluster. The concentration of destinations just south of the urban core suggests that even trips with initial bus access often require transfers at the centre.
+-   **North:** Cluster 2 includes rural areas with dispersed travel origins and limited bus service, particularly along the northern edges. The concentration of destinations just south of the urban core suggests many trips would require a transfer at the centre.
 
--   **South East:** Cluster 7 shows concentrated travel demand from the South East to areas like Horsforth and neighbouring towns in the North West. These trips mostly originate in locations with no bus services.
+-   **South East:** Cluster 7 shows concentrated travel demand from the South East to Horsforth and nearby towns in the North West. These trips mostly originate in locations with no bus services.
 
 The clustering analysis highlights several significant transport challenges across the study area.
 
-1.  **PT not extending to the outskirts:** The clusters in the South and South West all connect to the city centre (8, 10, and 6). Even though PT services are mostly radial and into the city centre, these particular cases show the issue of PT services not extending far out enough to serve some travel demand in areas like Batley and Kirkhamgate. This seems to also be a factor in cluster 7, where there is no high frequency bus route extending to the South East.
+1.  **Public transport not extending far enough to the outskirts:** The clusters in the South and South West all connect to the city centre (8, 10, and 6). Even though PT services are mostly radial and into the city centre, they do not extend far out enough to serve some travel demand in areas like Batley and Kirkhamgate. Cluster 7 faces a similar issue, with no high frequency bus route extending to the South East.
 
-2.  **Lack of North-South connectivity in West:** The vertical clusters in the West (3 and 9) underscore the absence of North-South public transport routes. While there is demand for travel between Pudsey and both towns like Guiseley/Yeadon in the North and Morley in the South, existing services primarily facilitate travel into the centre, leaving these trips unserved or requiring inefficient transfers. Cluster 4 is affected by the same issue, as most OD pairs probably do not fall along the bus route connecting the centre to the North West.
+2.  **Lack of North-South connectivity in West:** Cluster 3 and 9 reveal the absence of North-South public transport routes. While there is demand for travel between Pudsey and both towns like Guiseley/Yeadon in the North and Morley in the South, existing services primarily facilitate centre-bound trips, leaving these journeys unserved or requiring inefficient transfers. Cluster 4 is affected by the same issue, as most OD pairs do not fall along the bus route connecting the centre to the North West.
 
-3.  **Poor rural accessibility:** The North East clusters (1 and 5) and the rural North cluster (2) highlight challenges in providing transport to dispersed populations. Sparse travel demand and scattered origins/destinations make traditional fixed-route transport impractical. For trips to the urban core or other peripheral areas, there is only one high frequency route extending into the North East, and none into the North. The service area of these routes is only a small fraction of the area covered by the clusters.
+3.  **Poor rural accessibility:** Clusters 1, 2, and 5 highlight the difficulty of serving low-density areas with fixed-route transport. Sparse travel demand and scattered origins/destinations make traditional fixed-route transport impractical. For trips to the urban core, there is only one high frequency route extending into the North East, and none into the North. The catchment area of these routes covers a small fraction of the clusters.
 
-4.  **Transfer time as part of cross-city travel**: Part of the unmet demand in the clusters could be due to long transfer times. This could be the case for cluster 7, which connects the South East to Horsforth in the North West. While some of the unmet demand is due to no high frequency bus routes extending into the South East, some origins in the South east that are along bus routes may suffer from long transfer times at the centre. Long transfer times could also explain part of the unmet demand in cluster 6.
+4.  **Transfer time as part of cross-city travel**: Long transfer times may contribute to unmet demand in some clusters. In Cluster 7, which connects the South East to Horsforth in the North West, the lack of high-frequency bus routes extending into the South East is a key factor. However, even origins along bus routes may face long transfers at the centre. Similarly, transfer delays could explain part of the unmet demand in Cluster 6.
 
 These 4 challenges reveal gaps in the current public transport network, especially for rural areas in the outskirts and trips not going from/to the centre. DRT services could address these challenges by offering flexible, demand-responsive connections where high-frequency bus routes are impractical. This could take many forms, such as:
 
 -   **DRT service to address entire trips:** A standalone DRT service could operate along the Western North-South axis, offering direct trips along the Guiseley/Yeadon-Pudsey axis in the North (Cluster 3), as well as the Morley-Pudsey axis in the South (Cluster 9).
 
--   **DRT as First/last-mile solution:** In low-density areas (Clusters 1, 2, and 5), DRT could act as a feeder to high-frequency bus routes, improving access without compromising offerational efficiency of the bus network.
+-   **DRT as First/last-mile solution:** In low-density areas (Clusters 1, 2, and 5), DRT could act as a feeder to high-frequency bus routes, improving access without compromising operational efficiency of the bus network.
 
--   **DRT + improvements in PT service provision**: Clusters that pass through the city centre, such as Clusters 2 and 6, may require a combination of DRT services and better PT schedule synchronization. DRT can provide first-/last-mile connections to high-frequency routes, but these routes alone may not complete the entire journey. In such cases, improving bus schedule coordination at the city centre is essential to reducing transfer times and enhancing the overall passenger experience. These clusters highlight cases where DRT alone is not enough to create a viable PT alternative.
+-   **DRT + improvements in PT service provision**: Clusters that pass through the city centre, such as Clusters 2 and 6, may require both DRT services and better PT schedule synchronization. While DRT provides first-/last-mile connections to high-frequency routes, bus transfers at the centre may still be required. Synchronizing bus schedules is key to reducing transfer times and improving the passenger experience. These clusters highlight cases where addition of DRT alone is not enough to create an appealing PT option.
 
 ![Clustering results - OD pairs with poor PT supply ($OD_{s}$). Desire lines represent OD pairs making up each cluster, dashed black lines represent convex hull around desire lines, coloured polygons represent part of cluster that does not overlap with existing high frequency bus routes (see @sec-methods-clusters-to-zones)](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_crop.png){#fig-cluster-scenario-2 width="95%"}
 
 ## Clustering based on transport supply and demand {#sec-results-transport-demand}
 
-This section presents the results of clustering the remaining OD pairs after conducting both the supply and demand analysis ($OD_{sd}$) (See @fig-flowchart-scenarios). We compare these results to those of $OD_s$ (discussed in @sec-results-transport-supply) to assess the impact of incorporating potential demand into the analysis. We examine the cluster composition in @sec-cluster-examination, and then present aggregated results from running the full workflow across different time points in @sec-clusters-temporal.
+This section presents the results of clustering the remaining OD pairs after conducting both the supply and demand analysis ($OD_{sd}$) (See @fig-flowchart-scenarios). We compare these results to those of $OD_s$ (@sec-results-transport-supply) to assess the impact of incorporating potential demand. @sec-cluster-examination examines cluster composition, and @sec-clusters-temporal presents aggregated results across different time points.
 
-The clustering results of $OD_{sd}$ are similar to those of $OD_s$, with some notable differences. Cluster 9 in @fig-cluster-scenario-3 appears to be a combination of cluster 8 and 10 in @fig-cluster-scenario-2. $OD_{sd}$ has fewer OD pairs (@tbl-od_pairs_scenarios) as we exclude OD pairs with sufficient demand to justify a bus service (see @sec-method-transport-demand). The clustering algorithm finds clusters based on a minimum threshold of OD flows, so fewer overall OD pairs means that a larger spatial coverage is required to obtain the same minimum threshold.
+The clustering results are similar to those in @sec-results-transport-supply, with some key differences. Cluster 9 in @fig-cluster-scenario-3 is a combination of cluster 8 and 10 in @fig-cluster-scenario-2. $OD_{sd}$ has fewer OD pairs (@tbl-od_pairs_scenarios) as we exclude those with sufficient demand for a bus service (see @sec-method-transport-demand). The clustering algorithm, which is based on a minimum threshold of OD flows, requires a larger spatial coverage to reach the threshold given fewer OD pairs.
 
-Another important distinction is that cluster 5 in @fig-cluster-scenario-2 does not appear here. The high demand from the urban core to the North East led the demand analysis (@sec-method-transport-demand) to exclude many of the OD pairs that were in that cluster, as they can be served by improved headway on existing public transport services. The remaining unserved OD pairs lack enough concentrated demand to form a separate cluster.
+Another important distinction is that cluster 5 from @fig-cluster-scenario-2 does not appear here. The high demand from the urban core to the North East led the demand analysis (@sec-method-transport-demand) to exclude many of the OD pairs that were in that cluster, as they could be served by improved headways on existing public transport routes. The remaining OD pairs, which lack sufficient concentrated demand, do not form a separate cluster.
 
 ![Clustering results - OD pairs with poor PT supply and low potential demand ($OD_{sd}$) - Desire lines represent OD pairs making up each cluster, dashed black lines represent convex hull around desire lines, coloured polygons represent part of cluster that does not overlap with existing high frequency bus routes (see @sec-methods-clusters-to-zones)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_crop.png){#fig-cluster-scenario-3 width="95%"}
 
 ### Examination of clusters {#sec-cluster-examination}
 
-To better interpret the clustering results, we examine their spatial coverage, demand composition, and internal homogeneity (@fig-cluster-stats). This analysis helps assess (a) the effect of transforming clusters to DRT operating zones, (b) how well the clusters capture distinct patterns of travel demand, and (c) the differences in the number and length of the OD pairs making up each cluster.
+To better interpret the clustering results, we examine their spatial coverage, demand composition, and internal homogeneity (@fig-cluster-stats). This analysis helps assess (a) the effect of transforming clusters to DRT operating zones, (b) how well clusters capture distinct travel demand patterns, and (c) the differences in the number and length of the OD pairs making up each cluster.
 
-@fig-cluster-stats-1 compares the urban/rural coverage of each cluster before and after excluding areas overlapping with the high-frequency bus network (step 3 in @fig-workflow). The extracted DRT operating zones cover noticeably less urban area than the original clusters, as most of the urban core is already served by high-frequency bus routes. Since these operating zones are designed to integrate with the existing network, limiting DRT service to the urban periphery helps prevent competition with fixed-route PT. This also improves service efficiency, as smaller coverage areas are easier for a DRT fleet to serve effectively.
+@fig-cluster-stats-1 compares the urban/rural coverage of each cluster before and after excluding areas overlapping with the high-frequency bus network (step 3 in @fig-workflow). The extracted DRT operating zones cover less urban area than the original clusters, as most of the urban core is already served by high-frequency bus routes. Since these operating zones are designed to integrate with the existing network, limiting DRT service to the urban periphery helps prevent competition with fixed-route PT. This also improves service efficiency, as smaller coverage areas are easier for a DRT fleet to serve effectively.
 
-Clusters also differ in their composition, as shown in @fig-cluster-stats-2, which presents statistics on OD pairs in each cluster. Some clusters consist of numerous OD pairs, each with relatively low trip volumes (e.g. Cluster 8), while others contain fewer OD pairs with high trip volumes (e.g. Cluster 3). The cluster composition, alongside spatial extent, can inform the type of DRT service [@d1994demand] suited for each zone. Clusters with a small number of high-demand OD pairs may benefit from more direct services, while those with many low-demand OD pairs are better suited to flexible, many-to-many operations. Clusters with mixed OD characteristics may require multiple DRT fleets with different operational models.
+Clusters also differ in their composition, as shown in @fig-cluster-stats-2. Some clusters (e.g. Cluster 8) contain many OD pairs with low trip volumes, while others (e.g. Cluster 3) have fewer OD pairs with higher volumes. The cluster composition, alongside spatial extent, informs the type of DRT service [@d1994demand] suited for each zone. Clusters with a small number of high-demand OD pairs may benefit from more direct services, while those with many low-demand OD pairs are better suited to flexible, many-to-many operations. Clusters with mixed OD characteristics may require multiple DRT fleets with different operational models.
 
-@fig-cluster-stats-3 illustrates the internal homogeneity of OD flows within each cluster by analyzing the distribution of OD bearings and distances. Such homogeneity is key to our objective of capturing spatial concentrations of travel demand. Most clusters exhibit directional consistency, with OD flows following similar bearings. Some clusters, like 4 and 5, have highly concentrated demand, where OD pairs share similar distances and orientations. Others, such as Cluster 1, display more variation in OD lengths but still show a dominant distance range (e.g., 20–40 km).
-
-Clusters made up of longer distance OD flows show more variance in their directionality, which can also be seen in @fig-cluster-scenario-3 (e.g. cluster 1 and 2). These clusters tend to have a concentrated anchor at one end but dispersed destinations at the other. A few clusters, such as cluster 7, cover a significantly large spatial extent and their OD flows are not as concentrated. In contrast, shorter distance OD flows show lower circular variance, with demand more tightly clustered at both endpoints. This is a result of our distance metric ([@eq-fds]) which normalizes distances by OD length, making longer flows appear closer than shorter ones.
+@fig-cluster-stats-3 illustrates internal homogeneity of OD flows within each cluster by examining OD bearings and distances. Such homogeneity is key to our objective of capturing spatial concentrations of travel demand. Most clusters exhibit directional consistency, with OD flows following similar bearings. Clusters with shorter distance OD flows (e.g., 4 and 5) show low circular variance, with demand more tightly clustered at both endpoints. In contrast, clusters with longer distance OD flows (e.g., 1, 2, and 7) show more variance in directionality, as seen in @fig-cluster-scenario-3. This is due to our distance metric (\[@eq-fds\]), which normalizes distances by OD length, making longer flows appear closer than shorter ones.
 
 <!-- ::: {#fig-cluster-stats layout-ncol="2"} -->
 
@@ -445,9 +443,9 @@ Cluster statistics
 
 @fig-zones-one-map shows how the potential DRT zones could look like if combined together. This includes merging all the cluster areas after step 3 in @fig-workflow. This visualization is presented for five different times of day (as described in @sec-methods-preparing-data) to capture temporal variations in transport supply and travel demand.
 
-The resulting DRT zones consistently form a doughnut-shaped pattern around the periphery of the study area, with the city centre excluded due to the concentration of high-frequency bus routes. Aggregating the clusters into a single map further highlights that potential DRT zones are primarily located in the outskirts, where population densities are relatively low.
+The resulting DRT zones form a doughnut-shape around the periphery of the study area, with the city centre excluded due to the concentration of high-frequency bus routes. The shape is more pronounced and continuous outside of the morning peak (12:30, 15:30, 18:30), which aligns with the reduction in bus services during those periods (visible as fewer and thinner red lines).
 
-Notably, the doughnut shape is more pronounced and continuous outside of the morning peak (12:30, 15:30, 18:30), which aligns with the reduction in bus services during those periods (visible as fewer and thinner red lines).
+Aggregating the clusters into a single map highlights that potential DRT zones are primarily located in the outskirts where population densities are low.
 
 ![Aggregate DRT zones generated by combining individual DRT zones. Each facet shows the result for a different time of day. Analysis is based on weekday supply and demand data](images/map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES_scenario_3.png){#fig-zones-one-map fig-align="center"}
 
