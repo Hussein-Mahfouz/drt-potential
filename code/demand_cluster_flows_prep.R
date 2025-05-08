@@ -195,19 +195,20 @@ od_demand_2 <- od_demand_filtered %>%
 # ----- Option 3: OD pairs with poor PT supply and low potential demand
 
 # get percentiles
-od_demand_3 <- od_demand_filtered %>%
+od_demand_dmnd <- od_demand_filtered %>%
   mutate(demand_route_percentile = percent_rank(potential_demand_equal_split),
          demand_route_percentile_fct = cut(demand_route_percentile,
                                            breaks = seq(0, 1, by = 0.25),
                                            include.lowest = TRUE))
 
 # od_filtered: keeps od pairs in od_demand_poor_Supply that have low pd on routes
-od_demand_3 <- od_demand_3 %>%
+od_demand_3 <- od_demand_dmnd %>%
   #filter(od_id %in% od_demand_2$od_id & potential_demand_equal_split < 500)
   filter(od_id %in% od_demand_2$od_id & demand_route_percentile < 0.75)
 
-
-
+# # NEW: We sample from od_demand_dmnd directly (not od_demand_2). od pairs with low speed
+# od_demand_3 <- od_demand_dmnd %>%
+#   filter(demand_route_percentile < 0.5, n_rides > 1)
 ### -----  Add a column to identify which scenarios each od pair belongs to
 
 # IMPORTANT: Read this as jittering has stopped working
