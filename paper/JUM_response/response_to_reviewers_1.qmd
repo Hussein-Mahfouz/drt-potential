@@ -1,0 +1,77 @@
+---
+title: "Response to reviewers"
+#date: "`r format(Sys.time(), '%d %m %y')`"
+format:
+  #gfm: default
+  # html:
+  #   toc: true
+  # docx:
+  #   toc: false
+  #   number-sections: true
+  #   fig-pos: 'H'
+  pdf:
+    toc: false
+    number-sections: true
+    extra_dependencies: ["float"]
+    pdf-engine: xelatex #pdflatex # xelatex
+    geometry:
+         - left=15.0mm
+         - right=15.0mm
+         - top=15mm
+    fig-pos: 'H'
+    keep-tex: true
+bibliography: ../lit-review.bib
+# elsevier style for referencing (from https://github.com/citation-style-language/styles)
+csl: ../elsevier-harvard.csl
+# so that figures don't float around
+# include-in-header:
+#  \usepackage{float}
+#  \floatplacement{figure}{H}
+ # to add acronyms (only works for pdf output)
+---
+
+```{r, include = FALSE}
+#library(tidyverse)
+knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
+```
+
+## Reviewer comment: 
+
+> “What is the statistical representativeness of the mobile data sample? How do you guarantee the allocation of those signs to road and rail have a reliable accuracy? What you have from mobile signs is the density of signals, so what methodology was performed to guarantee that the average number of trips is reliable and how can you assure it is a reliable sample of all the population?”
+
+## Response 
+
+Thank you for this important comment. We mention in Section 3.2 that we use origin-destination matrices derived from the GB Trip Database (GBTD), a commercial product developed by Telefónica (O2) and the UK Department for Transport. However it is true that we do not go intot he statistical representativeness of the data.
+
+chapter 3 of the user guide for the GBTD descibes their methodology to ensure statistical representativeness, mode attribution, and trip accuracy. Unfortunately, there is no public link to the user guide, but we have submitted the guide as an additional document.
+
+Specifically:
+
+-   Representativeness: The database expands observed trip patterns from active O2 users to represent the entire GB population using a statistically derived expansion process. Users included in the sample are filtered using the “Rule of Seven and Ten” (at least 7 events per day on 10 different days) and a 16-day minimum observation period to ensure consistent behavioural data and eliminate visitors or anomalous users
+-   Mode attribution: Trips are classified into motorised road or rail modes using rules that combine cell-type tags, rail-only/walk-only zones, and spatial proximity to stations. These rules differ inside and outside London and include checks for station adjacency, Wi-Fi use on underground services, and distance-based travel time thresholds
+-   Trip inference and OD detection: Trips are inferred from sequences of handover events (transfers between cell towers when a person is moving) and dwell events (periods where a user remains in one location). A dwell threshold (a minimum time that must elapse in one location to count as a trip end) is calculated based on typical journey durations. To avoid misclassifying brief pauses or unstable signals, short-distance cell changes caused by network noise—known as “flickering”—are filtered out using a pattern-detection algorithim
+-   Trip expansion: To address the fact that the source data is drawn from a single mobile network provider, the GBTD applies an expansion process that scales the sample to the full GB population. Expansion factors are calculated at the Middle Layer Super Output Area (MSOA) level, and are based on comparisons with Census journey-to-work data, demographic distributions, and known trip volumes from travel surveys. This helps to correct for demographic and spatial sampling bias, and enables population-level inference
+
+While no mobile data product is error-free, we believe that the GBTD's multi-stage filtering, triangulation, and expansion methodology provide a robust basis for aggregate OD analysis. We now summarise these key points in the revised manuscript and cite the methodology guide for transparency.
+
+## Edit to paper: 
+
+### Original
+
+We use trip records for 2019 derived from mobile phone data. The data is provided by Connected Places Catapult[^1] and covers all motorised road and rail trips throughout Great Britain (see @franco2020demand for a description of the data preparation). A data request includes a date range, and a zoning system with zones being individual or groups of MSOAs (there is a cap on the number of zones permitted). The output is the average number of trips between each unique zone pair, disaggregated by hour of day and weekday / weekend. We aggregate the data into five periods (5am - 8am, 8am-11am, 11am-2pm, 2pm-5pm, 5pm-8pm) to simplify the analysis. The methods proposed, however, can be applied at any temporal aggregation.
+
+[^1]: <https://cp.catapult.org.uk/project/great-britain-trip-database-portal/>
+
+### Edited
+
+The origin–destination matrices used in this analysis are derived from the GB Trip Database (GBTD)[^2], a national dataset produced by Telefónica (O2) in partnership with the UK Department for Transport. The data are based on anonymised mobile phone events, filtered to include only users with consistent daily activity over a 16-day window, and expanded to represent the wider population using area-level weighting factors. These factors are calculated at the Middle Layer Super Output Area (MSOA) level using comparisons with Census commuting flows and travel survey data, helping to correct for demographic and spatial bias.
+
+[^2]: <https://cp.catapult.org.uk/project/great-britain-trip-database-portal/>
+
+Trips are inferred from sequences of handover events (signal transfers between mobile cells) and dwell periods (extended time spent in one location). Trips are assigned to origin and destination zones based on users’ repeated activity patterns. <!--# Trips are classified as road or rail using spatial and temporal rules, including distance to stations, journey time, and mobile cell metadata.--> While no mobile dataset is error-free, the GBTD methodology offers a robust foundation for our OD analysis, and has been used in a study to generate activity patterns for an agent-based simulation [@franco2020demand].
+
+For this study, we requested OD data for 2019 from Connected Places Catapult, covering all motorised road and rail trips in Great Britain. The request specified a date range and a zoning system based on MSOA boundaries (subject to a cap on the number of zones permitted). The resulting dataset provides the average number of trips between each zone pair, disaggregated by hour of day and weekday/weekend. To simplify the analysis, we aggregate the data into five broad time periods: 5–8am, 8–11am, 11am–2pm, 2–5pm, and 5–8pm. However, the clustering method is compatible with other temporal resolutions and could be applied at finer levels where needed.
+
+\pagebreak
+
+# References

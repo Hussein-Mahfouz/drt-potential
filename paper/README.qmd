@@ -157,9 +157,13 @@ Under the Bus Services Act [@uk2017busact], WYCA’s Bus Service Improvement Pla
 
 ## Demand data {#sec-methods-preparing-data}
 
-We use trip records for 2019 derived from mobile phone data. The data is provided by Connected Places Catapult[^1] and covers all motorised road and rail trips throughout Great Britain (see @franco2020demand for a description of the data preparation). A data request includes a date range, and a zoning system with zones being individual or groups of MSOAs (there is a cap on the number of zones permitted). The output is the average number of trips between each unique zone pair, disaggregated by hour of day and weekday / weekend. We aggregate the data into five periods (5am - 8am, 8am-11am, 11am-2pm, 2pm-5pm, 5pm-8pm) to simplify the analysis. The methods proposed, however, can be applied at any temporal aggregation.
+The origin–destination matrices used in this analysis are derived from the GB Trip Database (GBTD)[^1], a national dataset produced by Telefónica (O2) in partnership with the UK Department for Transport. The data are based on anonymised mobile phone events, filtered to include only users with consistent daily activity over a 16-day window, and expanded to represent the wider population using area-level weighting factors. These factors are calculated at the Middle Layer Super Output Area (MSOA) level using comparisons with Census commuting flows and travel survey data, helping to correct for demographic and spatial bias.
 
 [^1]: <https://cp.catapult.org.uk/project/great-britain-trip-database-portal/>
+
+Trips are inferred from sequences of handover events (signal transfers between mobile cells) and dwell periods (extended time spent in one location). Trips are assigned to origin and destination zones based on users’ repeated activity patterns. <!--# Trips are classified as road or rail using spatial and temporal rules, including distance to stations, journey time, and mobile cell metadata.--> While no mobile dataset is error-free, the GBTD methodology offers a robust foundation for our OD analysis, and has been used in a study to generate activity patterns for an agent-based simulation [@franco2020demand].
+
+For this study, we requested OD data for 2019 from Connected Places Catapult, covering all motorised road and rail trips in Great Britain. The request specified a date range and a zoning system based on MSOA boundaries (subject to a cap on the number of zones permitted). The resulting dataset provides the average number of trips between each zone pair, disaggregated by hour of day and weekday/weekend. To simplify the analysis, we aggregate the data into five broad time periods: 5–8am, 8–11am, 11am–2pm, 2–5pm, and 5–8pm. However, the clustering method is compatible with other temporal resolutions and could be applied at finer levels where needed.
 
 ### Disaggregating OD data
 
@@ -206,7 +210,7 @@ Setting the threshold at $p75$ implies that service on the top 25% of routes in 
 :::: columns
 ::: {#tbl-od_pairs_scenarios .column width="90%"}
 | Name | No. of OD pairs | Description |
-|-----------------|-----------------|--------------------------------------|
+|------------------------|------------------------|------------------------|
 | $OD_{all}$ | 50,301 (100%) | All OD pairs in the study area that have people travelling between them |
 | $OD_{s}$ | 40,183 (80%) | OD pairs with poor public transport supply (see @fig-flowchart-scenarios) |
 | $OD_{sd}$ | 34,837 (68%) | OD pairs with poor public transport supply and low potential demand (see @fig-flowchart-scenarios) |
