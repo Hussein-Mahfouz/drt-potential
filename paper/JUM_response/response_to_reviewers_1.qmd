@@ -53,18 +53,15 @@ knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
 
 <!-- Lastly, the paper lacks an agent based analysis, better demand sets (with temporal variability) and a cost-benefit analysis for different business models. It's an interesting piece of work but does not bring a scientific added value that justifies its publication. Nevertheless, I would recommend authors to give it a try to short the length of the paper, adapt the format and be more clear about some of these limitations. Good luck and good work! -->
 
-
-
-
-
-
 <!-- Reviewer #2: The article "Delineating potential DRT operating areas: an origin-destination clustering approach" is a relevant and timely contribution to the evolving literature on demand responsive transport planning. It proposes a clustering method for outlining appropriate Demand-Responsive Transport (DRT) service areas from origin-destination flow data. The analysis appears satisfactory, and the manuscript is well-written. I have two comments: -->
+
 <!-- The thresholds used to define "poor supply" — OD pairs with travel speeds below the 50th percentile or with more than one transfer — are intuitive, but it is unclear whether these thresholds are arbitrary or are supported by the literature. -->
+
 <!-- Similarly, the use of the 75th percentile of route demand as a cut-off for eliminating OD pairs from ODsd is a major filtering step. This threshold represents a policy assumption that OD pairs with demand greater than this are worthy of fixed-route service, but it is a fairly high bar for demand and may exclude areas that would still be well served by DRT. -->
+
 <!-- If these thresholds are defined arbitrarily, it may be appropriate to conduct sensitivity analyses by varying these thresholds as they have the potential to affect the clustering results. -->
 
-
-# Introduction {-}
+# Introduction {.unnumbered}
 
 We thank the reviewers for their constructive feedback and suggestions, which have helped us improve the manuscript. Below, we provide a summary of the main comments and our responses. We have also made edits to the manuscript to address these points.
 
@@ -219,8 +216,11 @@ For this study, we requested OD data for 2019 from Connected Places Catapult, co
 # Reviewer 2
 
 <!-- "Delineating potential DRT operating areas: an origin-destination clustering approach" is a relevant and timely contribution to the evolving literature on demand responsive transport planning. It proposes a clustering method for outlining appropriate Demand-Responsive Transport (DRT) service areas from origin-destination flow data. The analysis appears satisfactory, and the manuscript is well-written. I have two comments: -->
+
 <!-- The thresholds used to define "poor supply" — OD pairs with travel speeds below the 50th percentile or with more than one transfer — are intuitive, but it is unclear whether these thresholds are arbitrary or are supported by the literature. -->
+
 <!-- Similarly, the use of the 75th percentile of route demand as a cut-off for eliminating OD pairs from ODsd is a major filtering step. This threshold represents a policy assumption that OD pairs with demand greater than this are worthy of fixed-route service, but it is a fairly high bar for demand and may exclude areas that would still be well served by DRT. -->
+
 <!-- If these thresholds are defined arbitrarily, it may be appropriate to conduct sensitivity analyses by varying these thresholds as they have the potential to affect the clustering results. -->
 
 ## Thresholds for filtering OD pairs
