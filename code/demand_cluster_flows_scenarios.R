@@ -207,3 +207,153 @@ st_write(od_demand_scenarios, paste0("data/interim/travel_demand/", geography, "
 #
 # # density plot: facet by demand percentile: Keep potential_demand_equal_split = NA (replace with 0)
 #
+
+
+
+
+
+
+
+
+# ------------------------------------------------------------------------------
+# SENSITIVITY ANALYSIS OF OD FILTERING: This section performs a sensitivity
+# analysis for the speed and demand percentile cutoffs used to filter OD pairs.
+# We create a grid of % cutoffs and calculate the number of OD pairs that
+# meet the criteria for each combination of cutoffs. This should help us
+# understand the impact of these cutoffs on the number of OD pairs retained.
+# ------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# Function to filter OD demand and return number of rows meeting criteria
+# ------------------------------------------------------------------------------
+filter_od_demand <- function(speed_cutoff, demand_cutoff, od_data,
+                             percentile_method = c("all", "nonzero_only")) {
+
+  percentile_method <- match.arg(percentile_method)
+
+  # ----------------------------------------------------------------------------
+  # Add percentile ranks for potential demand using one of two methods:
+  # ----------------------------------------------------------------------------
+  # 1. "all"           → Rank all OD pairs, including those with zero demand.
+  #                      This spreads the full range of percentiles across all values.
+  #
+  # 2. "nonzero_only"  → Compute percentiles **only for non-zero** values of
+  #                      potential_demand_equal_split.
+  #                      Zero-demand OD pairs are assigned a percentile of 0.
+  #
+  # This affects how many OD pairs are considered "low demand" when applying
+  # the demand_cutoff threshold.
+  # ----------------------------------------------------------------------------
+
+
+  od_data <- od_data %>%
+    mutate(
+      demand_route_percentile = case_when(
+        percentile_method == "all" ~ percent_rank(potential_demand_equal_split),
+        percentile_method == "nonzero_only" ~ {
+          tmp <- potential_demand_equal_split
+          ranks <- rep(0, length(tmp))
+          non_zero <- tmp > 0
+          ranks[non_zero] <- percent_rank(tmp[non_zero])
+          ranks
+        }
+      )
+    )
+
+  od_data %>%
+    filter(
+      # Poor PT supply logic
+      n_rides > 2 | is.na(n_rides) |
+        speed_percentile < speed_cutoff | is.na(speed_percentile),
+      # Low demand logic
+      demand_route_percentile < demand_cutoff
+    ) %>%
+    nrow()
+}
+
+# ------------------------------------------------------------------------------
+# Generate cutoff grid and calculate total OD pairs
+# ------------------------------------------------------------------------------
+cutoffs <- seq(0.30, 1.00, by = 0.05)
+total_od_pairs <- nrow(od_demand)
+
+sensitivity_grid <- expand.grid(
+  speed_cutoff = cutoffs,
+  demand_cutoff = cutoffs
+)
+
+# ------------------------------------------------------------------------------
+# Function to apply filter logic and generate results table for a given method
+# ------------------------------------------------------------------------------
+get_sensitivity_results <- function(method = c("all", "nonzero_only")) {
+  method <- match.arg(method)
+
+  sensitivity_grid %>%
+    rowwise() %>%
+    mutate(
+      n_filtered = filter_od_demand(speed_cutoff, demand_cutoff, od_demand,
+                                    percentile_method = method),
+      pct_filtered = round(n_filtered / total_od_pairs * 100, 1)
+    ) %>%
+    ungroup()
+}
+
+# ------------------------------------------------------------------------------
+# Get results for both percentile methods
+# ------------------------------------------------------------------------------
+results_all <- get_sensitivity_results("all")
+results_nonzero <- get_sensitivity_results("nonzero_only")
+
+# ------------------------------------------------------------------------------
+# Create label and percentage tables (wide format) for display
+# ------------------------------------------------------------------------------
+make_display_tables <- function(results_df) {
+  label_table <- results_df %>%
+    mutate(cell_label = paste0(n_filtered, " (", pct_filtered, "%)")) %>%
+    select(speed_cutoff, demand_cutoff, cell_label) %>%
+    pivot_wider(
+      names_from = speed_cutoff,
+      values_from = cell_label,
+      names_prefix = "Speed < "
+    )
+
+  pct_table <- results_df %>%
+    select(speed_cutoff, demand_cutoff, pct_filtered) %>%
+    pivot_wider(
+      names_from = speed_cutoff,
+      values_from = pct_filtered,
+      names_prefix = "Speed < "
+    )
+
+  list(label = label_table, pct = pct_table)
+}
+
+# Get formatted tables
+tables_all <- make_display_tables(results_all)
+tables_nonzero <- make_display_tables(results_nonzero)
+
+# ------------------------------------------------------------------------------
+# Display results using gt
+# ------------------------------------------------------------------------------
+gt_pct_coloured <- function(pct_table) {
+  gt(pct_table) %>%
+    data_color(
+      columns = -c(demand_cutoff),
+      method = "numeric",
+      palette = "Blues",
+      direction = "row",
+      domain = c(0, 100),
+      bins = 5
+    )
+}
+
+# View tables (You can assign these to gt objects or view inline in RStudio)
+gt_pct_coloured(tables_all$pct)      # For "all" method
+gt_pct_coloured(tables_nonzero$pct)  # For "nonzero_only" method
+
+gt(tables_all$label)                 # With labels for "all"
+gt(tables_nonzero$label)            # With labels for "nonzero_only"
+
+
+
+
