@@ -383,26 +383,15 @@ Another important distinction is that cluster 5 from @fig-cluster-scenario-2 doe
 
 ![Clustering results - OD pairs with poor PT supply and low potential demand ($OD_{sd}$) - Desire lines represent OD pairs making up each cluster, dashed black lines represent convex hull around desire lines, coloured polygons represent part of cluster that does not overlap with existing high frequency bus routes (see @sec-methods-clusters-to-zones)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_crop.png){#fig-cluster-scenario-3 width="95%"}
 
-### Examination of clusters {#sec-cluster-examination}
+### Examination of cluster homogeneity {#sec-cluster-examination}
 
-To better interpret the clustering results, we examine their spatial coverage, demand composition, and internal homogeneity (@fig-cluster-stats). This analysis helps assess (a) the effect of transforming clusters to DRT operating zones, (b) how well clusters capture distinct travel demand patterns, and (c) the differences in the number and length of the OD pairs making up each cluster.
+To better interpret the clustering results, we examine the internal homogeneity of OD flows within each cluster, focusing on trip direction and length (@fig-cluster-homogeneity). Greater homogeneity suggests that a DRT service could pool passengers more effectively, as trips follow similar spatial patterns.
 
-@fig-cluster-stats-1 compares the urban/rural coverage of each cluster before and after excluding areas overlapping with the high-frequency bus network (step 3 in @fig-workflow). The extracted DRT operating zones cover less urban area than the original clusters, as most of the urban core is already served by high-frequency bus routes. Since these operating zones are designed to integrate with the existing network, limiting DRT service to the urban periphery helps prevent competition with fixed-route PT. This also improves service efficiency, as smaller coverage areas are easier for a DRT fleet to serve effectively.
+Several clusters, such as 4 and 5, show strong directional alignment and low variation in trip length. These clusters are made up of short OD flows with consistent bearings, indicating tightly grouped demand likely to support more direct services. In contrast, clusters with longer OD flows—such as 1, 2, and 7—exhibit greater directional variance, partly due to the normalisation in the flow distance metric (@eq-fds), which can group dissimilar long-distance flows together.
 
-Clusters also differ in their composition, as shown in @fig-cluster-stats-2. Some clusters (e.g. Cluster 8) contain many OD pairs with low trip volumes, while others (e.g. Cluster 3) have fewer OD pairs with higher volumes. The cluster composition, alongside spatial extent, informs the type of DRT service [@d1994demand] suited for each zone. Clusters with a small number of high-demand OD pairs may benefit from more direct services, while those with many low-demand OD pairs are better suited to flexible, many-to-many operations. Clusters with mixed OD characteristics may require multiple DRT fleets with different operational models.
+This analysis offers a way to assess the operational potential of each cluster based on the consistency of travel patterns they contain. Clusters with more homogeneous OD flows may be better suited to pooled DRT operations, whereas those with more internal variation will require greater operating flexibility and may struggle to pool demand as efficiently.
 
-@fig-cluster-stats-3 illustrates internal homogeneity of OD flows within each cluster by examining OD bearings and distances. Such homogeneity is key to our objective of capturing spatial concentrations of travel demand. Most clusters exhibit directional consistency, with OD flows following similar bearings. Clusters with shorter distance OD flows (e.g., 4 and 5) show low circular variance, with demand more tightly clustered at both endpoints. In contrast, clusters with longer distance OD flows (e.g., 1, 2, and 7) show more variance in directionality, as seen in @fig-cluster-scenario-3. This is due to the distance metric ([@eq-fds]), which normalizes distances by OD length, making longer flows appear closer than shorter ones.
-
-<!-- ::: {#fig-cluster-stats layout-ncol="2"} -->
-
-<!-- ![Classification of areas covered by each cluster and the DRT zone extracted from it](images/figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_3_length_50000.png){#fig-cluster-stats-1 width="300"} -->
-
-<!-- ![Total commuters on the different OD pairs making up each cluster](images/figure_scatter_commuters_color_speed_facet_cluster_scenario_3_length_50000.png){#fig-cluster-stats2 width="300"} -->
-
-<!-- Cluster statistics -->
-
-<!-- ::: -->
-
+<!--# 
 ::: {#fig-cluster-stats layout="[[1,1], [1]]"}
 ![Classification of areas covered by each cluster and the DRT zone extracted from it](images/figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_3_length_50000.png){#fig-cluster-stats-1 width="30%"}
 
@@ -412,6 +401,9 @@ Clusters also differ in their composition, as shown in @fig-cluster-stats-2. Som
 
 Cluster statistics
 :::
+-->
+
+![Distribution of trips (weighted OD pairs) in each cluster. Each column shows the bearing and length composition of a cluster. This includes histograms of the number of trips (weighted OD pairs) in each (30 degree) bearing range (x-axis). The trips are also faceted by length ranges (10km each)](images/figure_bar_bearing_y_commuters_facet_grid_cluster_distance_3_length_50000.png){#fig-cluster-homogeneity fig-align="center" width="85%"}
 
 ### Aggregate result and temporal dimension {#sec-clusters-temporal}
 

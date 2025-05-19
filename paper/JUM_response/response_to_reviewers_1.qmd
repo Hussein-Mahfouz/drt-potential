@@ -176,7 +176,7 @@ To overcome the issue of scale associated with OD flows of various lengths, the 
 
 To address the challenges of clustering OD flows of varying lengths, several research directions could be pursued. One approach is to improve the current distance metric by applying transformations that reduce the influence of OD length—such as log transformations to the denominator of the similarity function. Incorporating a parameter that explicitly represents OD flow bearing could also help minimise circular variance within clusters. An alternative direction is to use different distance metrics altogether. For example, the Fréchet distance [@eiter1994computing] could be applied, as it measures the similarity between curves by identifying the minimum “leash” length required to traverse them simultaneously. Another strategy is to explore clustering at different scales, rather than modifying the distance metric itself. This could involve partitioning the data by OD length and running DBSCAN separately for each group. Alternatively, algorithms such as HDBSCAN [@tao2017flowhdbscan] or OPTICS [@fang2021adaptive] may be better suited to this task. These methods are capable of detecting clusters at multiple scales and can extract clusters of different lengths without requiring manual distance normalization.
 
-## Reviewer comment:
+## Statistical representativeness of the mobile data sample
 
 > “What is the statistical representativeness of the mobile data sample? How do you guarantee the allocation of those signs to road and rail have a reliable accuracy? What you have from mobile signs is the density of signals, so what methodology was performed to guarantee that the average number of trips is reliable and how can you assure it is a reliable sample of all the population?”
 
@@ -212,6 +212,50 @@ The origin–destination matrices used in this analysis are derived from the GB 
 Trips are inferred from sequences of handover events (signal transfers between mobile cells) and dwell periods (extended time spent in one location). Trips are assigned to origin and destination zones based on users’ repeated activity patterns. <!--# Trips are classified as road or rail using spatial and temporal rules, including distance to stations, journey time, and mobile cell metadata.--> While no mobile dataset is error-free, the GBTD methodology offers a robust foundation for our OD analysis, and has been used in a study to generate activity patterns for an agent-based simulation [@franco2020demand].
 
 For this study, we requested OD data for 2019 from Connected Places Catapult, covering all motorised road and rail trips in Great Britain. The request specified a date range and a zoning system based on MSOA boundaries (subject to a cap on the number of zones permitted). The resulting dataset provides the average number of trips between each zone pair, disaggregated by hour of day and weekday/weekend. To simplify the analysis, we aggregate the data into five broad time periods: 5–8am, 8–11am, 11am–2pm, 2–5pm, and 5–8pm. However, the clustering method is compatible with other temporal resolutions and could be applied at finer levels where needed.
+
+## Results section is too long
+
+> Section 4: I would suggest to try to reduce the length and the number of images. Keep only the ones that add value to the written information.
+
+### Response
+
+Thank you for the feedback. We have shortened the section by removing visuals and editing text. Figure 6 was a facet with 3 sub figures. We have removed figure 6a and 6b as well as the text describing them
+
+### Edits made
+
+**Original**
+
+*Examination of clusters*
+
+To better interpret the clustering results, we examine their spatial coverage, demand composition, and internal homogeneity (@fig-cluster-stats). This analysis helps assess (a) the effect of transforming clusters to DRT operating zones, (b) how well clusters capture distinct travel demand patterns, and (c) the differences in the number and length of the OD pairs making up each cluster.
+
+@fig-cluster-stats-1 compares the urban/rural coverage of each cluster before and after excluding areas overlapping with the high-frequency bus network (step 3 in @fig-workflow). The extracted DRT operating zones cover less urban area than the original clusters, as most of the urban core is already served by high-frequency bus routes. Since these operating zones are designed to integrate with the existing network, limiting DRT service to the urban periphery helps prevent competition with fixed-route PT. This also improves service efficiency, as smaller coverage areas are easier for a DRT fleet to serve effectively.
+
+Clusters also differ in their composition, as shown in @fig-cluster-stats-2. Some clusters (e.g. Cluster 8) contain many OD pairs with low trip volumes, while others (e.g. Cluster 3) have fewer OD pairs with higher volumes. The cluster composition, alongside spatial extent, informs the type of DRT service [@d1994demand] suited for each zone. Clusters with a small number of high-demand OD pairs may benefit from more direct services, while those with many low-demand OD pairs are better suited to flexible, many-to-many operations. Clusters with mixed OD characteristics may require multiple DRT fleets with different operational models.
+
+@fig-cluster-stats-3 illustrates internal homogeneity of OD flows within each cluster by examining OD bearings and distances. Such homogeneity is key to our objective of capturing spatial concentrations of travel demand. Most clusters exhibit directional consistency, with OD flows following similar bearings. Clusters with shorter distance OD flows (e.g., 4 and 5) show low circular variance, with demand more tightly clustered at both endpoints. In contrast, clusters with longer distance OD flows (e.g., 1, 2, and 7) show more variance in directionality, as seen in @fig-cluster-scenario-3. This is due to our distance metric ([@eq-fds]), which normalizes distances by OD length, making longer flows appear closer than shorter ones.
+
+::: {#fig-cluster-stats layout="[[1,1], [1]]"}
+![Classification of areas covered by each cluster and the DRT zone extracted from it](../images/figure_bar_urban_rural_compare_filter_no_filter_facet_cluster_scenario_3_length_50000.png){#fig-cluster-stats-1 width="45%"}
+
+![Total trips on the different OD pairs making up each cluster](../images/figure_scatter_commuters_facet_cluster_scenario_3_length_50000.png){#fig-cluster-stats-2 width="45%"}
+
+![Distribution of trips (weighted OD pairs) in each cluster. Each column shows the bearing and length composition of a cluster. This includes histograms of the number of trips (weighted OD pairs) in each (30 degree) bearing range (x-axis). The trips are also faceted by length ranges (10km each)](../images/figure_bar_bearing_y_commuters_facet_grid_cluster_distance_3_length_50000.png){#fig-cluster-stats-3 width="90%"}
+
+Cluster statistics
+:::
+
+**Edited**
+
+*Examination of cluster homogeneity*
+
+To better interpret the clustering results, we examine the internal homogeneity of OD flows within each cluster, focusing on trip direction and length (@fig-cluster-homogeneity). Greater homogeneity suggests that a DRT service could pool passengers more effectively, as trips follow similar spatial patterns.
+
+Several clusters, such as 4 and 5, show strong directional alignment and low variation in trip length. These clusters are made up of short OD flows with consistent bearings, indicating tightly grouped demand likely to support more direct services. In contrast, clusters with longer OD flows—such as 1, 2, and 7—exhibit greater directional variance, partly due to the normalisation in the flow distance metric (@eq-fds), which can group dissimilar long-distance flows together.
+
+This analysis offers a way to assess the operational potential of each cluster based on the consistency of travel patterns they contain. Clusters with more homogeneous OD flows may be better suited to pooled DRT operations, whereas those with more internal variation will require greater operating flexibility and may struggle to pool demand as efficiently.
+
+![Distribution of trips (weighted OD pairs) in each cluster. Each column shows the bearing and length composition of a cluster. This includes histograms of the number of trips (weighted OD pairs) in each (30 degree) bearing range (x-axis). The trips are also faceted by length ranges (10km each)](../images/figure_bar_bearing_y_commuters_facet_grid_cluster_distance_3_length_50000.png){#fig-cluster-homogeneity fig-align="center" width="85%"}
 
 # Reviewer 2
 
