@@ -4,6 +4,7 @@
 library(tidyverse)
 library(sf)
 #library(lwgeom)
+library(ggridges)
 
 
 ########## ----------------------- Read in the data ----------------------- ##########
@@ -37,6 +38,9 @@ od_demand = od_demand %>%
 # ----- Option 1: All OD pairs
 od_demand_1 <- od_demand
 
+# TODO: add use_zero_speed option (as done for demand). percentiles are skewed by
+# 0 values
+
 # ----- Option 2: OD pairs with poor PT supply (many transfers or low travel speed)
 od_demand_2 <- od_demand %>%
   # transfers - NA transfers means there is no option to go by bus
@@ -45,11 +49,36 @@ od_demand_2 <- od_demand %>%
 
 # ----- Option 3: OD pairs with poor PT supply and low potential demand
 # get percentiles
-od_demand_3 <- od_demand %>%
-  mutate(demand_route_percentile = percent_rank(potential_demand_equal_split),
-         demand_route_percentile_fct = cut(demand_route_percentile,
-                                           breaks = seq(0, 1, by = 0.25),
-                                           include.lowest = TRUE))
+
+# decide whether percentiles take into account all OD pairs or only non-zero demand
+use_zero_demand <- TRUE
+
+if(use_zero_demand) {
+  # keep all OD pairs
+  od_demand_3 <- od_demand %>%
+    mutate(demand_route_percentile = percent_rank(potential_demand_equal_split),
+           demand_route_percentile_fct = cut(demand_route_percentile,
+                                             breaks = seq(0, 1, by = 0.25),
+                                             include.lowest = TRUE))
+} else {
+  # remove zero demand
+  od_demand_3 <- od_demand %>%
+    mutate(
+      demand_route_percentile = {
+        tmp <- potential_demand_equal_split
+        ranks <- rep(0, length(tmp))  # Initialise all to 0
+        non_zero <- tmp > 0
+        ranks[non_zero] <- percent_rank(tmp[non_zero])
+        ranks
+      },
+      demand_route_percentile_fct = cut(
+        demand_route_percentile,
+        breaks = seq(0, 1, by = 0.25),
+        include.lowest = TRUE
+      )
+    )
+}
+
 
 # od_filtered: keeps od pairs in od_demand_poor_Supply that have low pd on routes
 od_demand_3 <- od_demand_3 %>%
@@ -86,127 +115,116 @@ st_write(od_demand_scenarios, paste0("data/interim/travel_demand/", geography, "
 
 
 
-#
-#
-#
-# # ---------------------- plot distributions
-#
-# plots_path <- "data/processed/plots/eda/speed_demand_cutoffs/"
-#
-# # ---------- SPEED
-#
-# # histogram
-#
-# od_demand_filtered %>%
-#   #mutate(speed_kph = replace_na(speed_kph, 0)) %>%
-#   ggplot(aes(x = speed_kph)) +
-#   geom_histogram(binwidth = 1, alpha = 0.8) +
-#   labs(title = "Average speeds between ODs using PT",
-#        subtitle = "All reachable OD pairs",
-#        x = "Speed (kph)",
-#        y = "No. of OD pairs")
-#
-# ggsave(filename = paste0(plots_path, "plot_hist_speeds_reachable_od.png"))
-#
-#
-#
-# # histogram: Keep speed_kph = NA (replace with 0)
-#
-# od_demand_filtered %>%
-#   mutate(speed_kph = replace_na(speed_kph, 0)) %>%
-#   ggplot(aes(x = speed_kph)) +
-#   geom_histogram(binwidth = 1, alpha = 0.8) +
-#   labs(title = "Average speeds between ODs using PT",
-#        subtitle = "All OD pairs",
-#        x = "Speed (kph)",
-#        y = "No. of OD pairs")
-#
-# ggsave(filename = paste0(plots_path, "plot_hist_speeds_all_od.png"))
-#
-# # density plot: facet by demand percentile
-#
-# od_demand_filtered %>%
-#   ggplot(aes(x=speed_kph, y=demand_percentile_fct, fill = factor(stat(quantile)))) +
-#   stat_density_ridges(
-#     geom = "density_ridges_gradient", calc_ecdf = TRUE,
-#     quantiles = 4, quantile_lines = TRUE
-#   ) +
-#   scale_fill_brewer(name = "Quartiles") +
-#   labs(title = "Average speeds between ODs using PT",
-#        subtitle = "All reachable OD pairs",
-#        x = "Speed (kph)",
-#        y = "Travel demand on busiest route\nserving OD pair (percentiles)")
-#
-# ggsave(filename = paste0(plots_path, "plot_dens_speeds_facet_demand_all_od.png"))
-#
-# # density plot: facet by demand percentile: Keep speed_kph = NA (replace with 0)
-#
-# od_demand_filtered %>%
-#   mutate(speed_kph = replace_na(speed_kph, 0)) %>%
-#   ggplot(aes(x=speed_kph, y=demand_percentile_fct, fill = factor(stat(quantile)))) +
-#   stat_density_ridges(
-#     geom = "density_ridges_gradient", calc_ecdf = TRUE,
-#     quantiles = 4, quantile_lines = TRUE
-#   ) +
-#   scale_fill_brewer(name = "Quartiles") +
-#   labs(title = "Average speeds between ODs using PT",
-#        subtitle = "All OD pairs",
-#        x = "Speed (kph)",
-#        y = "Potential demand on busiest route\nserving OD pair (percentiles)")
-#
-# ggsave(filename = paste0(plots_path, "plot_dens_speeds_facet_demand_reachable_od.png"))
-#
-#
-# # ---------- DEMAND (potential_demand_equal_split)
-#
-# # histogram
-#
-# od_demand_filtered %>%
-#   #mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0)) %>%
-#   ggplot(aes(x = potential_demand_equal_split)) +
-#   geom_histogram(bins = 25, alpha = 0.8) +
-#   labs(title = "Potential demand on busiest\nPT route serving OD pair",
-#        subtitle = "All reachable OD pairs",
-#        x = "Potential demand (no. of passengers)",
-#        y = "No. of OD pairs")
-#
-# ggsave(filename = paste0(plots_path, "plot_hist_demand_reachable_od.png"))
-#
-#
-# # histogram: facet by demand percentile
-# od_demand_filtered %>%
-#   #mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0)) %>%
-#   filter(!is.na(speed_percentile_fct)) %>%
-#   ggplot(aes(x = potential_demand_equal_split)) +
-#   geom_histogram(binwidth = 1000, alpha = 0.8) +
-#   labs(title = "Potential demand on busiest\nPT route serving OD pair",
-#        subtitle= "Facet = speed percentiles",
-#        x = "Potential demand (no. of passengers)",
-#        y = "No. of OD pairs") +
-#   facet_wrap(vars(speed_percentile_fct), nrow = 2)
-#
-# ggsave(filename = paste0(plots_path, "plot_hist_demand_facet_speed_reachable_od.png"))
-#
-# # density plot: facet by demand percentile
-#
-# od_demand_filtered %>%
-#   mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0)) %>%
-#   filter(!is.na(speed_percentile_fct)) %>%
-#          ggplot(aes(x=potential_demand_equal_split, y=speed_percentile_fct, fill = factor(stat(quantile)))) +
-#   stat_density_ridges(
-#     geom = "density_ridges_gradient", calc_ecdf = TRUE,
-#     quantiles = 4, quantile_lines = TRUE
-#   ) +
-#   scale_fill_brewer(name = "Quartiles") +
-#   labs(title = "Potential demand on busiest\nPT route serving OD pair",
-#        x = "Potential demand (no. of passengers)",
-#        y = "Speed percentiles")
-#
-# ggsave(filename = paste0(plots_path, "plot_dens_demand_facet_speeds_all_od.png"))
-#
-#
-# # density plot: facet by demand percentile: Keep potential_demand_equal_split = NA (replace with 0)
-#
+
+# ------------------------------------------------------------------------------
+# Plot distributions of speed and demand percentiles under two conditions:
+# 1. All OD pairs: speed and demand percentiles calculated using all OD pairs
+# 2. Non-zero speed and demand: speed and demand percentiles calculated using
+#    only non-zero speed and demand OD pairs. All zero speed and demand OD pairs
+#    are assigned a percentile of 0.
+# ------------------------------------------------------------------------------
+
+plots_path <- "data/processed/plots/eda/speed_demand_cutoffs/temporal/"
+
+# ---------- SPEED
+
+# histogram of speed percentile:
+      # Keep speed_kph = NA (replace with 0).
+      # Facet: combination
+
+
+od_demand %>%
+  mutate(speed_kph = replace_na(speed_kph, 0)) %>%
+  ggplot(aes(x = speed_kph, fill = speed_percentile_fct)) +
+  geom_histogram(binwidth = 1, alpha = 0.8) +
+  labs(title = "Distribution of speeds between ODs using PT", subtitle = "All OD pairs (Zero implies no PT connection)",
+       x = "Speed (kph)",
+       y = "No. of OD pairs",
+       fill = "Speed \nPercentile") +
+  facet_wrap(vars(combination)) +
+  theme(legend.position = "bottom")
+
+
+ggsave(filename = paste0(plots_path, "plot_speed_perc_facet_combination_all_ods.png"),
+       width = 8, dpi = 600)
+
+# histogram of speed percentile:
+      # Remove speed = NA or speed = 0 (unreachable).
+      # Facet: combination
+
+
+od_demand %>%
+  mutate(speed_kph = replace_na(speed_kph, 0)) %>%
+  filter(speed_kph != 0) %>%
+  ggplot(aes(x = speed_kph, fill = speed_percentile_fct)) +
+  geom_histogram(binwidth = 0.2, alpha = 0.8) +
+  labs(title = "Average speeds between ODs using PT", subtitle = "Non-zero OD pairs (All OD pairs with viable PT connection",
+       x = "Speed (kph)",
+       y = "No. of OD pairs",
+       fill = "Speed \nPercentile") +
+  facet_wrap(vars(combination)) +
+  theme(legend.position = "bottom")
+
+ggsave(filename = paste0(plots_path, "plot_speed_perc_facet_combination_reachable_ods.png"),
+       width = 8, dpi = 600)
+
+
+
+
+# ---------- DEMAND (potential_demand_equal_split)
+
+# histogram of demand percentile:
+      # Keep potential_demand_equal_split = NA (replace with 0).
+      # Facet: combination
+
+od_demand %>%
+  mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0),
+         demand_route_percentile = percent_rank(potential_demand_equal_split),
+         demand_route_percentile_fct = cut(demand_route_percentile,
+                                           breaks = seq(0, 1, by = 0.25),
+                                           include.lowest = TRUE)) %>%
+  ggplot(aes(x = potential_demand_equal_split, fill = demand_route_percentile_fct)) +
+  geom_histogram(binwidth = 25, alpha = 0.8) +
+  labs(title = "Potential demand on busiest PT route serving OD pair",
+       subtitle = "Zero implies no direct PT connection",
+       x = "Potential demand (no. of passengers)",
+       y ="No. of OD pairs",
+       fill = "Demand \npercentile",
+       caption = "NOTE: demand percentile is based on demand of busiest route that directly serves OD pair") +
+  theme(legend.position = "bottom") +
+  facet_wrap(vars(combination))
+
+ggsave(filename = paste0(plots_path, "plot_demand_perc_facet_combination_all_ods.png"),
+       width = 8, dpi = 600)
+
+# histogram of demand percentile:
+      # Remove potential_demand_equal_split = NA or potential_demand_equal_split = 0 (unreachable).
+      # Facet: combination
+
+od_demand %>%
+  mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0)) %>%
+  filter(potential_demand_equal_split != 0) %>%
+  mutate(demand_route_percentile = percent_rank(potential_demand_equal_split),
+         demand_route_percentile_fct = cut(demand_route_percentile,
+                                     breaks = seq(0, 1, by = 0.25),
+                                     include.lowest = TRUE)) %>%
+  ggplot(aes(x = potential_demand_equal_split, fill = demand_route_percentile_fct)) +
+  geom_histogram(binwidth = 50, alpha = 0.8) +
+  labs(title = "Potential demand on busiest PT route serving OD pair",
+       subtitle = "Zero implies no direct PT connection",
+       x = "Potential demand (no. of passengers)",
+       y ="No. of OD pairs",
+       fill = "Demand percentile",
+       caption = "NOTE: demand percentile is based on demand of busiest route that directly serves OD pair") +
+  theme(legend.position = "bottom") +
+  facet_wrap(vars(combination))
+
+ggsave(filename = paste0(plots_path, "plot_demand_perc_facet_combination_reachable_ods.png"),
+       width = 8, dpi = 600)
+
+
+
+
 
 
 
@@ -222,8 +240,6 @@ st_write(od_demand_scenarios, paste0("data/interim/travel_demand/", geography, "
 # meet the criteria for each combination of cutoffs. This should help us
 # understand the impact of these cutoffs on the number of OD pairs retained.
 # ------------------------------------------------------------------------------
-
-plots_path <- "data/processed/plots/eda/speed_demand_cutoffs/temporal/"
 
 # ------------------------------------------------------------------------------
 # Function to filter OD demand and return number of rows meeting criteria
@@ -315,7 +331,7 @@ get_sensitivity_results <- function(speed_method = c("all", "nonzero_only"),
       n_filtered = filter_od_demand(speed_cutoff, demand_cutoff, od_demand,
                                     speed_percentile_method = speed_method,
                                     demand_percentile_method = demand_method),
-      pct_filtered = round(n_filtered / total_od_pairs * 100, 1)
+      pct_filtered = round(n_filtered / total_od_pairs * 100)
     ) %>%
     ungroup()
 }
@@ -411,40 +427,43 @@ ggplot(results_all_all, aes(x = speed_cutoff, y = demand_cutoff, fill = pct_filt
   geom_tile(color = "white",
             lwd = 0.2,
             linetype = 1) +
-  geom_text(aes(label = pct_filtered), color = "white", size = 2) +
-  #scale_fill_gradientn(colors = hcl.colors(5, "RdYlGn")) +
+  geom_text(aes(label = pct_filtered), color = "white", size = 1.8) +
+  scale_fill_gradientn(colors = hcl.colors(5, "RdYlGn")) +
   coord_fixed() +
   labs(
     title = "Sensitivity Analysis of OD Filtering",
-    subtitle = "OD pairs retained at different speed and demand percentile cutoffs",
+    subtitle = "OD pairs retained at different speed \nand demand percentile cutoffs",
     x = "Speed Cutoff (Percentile)",
     y = "Demand Cutoff (Percentile)",
-    fill = "% of OD pairs\n filtered",
+    fill = "% of OD pairs\n retained",
     caption = "Note: Percentiles are calculated based on the entire dataset, \nincluding zero-demand and zero-speed OD pairs."
-  )# +
- # theme(plot.caption = element_text(size = 6))
+  )  +
+  theme(legend.position = "bottom",
+        plot.caption = element_text(hjust = 0, size = 6))
 
 ggsave(filename = paste0(plots_path, "sensitivity_analysis_heatmap_all_all.png"),
-       width = 8, dpi = 600)
+       width = 5, dpi = 600)
 
 
 ggplot(results_both_nonzero, aes(x = speed_cutoff, y = demand_cutoff, fill = pct_filtered)) +
   geom_tile(color = "white",
             lwd = 0.2,
             linetype = 1) +
-  geom_text(aes(label = pct_filtered), color = "white", size = 2) +
- # scale_fill_gradientn(colors = hcl.colors(5, "RdYlGn")) +
+  geom_text(aes(label = pct_filtered), color = "white", size = 1.8) +
+  scale_fill_gradientn(colors = hcl.colors(5, "RdYlGn")) +
   coord_fixed() +
   labs(
     title = "Sensitivity Analysis of OD Filtering",
-    subtitle = "OD pairs retained at different speed and demand percentile cutoffs",
+    subtitle = "OD pairs retained at different speed \nand demand percentile cutoffs",
     x = "Speed Cutoff (Percentile)",
     y = "Demand Cutoff (Percentile)",
-    fill = "% of OD pairs\n filtered",
-    caption = "Note: Percentiles are calculated based on non-zero OD pairs only. \nZero-demand and zero-speed OD pairs are added retroactively with percentile = 0"
-  )
+    fill = "% of OD pairs\n retained",
+    caption = "Note: Percentiles are calculated based on non-zero OD pairs only. \nZero-demand and zero-speed OD pairs are added retroactively \nwith percentile = 0"
+  ) +
+  theme(legend.position = "bottom",
+        plot.caption = element_text(hjust = 0, size = 6))
 
 ggsave(filename = paste0(plots_path, "sensitivity_analysis_heatmap_both_nonzero.png"),
-       width = 8, dpi = 600)
+       width = 5, dpi = 600)
 
 
