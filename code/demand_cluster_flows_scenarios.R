@@ -56,13 +56,16 @@ use_zero_demand <- TRUE
 if(use_zero_demand) {
   # keep all OD pairs
   od_demand_3 <- od_demand %>%
+    group_by(combination) %>%
     mutate(demand_route_percentile = percent_rank(potential_demand_equal_split),
            demand_route_percentile_fct = cut(demand_route_percentile,
                                              breaks = seq(0, 1, by = 0.25),
-                                             include.lowest = TRUE))
+                                             include.lowest = TRUE)) %>%
+    ungroup()
 } else {
   # remove zero demand
   od_demand_3 <- od_demand %>%
+    group_by(combination) %>%
     mutate(
       demand_route_percentile = {
         tmp <- potential_demand_equal_split
@@ -76,7 +79,8 @@ if(use_zero_demand) {
         breaks = seq(0, 1, by = 0.25),
         include.lowest = TRUE
       )
-    )
+    ) %>%
+    ungroup()
 }
 
 
@@ -158,7 +162,7 @@ od_demand %>%
   filter(speed_kph != 0) %>%
   ggplot(aes(x = speed_kph, fill = speed_percentile_fct)) +
   geom_histogram(binwidth = 0.2, alpha = 0.8) +
-  labs(title = "Average speeds between ODs using PT", subtitle = "Non-zero OD pairs (All OD pairs with viable PT connection",
+  labs(title = "Average speeds between ODs using PT", subtitle = "Non-zero OD pairs (All OD pairs with viable PT connection)",
        x = "Speed (kph)",
        y = "No. of OD pairs",
        fill = "Speed \nPercentile") +
@@ -178,11 +182,13 @@ ggsave(filename = paste0(plots_path, "plot_speed_perc_facet_combination_reachabl
       # Facet: combination
 
 od_demand %>%
+  group_by(combination) %>%
   mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0),
          demand_route_percentile = percent_rank(potential_demand_equal_split),
          demand_route_percentile_fct = cut(demand_route_percentile,
                                            breaks = seq(0, 1, by = 0.25),
                                            include.lowest = TRUE)) %>%
+  ungroup() %>%
   ggplot(aes(x = potential_demand_equal_split, fill = demand_route_percentile_fct)) +
   geom_histogram(binwidth = 25, alpha = 0.8) +
   labs(title = "Potential demand on busiest PT route serving OD pair",
@@ -202,16 +208,18 @@ ggsave(filename = paste0(plots_path, "plot_demand_perc_facet_combination_all_ods
       # Facet: combination
 
 od_demand %>%
+  group_by(combination) %>%
   mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0)) %>%
   filter(potential_demand_equal_split != 0) %>%
   mutate(demand_route_percentile = percent_rank(potential_demand_equal_split),
          demand_route_percentile_fct = cut(demand_route_percentile,
                                      breaks = seq(0, 1, by = 0.25),
                                      include.lowest = TRUE)) %>%
+  ungroup() %>%
   ggplot(aes(x = potential_demand_equal_split, fill = demand_route_percentile_fct)) +
   geom_histogram(binwidth = 50, alpha = 0.8) +
   labs(title = "Potential demand on busiest PT route serving OD pair",
-       subtitle = "Zero implies no direct PT connection",
+       subtitle = "Non-zero OD pairs (All OD pairs with viable PT connection)",
        x = "Potential demand (no. of passengers)",
        y ="No. of OD pairs",
        fill = "Demand percentile",
@@ -268,6 +276,7 @@ filter_od_demand <- function(speed_cutoff, demand_cutoff, od_data,
   demand_percentile_method <- match.arg(demand_percentile_method)
 
   od_data <- od_data %>%
+    group_by(combination) %>%
     mutate(
       # Compute demand percentile
       demand_route_percentile = case_when(
@@ -292,7 +301,8 @@ filter_od_demand <- function(speed_cutoff, demand_cutoff, od_data,
           ranks
         }
       )
-    )
+    ) %>%
+    ungroup()
 
   od_data %>%
     filter(
