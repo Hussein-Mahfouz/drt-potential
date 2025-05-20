@@ -169,13 +169,13 @@ For this study, we requested OD data for 2019 from Connected Places Catapult, co
 
 Our OD data is aggregated at the Middle Super Output Area (MSOA) level, a geographical unit defined by the Office for National Statistics (ONS) that represents areas with populations of 5,000–15,000 people. Our study area, Leeds, is divided into 107 MSOAs. However, this aggregation level is too coarse for our clustering analysis. To address this, we apply jittering [@lovelace2022jittering] to disaggregate OD pairs with high traveller counts into multiple smaller OD pairs. The start and end points of the new ODs are constrained to their original MSOAs, but are snapped probabilistically to subzones of $100m^2$ based on the population density distribution within each MSOA. A disaggregation threshold ensures no OD pair exceeds 100 people.
 
-## Preparing input data for clustering
+## Preparing input data for clustering {#sec-methods-filtering-ods}
 
 After disaggregating the OD trip data, we need to decide which OD pairs to use for clustering. If we were to pass all OD pairs to the algorithm, then our clusters may include noise from OD pairs that are well served by public transport. We would also generate DRT zones that serve all demand, whereas our objective is to propose DRT zones that complement bus routes and fill the gaps in the bus network, as explained in @sec-lit-service-areas. We identify gaps in public transport service provision by trying two different inputs: (1) OD pairs with poor public transport supply ($OD_s$) , and (2) OD pairs with poor public transport supply and low potential demand ($OD_{sd}$).
 
 $OD_s$ is meant to suggest DRT zones that complement the existing bus network by only including the OD demand that is not well served by said network, as explained in @sec-method-transport-supply. $OD_{sd}$ is similar, but also excludes OD pairs that could be served by a better bus service. This exclusion is based on criteria explained in @sec-method-transport-demand. The workflow for the supply and demand analysis is shown in @fig-flowchart-scenarios. The number of OD pairs in each approach is shown in @tbl-od_pairs_scenarios.
 
-![Flowchart for determining input to clustering algorithm](images/flowchart_od_potential_demand.png){#fig-flowchart-scenarios}
+![Flowchart for determining input to clustering algorithm](images/flowchart_od_potential_demand_2.png){#fig-flowchart-scenarios}
 
 ### Supply analysis {#sec-method-transport-supply}
 
@@ -185,7 +185,7 @@ A supply analysis is carried out to determine the OD pairs that are included in 
 
 [^3]: https://data.atoc.org/
 
-The OSM road network and timetable data are fed into a multimodal routing engine [@pereira2021r5r] to calculate travel time between zones. Euclidean distance between an OD pair is used to calculate travel speed. OD pairs with speed below the 50th percentile or that require more than one transfer to be reached by public transport are considered to have poor supply.
+The OSM road network and timetable data are fed into a multimodal routing engine [@pereira2021r5r] to calculate travel time between zones. Euclidean distance between an OD pair is used to calculate travel speed. OD pairs with speed below a defined speed cutoff threshold or that require more than one transfer to be reached by public transport are considered to have poor supply. We use the 50th percentile of OD speeds as our threshold, but the distribution of OD speeds is shown in @sec-appendix-sensitivity.
 
 ### Demand analysis {#sec-method-transport-demand}
 
@@ -195,9 +195,9 @@ To calculate potential demand on each public transport route, we followed a thre
 
 [^4]: Demand is distributed between the common lines (routes) in proportion to the frequency of each route
 
-We then excluded OD pairs from our target set $OD_{sd}$ if the potential demand on the busiest direct route serving them exceeded the 75th percentile of route demand (see @fig-flowchart-scenarios). OD pairs with high potential demand are not included in $OD_{sd}$ as there is sufficient demand to justify a high frequency bus route, even if one does not currently exist. The heuristic for calculating potential demand allows us to avoid serving areas with DRT just because there is poor public transport supply; there must also be insufficient demand to warrant a high frequency bus route.
+We then excluded OD pairs from our target set $OD_{sd}$ if the potential demand on the busiest direct route serving them exceeded our route demand threshold (see @fig-flowchart-scenarios). OD pairs with high potential demand are not included in $OD_{sd}$ as there is sufficient demand to justify a high frequency bus route, even if one does not currently exist. The heuristic for calculating potential demand allows us to avoid serving areas with DRT just because there is poor public transport supply; there must also be insufficient demand to warrant a high frequency bus route.
 
-Setting the threshold at $p75$ implies that service on the top 25% of routes in terms of potential demand will be improved so that they are all high-frequency routes. In reality, this % could be edited based on the budget available for additional buses.
+We set a threshold of $p75$ which implies that service on the top 25% of routes in terms of potential demand is sufficient to warrant higher-frequency routes and should not be part of our DRT analysis. In reality, this % could be edited based on the budget available for additional buses or operator figures on the demand necessary to provide a service with a certain headway. @sec-appendix-sensitivity shows the number of OD pairs retained for different supply and demand thresholds.
 
 :::: columns
 ::: {#tbl-od_pairs_scenarios .column width="90%"}
@@ -488,3 +488,17 @@ The approach can be adopted by practitioners in early stage strategic planning o
 \pagebreak
 
 # References
+
+\pagebreak
+
+# Appendix A: Sensitivity analysis for speed and demand thresholds {#sec-appendix-sensitivity}
+
+In @sec-methods-filtering-ods, we filter ODs based on supply and demand thresholds. Below we show the distribution plots and sensitivity analysis that are used to inform these thresholds. For the speed and demand distributions (Figure @fig-speed-pct-distribution and @fig-demand-pct-distribution), we do not include OD pairs with 0 values (OD pairs with no PT connection) as these dominate the distribution and skew the percentile results.
+
+The sensitivity analysis (Figure @fig-sensitivity-demand-speed) shows the number of OD pairs retained at different speed and demand thresholds. <!--# The analysis is based on the morning peak period, but similar results were obtained for other time periods. --> We can see that 60% of OD pairs are retained no matter how low our threshold is set. These OD pairs have no direct PT connection and so their values for speed and demand are 0. The number of OD pairs retained is more sensitive to the speed cutoff threshold than the demand cutoff threshold.
+
+![Distribution of speed values, faceted by time of day](images/plot_speed_perc_facet_combination_reachable_ods.png){#fig-speed-pct-distribution}
+
+![Distribution of potential demand values, faceted by time of day.](images/plot_demand_perc_facet_combination_reachable_ods.png){#fig-demand-pct-distribution}
+
+![Sensitivity analysis showing the number of OD pairs retained at different speed and demand thresholds](images/sensitivity_analysis_heatmap_both_nonzero.png){#fig-sensitivity-demand-speed}

@@ -279,10 +279,10 @@ Thank you for the suggestion. We have included a sensitivity analysis in the app
 
 Regarding potential demand, the high threshold means that OD pairs with demand greater than the 75th percentile are worthy of a fixed route service instead of DRT. The high bar means that we may be including additional OD pairs that could be served by fixed-routes, not excluding. As you will see in the figure, we are currently using the majority of OD pairs in our analysis, as only ....
 
-![](images/plot_speed_perc_facet_combination_reachable_ods.png)
+![](images/plot_speed_perc_facet_combination_reachable_ods-01.png)
 
-![](images/plot_demand_perc_facet_combination_reachable_ods-01.png)
+![](images/plot_demand_perc_facet_combination_reachable_ods-02.png)
 
-![](images/sensitivity_analysis_heatmap_both_nonzero.png)
+![](images/sensitivity_analysis_heatmap_both_nonzero-01.png)
 
 # References
