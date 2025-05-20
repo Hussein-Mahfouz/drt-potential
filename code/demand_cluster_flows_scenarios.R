@@ -223,16 +223,18 @@ st_write(od_demand_scenarios, paste0("data/interim/travel_demand/", geography, "
 # understand the impact of these cutoffs on the number of OD pairs retained.
 # ------------------------------------------------------------------------------
 
+plots_path <- "data/processed/plots/eda/speed_demand_cutoffs/temporal/"
+
 # ------------------------------------------------------------------------------
 # Function to filter OD demand and return number of rows meeting criteria
 # ------------------------------------------------------------------------------
-filter_od_demand <- function(speed_cutoff, demand_cutoff, od_data,
-                             percentile_method = c("all", "nonzero_only")) {
 
-  percentile_method <- match.arg(percentile_method)
+filter_od_demand <- function(speed_cutoff, demand_cutoff, od_data,
+                             speed_percentile_method = c("all", "nonzero_only"),
+                             demand_percentile_method = c("all", "nonzero_only")) {
 
   # ----------------------------------------------------------------------------
-  # Add percentile ranks for potential demand using one of two methods:
+  # Add percentile ranks for potential demand / speed using one of two methods:
   # ----------------------------------------------------------------------------
   # 1. "all"           → Rank all OD pairs, including those with zero demand.
   #                      This spreads the full range of percentiles across all values.
@@ -246,12 +248,28 @@ filter_od_demand <- function(speed_cutoff, demand_cutoff, od_data,
   # ----------------------------------------------------------------------------
 
 
+  speed_percentile_method <- match.arg(speed_percentile_method)
+  demand_percentile_method <- match.arg(demand_percentile_method)
+
   od_data <- od_data %>%
     mutate(
+      # Compute demand percentile
       demand_route_percentile = case_when(
-        percentile_method == "all" ~ percent_rank(potential_demand_equal_split),
-        percentile_method == "nonzero_only" ~ {
+        demand_percentile_method == "all" ~ percent_rank(potential_demand_equal_split),
+        demand_percentile_method == "nonzero_only" ~ {
           tmp <- potential_demand_equal_split
+          ranks <- rep(0, length(tmp))
+          non_zero <- tmp > 0
+          ranks[non_zero] <- percent_rank(tmp[non_zero])
+          ranks
+        }
+      ),
+
+      # Compute speed percentile
+      speed_percentile = case_when(
+        speed_percentile_method == "all" ~ percent_rank(speed_kph),
+        speed_percentile_method == "nonzero_only" ~ {
+          tmp <- speed_kph
           ranks <- rep(0, length(tmp))
           non_zero <- tmp > 0
           ranks[non_zero] <- percent_rank(tmp[non_zero])
@@ -274,7 +292,7 @@ filter_od_demand <- function(speed_cutoff, demand_cutoff, od_data,
 # ------------------------------------------------------------------------------
 # Generate cutoff grid and calculate total OD pairs
 # ------------------------------------------------------------------------------
-cutoffs <- seq(0.30, 1.00, by = 0.05)
+cutoffs <- seq(0.05, 1.00, by = 0.05)
 total_od_pairs <- nrow(od_demand)
 
 sensitivity_grid <- expand.grid(
@@ -283,26 +301,39 @@ sensitivity_grid <- expand.grid(
 )
 
 # ------------------------------------------------------------------------------
-# Function to apply filter logic and generate results table for a given method
+# Function to apply filter logic and generate results table for a given pair of methods
 # ------------------------------------------------------------------------------
-get_sensitivity_results <- function(method = c("all", "nonzero_only")) {
-  method <- match.arg(method)
+
+get_sensitivity_results <- function(speed_method = c("all", "nonzero_only"),
+                                    demand_method = c("all", "nonzero_only")) {
+  speed_method <- match.arg(speed_method)
+  demand_method <- match.arg(demand_method)
 
   sensitivity_grid %>%
     rowwise() %>%
     mutate(
       n_filtered = filter_od_demand(speed_cutoff, demand_cutoff, od_demand,
-                                    percentile_method = method),
+                                    speed_percentile_method = speed_method,
+                                    demand_percentile_method = demand_method),
       pct_filtered = round(n_filtered / total_od_pairs * 100, 1)
     ) %>%
     ungroup()
 }
 
+
+
 # ------------------------------------------------------------------------------
 # Get results for both percentile methods
 # ------------------------------------------------------------------------------
-results_all <- get_sensitivity_results("all")
-results_nonzero <- get_sensitivity_results("nonzero_only")
+
+results_all_all <- get_sensitivity_results(speed_method = "all",
+                                           demand_method = "all")
+results_nonzero_demand <- get_sensitivity_results(speed_method = "all",
+                                                  demand_method = "nonzero_only")
+results_nonzero_speed <- get_sensitivity_results(speed_method = "nonzero_only",
+                                                 demand_method = "all")
+results_both_nonzero <- get_sensitivity_results(speed_method = "nonzero_only",
+                                                demand_method = "nonzero_only")
 
 # ------------------------------------------------------------------------------
 # Create label and percentage tables (wide format) for display
@@ -329,8 +360,23 @@ make_display_tables <- function(results_df) {
 }
 
 # Get formatted tables
-tables_all <- make_display_tables(results_all)
-tables_nonzero <- make_display_tables(results_nonzero)
+tables_all_all <- make_display_tables(results_all_all)
+tables_nonzero_demand <- make_display_tables(results_nonzero_demand)
+tables_nonzero_speed <- make_display_tables(results_nonzero_speed)
+tables_both_nonzero <- make_display_tables(results_both_nonzero)
+
+# save tables to CSV
+write_csv(tables_all_all$label, paste0(plots_path, "sensitivity_analysis_labels_all_all.csv"))
+write_csv(tables_all_all$pct, paste0(plots_path, "sensitivity_analysis_pct_all_all.csv"))
+
+write_csv(tables_nonzero_demand$label, paste0(plots_path, "sensitivity_analysis_labels_nonzero_demand.csv"))
+write_csv(tables_nonzero_demand$pct, paste0(plots_path, "sensitivity_analysis_pct_nonzero_demand.csv"))
+
+write_csv(tables_nonzero_speed$label, paste0(plots_path, "sensitivity_analysis_labels_nonzero_speed.csv"))
+write_csv(tables_nonzero_speed$pct, paste0(plots_path, "sensitivity_analysis_pct_nonzero_speed.csv"))
+
+write_csv(tables_both_nonzero$label, paste0(plots_path, "sensitivity_analysis_labels_both_nonzero.csv"))
+write_csv(tables_both_nonzero$pct, paste0(plots_path, "sensitivity_analysis_pct_both_nonzero.csv"))
 
 # ------------------------------------------------------------------------------
 # Display results using gt
@@ -347,13 +393,58 @@ gt_pct_coloured <- function(pct_table) {
     )
 }
 
-# View tables (You can assign these to gt objects or view inline in RStudio)
-gt_pct_coloured(tables_all$pct)      # For "all" method
-gt_pct_coloured(tables_nonzero$pct)  # For "nonzero_only" method
+# View tables
+gt_pct_coloured(tables_all_all$pct)      # For "all" method
+gt_pct_coloured(tables_nonzero_demand$pct)     # For "nonzero_only" method
+gt_pct_coloured(tables_nonzero_speed$pct)     # For "nonzero_only" method
+gt_pct_coloured(tables_both_nonzero$pct)     # For "nonzero_only" method
 
-gt(tables_all$label)                 # With labels for "all"
-gt(tables_nonzero$label)            # With labels for "nonzero_only"
+
+gt(tables_all_all$label)                 # With labels for "all"
+gt(tables_nonzero_demand$label)            # With labels for "nonzero_only"
+gt(tables_nonzero_speed$label)            # With labels for "nonzero_only"
+gt(tables_both_nonzero$label)            # With labels for "nonzero_only"
 
 
+
+ggplot(results_all_all, aes(x = speed_cutoff, y = demand_cutoff, fill = pct_filtered)) +
+  geom_tile(color = "white",
+            lwd = 0.2,
+            linetype = 1) +
+  geom_text(aes(label = pct_filtered), color = "white", size = 2) +
+  #scale_fill_gradientn(colors = hcl.colors(5, "RdYlGn")) +
+  coord_fixed() +
+  labs(
+    title = "Sensitivity Analysis of OD Filtering",
+    subtitle = "OD pairs retained at different speed and demand percentile cutoffs",
+    x = "Speed Cutoff (Percentile)",
+    y = "Demand Cutoff (Percentile)",
+    fill = "% of OD pairs\n filtered",
+    caption = "Note: Percentiles are calculated based on the entire dataset, \nincluding zero-demand and zero-speed OD pairs."
+  )# +
+ # theme(plot.caption = element_text(size = 6))
+
+ggsave(filename = paste0(plots_path, "sensitivity_analysis_heatmap_all_all.png"),
+       width = 8, dpi = 600)
+
+
+ggplot(results_both_nonzero, aes(x = speed_cutoff, y = demand_cutoff, fill = pct_filtered)) +
+  geom_tile(color = "white",
+            lwd = 0.2,
+            linetype = 1) +
+  geom_text(aes(label = pct_filtered), color = "white", size = 2) +
+ # scale_fill_gradientn(colors = hcl.colors(5, "RdYlGn")) +
+  coord_fixed() +
+  labs(
+    title = "Sensitivity Analysis of OD Filtering",
+    subtitle = "OD pairs retained at different speed and demand percentile cutoffs",
+    x = "Speed Cutoff (Percentile)",
+    y = "Demand Cutoff (Percentile)",
+    fill = "% of OD pairs\n filtered",
+    caption = "Note: Percentiles are calculated based on non-zero OD pairs only. \nZero-demand and zero-speed OD pairs are added retroactively with percentile = 0"
+  )
+
+ggsave(filename = paste0(plots_path, "sensitivity_analysis_heatmap_both_nonzero.png"),
+       width = 8, dpi = 600)
 
 
