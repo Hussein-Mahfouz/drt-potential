@@ -270,17 +270,19 @@ This analysis offers a way to assess the operational potential of each cluster b
 ## Thresholds for filtering OD pairs
 
 > The thresholds used to define "poor supply" — OD pairs with travel speeds below the 50th percentile or with more than one transfer — are intuitive, but it is unclear whether these thresholds are arbitrary or are supported by the literature.
-
-### Response
-
-...
-
-## Use of the 75th percentile of route demand
-
+>
 > Similarly, the use of the 75th percentile of route demand as a cut-off for eliminating OD pairs from ODsd is a major filtering step. This threshold represents a policy assumption that OD pairs with demand greater than this are worthy of fixed-route service, but it is a fairly high bar for demand and may exclude areas that would still be well served by DRT.
 
 ### Response
 
-...
+Thank you for the suggestion. We have included a sensitivity analysis in the appendix to show the number of OD pairs retained for different speed and demand thresholds. It should be noted that the percentile values are skewed by a large number of OD pairs with zero values for speed and demand (due to there being no direct PT route connecting them). In our analysis, we exclude zero-value OD pairs when calculating percentiles (and assign them all a percentile value of zero).
+
+Regarding potential demand, the high threshold means that OD pairs with demand greater than the 75th percentile are worthy of a fixed route service instead of DRT. The high bar means that we may be including additional OD pairs that could be served by fixed-routes, not excluding. As you will see in the figure, we are currently using the majority of OD pairs in our analysis, as only ....
+
+![](images/plot_speed_perc_facet_combination_reachable_ods.png)
+
+![](images/plot_demand_perc_facet_combination_reachable_ods-01.png)
+
+![](images/sensitivity_analysis_heatmap_both_nonzero.png)
 
 # References
