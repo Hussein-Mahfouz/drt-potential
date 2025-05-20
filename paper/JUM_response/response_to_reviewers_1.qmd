@@ -257,6 +257,22 @@ This analysis offers a way to assess the operational potential of each cluster b
 
 ![Distribution of trips (weighted OD pairs) in each cluster. Each column shows the bearing and length composition of a cluster. This includes histograms of the number of trips (weighted OD pairs) in each (30 degree) bearing range (x-axis). The trips are also faceted by length ranges (10km each)](../images/figure_bar_bearing_y_commuters_facet_grid_cluster_distance_3_length_50000.png){#fig-cluster-homogeneity fig-align="center" width="85%"}
 
+## Comments on discussion
+
+> Section 5: The content of this section does not show any new content related with the topic. Two comments: first, is to ask transport planners, public transport operators and local stakeholders for where and how to place DRTs. Second, regarding line 50, most of the areas and operators cannot (or don't want to) provide a GTFS format and the travel demand matrices are an approximation based on mobile data signs. If the paper is based on the assumption that real demand patterns are determinant to a more suitable DRT design, then all the paper is biased on its results.
+
+### Response
+
+We address the first point—regarding the role of transport planners and local stakeholders—in our earlier response, where we clarify that our approach is intended to complement local knowledge rather than replace it.
+
+Regarding the availability of GTFS data, we note that while coverage varies across regions, many publicly accessible repositories exist. In the UK, for example, the Department for Transport maintains the Open Bus Data Service, which provides national GTFS feeds, and all operators are mandated to contribute. Similar open access GTFS feeds are provided by local authorities in different countries, and global repositories such as MobilityData[^4] and DigitalTransportforAfrica[^5] also aggregate feeds from a wide range of contexts—including data-scarce regions. The methodology is also transferable to contexts where GTFS data is not readily available. Planners can often obtain structured data on route alignments and stop locations, and headways directly from operators, or commission it where necessary. At a conceptual level, the method simply requires knowledge of where and when public transport routes run—information that is typically accessible even in data-scarce settings. GTFS feeds are a convenient format, but not a requirement for applying the approach.
+
+[^4]: <https://mobilitydatabase.org/feeds?gtfs=true&gtfs_rt=true>
+
+[^5]: <https://gitlab.com/digitaltransport/data>
+
+Regarding demand matrices, we acknowledge that mobile phone data is not free from limitations. However, the GB Trip Database (GBTD) applies a multi-stage methodology to address common sources of bias (which we have detail above). As such, the data used in our analysis represents an adjusted and expanded view of national travel patterns, rather than a raw or uncorrected sample. We also agree with the reviewer’s related comment on the value of activity-based models. As noted in our limitations section, an activity-based demand dataset could offer more detailed insights into individual trip chains and behavioural dependencies, and would allow for more granular temporal clustering.
+
 # Reviewer 2
 
 <!-- "Delineating potential DRT operating areas: an origin-destination clustering approach" is a relevant and timely contribution to the evolving literature on demand responsive transport planning. It proposes a clustering method for outlining appropriate Demand-Responsive Transport (DRT) service areas from origin-destination flow data. The analysis appears satisfactory, and the manuscript is well-written. I have two comments: -->
@@ -277,12 +293,20 @@ This analysis offers a way to assess the operational potential of each cluster b
 
 Thank you for the suggestion. We have included a sensitivity analysis in the appendix to show the number of OD pairs retained for different speed and demand thresholds. It should be noted that the percentile values are skewed by a large number of OD pairs with zero values for speed and demand (due to there being no direct PT route connecting them). In our analysis, we exclude zero-value OD pairs when calculating percentiles (and assign them all a percentile value of zero).
 
-Regarding potential demand, the high threshold means that OD pairs with demand greater than the 75th percentile are worthy of a fixed route service instead of DRT. The high bar means that we may be including additional OD pairs that could be served by fixed-routes, not excluding. As you will see in the figure, we are currently using the majority of OD pairs in our analysis, as only ....
+Regarding potential demand, the high threshold means that OD pairs with demand greater than the 75th percentile are worthy of a fixed route service instead of DRT. The high bar means that we may be including additional OD pairs that could be served by fixed-routes, not excluding. As you will see in the figure, we are currently using the majority of OD pairs in our analysis.
 
-![](images/plot_speed_perc_facet_combination_reachable_ods-01.png)
+### Edits made
 
-![](images/plot_demand_perc_facet_combination_reachable_ods-02.png)
+-   Added Appendix A with
 
-![](images/sensitivity_analysis_heatmap_both_nonzero-01.png)
+    -   percentile plots for speed and demand
+
+    -   a sensitivity analysis of the number of OD pairs retained for different combinations of supply and demand thresholds
+
+-   Edited the text in Preparing Input Data for Clustering
+
+    -   Edited Figure 3 to remove the percentile values. they are now only mentioned in the text, as the values should chnage depending on the data distribution
+
+    -   Edited the explanation for the use of the current thresholds, and referenced Appendix A in the main text
 
 # References

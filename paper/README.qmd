@@ -493,12 +493,16 @@ The approach can be adopted by practitioners in early stage strategic planning o
 
 # Appendix A: Sensitivity analysis for speed and demand thresholds {#sec-appendix-sensitivity}
 
-In @sec-methods-filtering-ods, we filter ODs based on supply and demand thresholds. Below we show the distribution plots and sensitivity analysis that are used to inform these thresholds. For the speed and demand distributions (Figure @fig-speed-pct-distribution and @fig-demand-pct-distribution), we do not include OD pairs with 0 values (OD pairs with no PT connection) as these dominate the distribution and skew the percentile results.
+In @sec-methods-filtering-ods, we filter ODs based on supply and demand thresholds. Below we show the distribution plots and sensitivity analysis that are used to inform these thresholds. For the speed and demand distributions (@fig-speed-pct-distribution and @fig-demand-pct-distribution), we do not include OD pairs with 0 values (OD pairs with no PT connection) as these dominate the distribution and skew the percentile results.
 
-The sensitivity analysis (Figure @fig-sensitivity-demand-speed) shows the number of OD pairs retained at different speed and demand thresholds. <!--# The analysis is based on the morning peak period, but similar results were obtained for other time periods. --> We can see that 60% of OD pairs are retained no matter how low our threshold is set. These OD pairs have no direct PT connection and so their values for speed and demand are 0. The number of OD pairs retained is more sensitive to the speed cutoff threshold than the demand cutoff threshold.
+The sensitivity analysis (@fig-sensitivity-demand-speed) shows the number of OD pairs retained at different speed and demand thresholds. <!--# The analysis is based on the morning peak period, but similar results were obtained for other time periods. --> We can see that 60% of OD pairs are retained no matter how low our threshold is set. These OD pairs have no direct PT connection and so their values for speed and demand are 0. The number of OD pairs retained is more sensitive to the speed cutoff threshold than the demand cutoff threshold.
 
-![Distribution of speed values, faceted by time of day](images/plot_speed_perc_facet_combination_reachable_ods.png){#fig-speed-pct-distribution}
+::: {#fig-distribution-speed-demand layout-ncol="2"}
+![Distribution of speed values](images/plot_speed_perc_reachable_ods_line.png){#fig-speed-pct-distribution}
 
-![Distribution of potential demand values, faceted by time of day.](images/plot_demand_perc_facet_combination_reachable_ods.png){#fig-demand-pct-distribution}
+![Distribution of potential demand values](images/plot_demand_perc_reachable_ods_line.png){#fig-demand-pct-distribution}
+
+Speed and demand distributions of OD pairs
+:::
 
 ![Sensitivity analysis showing the number of OD pairs retained at different speed and demand thresholds](images/sensitivity_analysis_heatmap_both_nonzero.png){#fig-sensitivity-demand-speed}
