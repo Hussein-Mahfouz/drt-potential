@@ -173,7 +173,20 @@ ggsave(filename = paste0(plots_path, "plot_speed_perc_facet_combination_reachabl
        width = 8, dpi = 600)
 
 
+# line plot instead of histogram
+od_demand %>%
+  mutate(speed_kph = replace_na(speed_kph, 0)) %>%
+  filter(speed_kph != 0) %>%
+  ggplot(aes(x = speed_percentile, y = speed_kph, color = combination)) +
+  geom_line() +
+  labs(title = "Average speeds between ODs using PT", subtitle = "Non-zero OD pairs (All OD pairs with viable PT connection)",
+       y = "Speed (kph)",
+       x = "No. of OD pairs (Percentile)",
+       color = "") +
+  theme(legend.position = "bottom")
 
+ggsave(filename = paste0(plots_path, "plot_speed_perc_reachable_ods_line.png"),
+       width = 8, dpi = 600)
 
 # ---------- DEMAND (potential_demand_equal_split)
 
@@ -203,6 +216,26 @@ od_demand %>%
 ggsave(filename = paste0(plots_path, "plot_demand_perc_facet_combination_all_ods.png"),
        width = 8, dpi = 600)
 
+# line plot instead of histogram
+od_demand %>%
+  group_by(combination) %>%
+  mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0),
+         demand_route_percentile = percent_rank(potential_demand_equal_split)) %>%
+  ungroup() %>%
+  ggplot(aes(x = demand_route_percentile, y = potential_demand_equal_split, color = combination)) +
+  geom_line() +
+  labs(title = "Potential demand on busiest PT route serving OD pair",
+       subtitle = "All OD pairs",
+       y = "Potential demand (no. of passengers)",
+       x = "No. of OD pairs (Percentile)",
+       caption = "NOTE: demand percentile is based on demand of busiest route that directly serves OD pair",
+       color = "") +
+  theme(legend.position = "bottom",
+        plot.caption = element_text(hjust = 0, size = 6))
+
+ggsave(filename = paste0(plots_path, "plot_demand_perc_all_ods_line.png"),
+       width = 8, dpi = 600)
+
 # histogram of demand percentile:
       # Remove potential_demand_equal_split = NA or potential_demand_equal_split = 0 (unreachable).
       # Facet: combination
@@ -228,6 +261,27 @@ od_demand %>%
   facet_wrap(vars(combination))
 
 ggsave(filename = paste0(plots_path, "plot_demand_perc_facet_combination_reachable_ods.png"),
+       width = 8, dpi = 600)
+
+# line plot instead of histogram
+od_demand %>%
+  group_by(combination) %>%
+  mutate(potential_demand_equal_split = replace_na(potential_demand_equal_split, 0)) %>%
+  filter(potential_demand_equal_split != 0) %>%
+  mutate(demand_route_percentile = percent_rank(potential_demand_equal_split)) %>%
+  ungroup() %>%
+  ggplot(aes(x = demand_route_percentile, y = potential_demand_equal_split, color = combination)) +
+  geom_line() +
+  labs(title = "Potential demand on busiest PT route serving OD pair",
+       subtitle = "Non-zero OD pairs (All OD pairs with viable PT connection)",
+       y = "Potential demand (no. of passengers)",
+       x = "No. of OD pairs (Percentile)",
+       color = "",
+       caption = "NOTE: demand percentile is based on demand of busiest route that directly serves OD pair") +
+  theme(legend.position = "bottom",
+        plot.caption = element_text(hjust = 0, size = 6))
+
+ggsave(filename = paste0(plots_path, "plot_demand_perc_reachable_ods_line.png"),
        width = 8, dpi = 600)
 
 
