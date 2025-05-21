@@ -74,13 +74,15 @@ We thank the reviewers for their constructive feedback and suggestions, which ha
 
 ### Response
 
-We agree that local knowledge is essential in DRT planning, and our approach is not intended to replace the expertise of planners, operators, or municipalities. Rather, it is designed to complement local insight by providing a data-driven tool to support early-stage, strategic planning.
+We thank the reviewer for this observation. We agree that local knowledge is central to DRT planning. Our approach is intended to complement this expertise by providing a data-driven method to support early-stage, strategic planning.
 
-The literature highlights high failure rates among DRT services [@enoch2006demand; @currie2020most], often attributed to a mismatch between service design and actual demand patterns. A key challenge is that many services fail to capture spatial and temporal concentrations of demand, limiting their ability to pool trips effectively and operate efficiently. This has prompted calls for improved methods to inform strategic service area design, which remains an identified research gap [@papanikolaou2017methodological].
+DRT failure rates are frequently linked to a mismatch between service design and actual demand patterns [@enoch2006demand; @currie2020most], particularly when services are too flexible or dispersed to support effective pooling. This has prompted calls for methods that can identify viable operating areas based on spatial and temporal demand concentrations [@papanikolaou2017methodological].
 
-Our contribution responds directly to this need. We propose a method for delineating potential DRT operating zones using OD flow data, helping to identify distinct spatial clusters of demand that could support pooled service delivery.
+Our method responds to this gap by identifying latent clusters of OD demand where DRT could operate more efficiently. While planners may have a general understanding of where DRT might be useful, our approach offers a reproducible way to define and visualise specific service areas that can then be refined through local insight.
 
-Importantly, we acknowledge that DRT is not a monolithic concept—it can serve diverse roles, from a service that operates across the entire city (e.g. MOIA in Hamburg and Hanover) [@zwick2022ride] to targeted rural or night-time coverage. In this study, we explicitly frame DRT as a feeder service that is intended to connect low-density zones with the fixed-route public transport network. **We have revised the manuscript to clarify this conceptual framing.**
+We also clarify that DRT takes different forms. In this study, we explicitly conceptualise it as a feeder service connecting low-density areas to the fixed-route network. The manuscript has been revised to reflect this framing in both the abstract and introduction.
+
+<!--# Importantly, we acknowledge that DRT is not a monolithic concept—it can serve diverse roles, from a service that operates across the entire city (e.g. MOIA in Hamburg and Hanover) [@zwick2022ride] to targeted rural or night-time coverage. In this study, we explicitly frame DRT as a feeder service that is intended to connect low-density zones with the fixed-route public transport network. We have revised the manuscript to clarify this conceptual framing. -->
 
 ## Temporal demand variations
 
