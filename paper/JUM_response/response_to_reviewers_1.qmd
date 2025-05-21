@@ -5,20 +5,20 @@ format:
   #gfm: default
   # html:
   #   toc: true
-  # docx:
-  #   toc: false
-  #   number-sections: true
-  #   fig-pos: 'H'
-  pdf:
+  docx:
     toc: false
     number-sections: true
-    extra_dependencies: ["float"]
-    pdf-engine: xelatex #pdflatex # xelatex
-    geometry:
-         - left=15.0mm
-         - right=15.0mm
-         - top=15mm
     fig-pos: 'H'
+  # pdf:
+  #   toc: false
+  #   number-sections: true
+  #   extra_dependencies: ["float"]
+  #   pdf-engine: xelatex #pdflatex # xelatex
+  #   geometry:
+  #        - left=15.0mm
+  #        - right=15.0mm
+  #        - top=15mm
+  #   fig-pos: 'H'
     keep-tex: true
 bibliography: ../lit-review.bib
 # elsevier style for referencing (from https://github.com/citation-style-language/styles)
@@ -63,11 +63,11 @@ knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
 
 # Introduction {.unnumbered}
 
-We thank the reviewers for their constructive feedback and suggestions, which have helped us improve the manuscript. Below, we provide a summary of the main comments and our responses. We have also made edits to the manuscript to address these points.
+We thank the reviewers for their constructive feedback and suggestions, which have helped us improve the manuscript. Below, we respond to each comment and indicate where corresponding edits have been made in the manuscript.
 
 # Reviewer 1
 
-## Existing knowlege of where DRT is needed
+## Existing knowledge of where DRT is needed
 
 > “in spite the interesting approach, public transport operators and local municipalities are aware of where DRT can be needed as a complement to the existing PT network. While performing their activities and responsibilities, both are aware of where DRT makes sense, either if it is a night route between university residences and downtown leisure areas or a Weekend higher demand to a beach area.\
 > "identifying suitable areas for DRT remains a research gap" - may be due to the fact that 1) those areas don't need the solution or 2) it is enough to ask to transport planners, public transport operators and local stakeholders\*\* as they know the territory and the way their users move.
@@ -357,6 +357,22 @@ We add the following paragraph in the DIscussion section Implications for strate
 \
 Future work could also assess the financial viability of different DRT service models. A cost–benefit analysis—considering fares, vehicle costs, pooling efficiency, expected mode share (based on mode choice modelling), and potential subsidies—would offer further insight into which service configurations are most appropriate in each zone. While beyond the scope of this study, such analysis is important for evaluating the economic sustainability of DRT deployments.
 
+## Conclusion re capturing sufficient passenger demand
+
+> *Section 6. Line 20. "many fail to capture sufficient passenger demand", which is also the case of this paper.*
+
+We have edited the text to clarify that while our approach aims to improve demand capture through more targeted service area delineation, we do not claim that the zones identified will necessarily lead to high ridership on their own.
+
+### Edits made
+
+**Original**
+
+The need to decarbonise the transport sector, improvements in real-time routing technology, and the proliferation of app-based services have all contributed to a surge in DRT research and real-world schemes [@castellanos2022technology]. However DRT services continue to suffer from the lack of robust strategic level planning, and many fail to capture sufficient passenger demand to make them economically viable [@enoch2006demand; @creutzig2024shared]. The OD clustering approach presented in this paper addresses these challenges by identifying potential DRT operating zones based on spatial concentrations of unmet travel demand, making them more likely to be viable and effective in reducing car dependency.
+
+**Edits made**
+
+The need to decarbonise the transport sector, improvements in real-time routing technology, and the proliferation of app-based services have all contributed to a surge in DRT research and real-world schemes [@castellanos2022technology]. However DRT services continue to suffer from the lack of robust strategic level planning, and many fail to capture sufficient passenger demand to make them economically viable [@enoch2006demand; @creutzig2024shared]. The OD clustering approach presented in this paper seeks to address this challenge by identifying potential DRT operating zones that align with spatial concentrations of unmet travel demand. While we do not claim that these delineated zones will, on their own, guarantee high ridership, they provide a data-driven foundation for more targeted and effective service design. In particular, the method can support planning for DRT as a feeder to public transport where appropriate, while also accommodating the possibility of standalone services in areas with limited transit access. This framing reflects a broader environmental objective: to reduce car dependency and support more sustainable, integrated mobility systems.
+
 # Reviewer 2
 
 <!-- "Delineating potential DRT operating areas: an origin-destination clustering approach" is a relevant and timely contribution to the evolving literature on demand responsive transport planning. It proposes a clustering method for outlining appropriate Demand-Responsive Transport (DRT) service areas from origin-destination flow data. The analysis appears satisfactory, and the manuscript is well-written. I have two comments: -->
@@ -392,5 +408,9 @@ Regarding potential demand, the high threshold means that OD pairs with demand g
     -   Edited Figure 3 to remove the percentile values. they are now only mentioned in the text, as the values should chnage depending on the data distribution
 
     -   Edited the explanation for the use of the current thresholds, and referenced Appendix A in the main text
+
+# Closing statement
+
+We thank the reviewers again for their constructive input, which has helped to significantly improve the manuscript.
 
 # References

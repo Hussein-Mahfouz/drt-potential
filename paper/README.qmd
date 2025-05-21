@@ -10,10 +10,16 @@ format:
   # docx:
   #   toc: false
   #   number-sections: true
+  #   include-in-header:
+  #       text: |
+  #         \usepackage{chngcntr}
   #   fig-pos: 'H'
   pdf:
     toc: false
     number-sections: true
+    include-in-header:
+      text: |
+        \usepackage{chngcntr}
     extra_dependencies: ["float"]
     pdf-engine: xelatex #pdflatex # xelatex
     geometry:
@@ -463,7 +469,7 @@ The clustering algorithm used (DBSCAN) requires the input of two parameters: eps
 
 <!--# Additionally, different density-based clustering algorithms such as HDBSCAN [@tao2017flowhdbscan] and OPTICS [@fang2021adaptive] can also be explored. Both of these algorithms require only one input parameter and can identify cluster formation at different scales. Identifying clusters at different scales can provide results that are well–suited to variations in population density and can also allow researchers and practitioners to compare different options for the same area. -->
 
-Another component of the clustering algorithm worth exploring further is the metric used to calculate distance between flows. Our clustering algorithm relies on distances between OD flows when creating clusters. Given the large study area, and the variation in trip distances, we use a distance metric [@tao2016spatial] that normalizes distances so that the values cover a smaller range. This is useful for DBSCAN, which takes one value for the search radius. If we do not normalize the flows, our distance metric will have a wider range, but we would not be able to choose a search radius that accommodates all the flows (a smaller radius would produce better results for shorter flows, and a larger search radius would produce distorted clusters that group the shorter flows with the longer ones). However, this normalization is not perfect, as can be seen in @fig-cluster-stats-3 where some clusters have OD flows of various lengths.
+Another component of the clustering algorithm worth exploring further is the metric used to calculate distance between flows. Our clustering algorithm relies on distances between OD flows when creating clusters. Given the large study area, and the variation in trip distances, we use a distance metric [@tao2016spatial] that normalizes distances so that the values cover a smaller range. This is useful for DBSCAN, which takes one value for the search radius. If we do not normalize the flows, our distance metric will have a wider range, but we would not be able to choose a search radius that accommodates all the flows (a smaller radius would produce better results for shorter flows, and a larger search radius would produce distorted clusters that group the shorter flows with the longer ones). However, this normalization is not perfect, as can be seen in @fig-cluster-homogeneity where some clusters have OD flows of various lengths.
 
 To address the challenges of clustering OD flows of varying lengths, several research directions could be pursued. One approach is to improve the current distance metric by applying transformations that reduce the influence of OD length—such as log transformations to the denominator of the similarity function. Incorporating a parameter that explicitly represents OD flow bearing could also help minimise circular variance within clusters. An alternative direction is to use different distance metrics altogether. For example, the Fréchet distance [@eiter1994computing] could be applied, as it measures the similarity between curves by identifying the minimum “leash” length required to traverse them simultaneously. Another strategy is to explore clustering at different scales, rather than modifying the distance metric itself. This could involve partitioning the data by OD length and running DBSCAN separately for each group. Alternatively, algorithms such as HDBSCAN [@tao2017flowhdbscan] or OPTICS [@fang2021adaptive] may be better suited to this task. These methods are capable of detecting clusters at multiple scales and can extract clusters of different lengths without requiring manual distance normalization.
 
@@ -479,7 +485,7 @@ To address the challenges of clustering OD flows of varying lengths, several res
 
 # Conclusion
 
-The need to decarbonise the transport sector, improvements in real-time routing technology, and the proliferation of app-based services have all contributed to a surge in DRT research and real-world schemes [@castellanos2022technology]. However DRT services continue to suffer from the lack of robust strategic level planning, and many fail to capture sufficient passenger demand to make them economically viable [@enoch2006demand; @creutzig2024shared]. The OD clustering approach presented in this paper addresses these challenges by identifying potential DRT operating zones based on spatial concentrations of unmet travel demand, making them more likely to be viable and effective in reducing car dependency.
+The need to decarbonise the transport sector, improvements in real-time routing technology, and the proliferation of app-based services have all contributed to a surge in DRT research and real-world schemes [@castellanos2022technology]. However DRT services continue to suffer from the lack of robust strategic level planning, and many fail to capture sufficient passenger demand to make them economically viable [@enoch2006demand; @creutzig2024shared]. The OD clustering approach presented in this paper seeks to address this challenge by identifying potential DRT operating zones that align with spatial concentrations of unmet travel demand. While we do not claim that these delineated zones will, on their own, guarantee high ridership, they provide a data-driven foundation for more targeted and effective service design. In particular, the method can support planning for DRT as a feeder to public transport where appropriate, while also accommodating the possibility of standalone services in areas with limited transit access. This framing reflects a broader environmental objective: to reduce car dependency and support more sustainable, integrated mobility systems.
 
 Strategic planning of DRT that accounts for its integration with more traditional public transport systems presents a promising avenue for improved mobility in areas with pockets of concentrated travel demand that are difficult to serve cost-effectively by fixed-route public transport. The approach presented in this paper offers both conceptual and methodological contributions that can help realise this promise. Conceptually, we borrow methods from spatial data mining and argue that they are well suited to filling gaps in the current approaches for strategic planning of DRT services. We build on this concept methodologically by embedding a clustering algorithm into a larger transport planning pipeline with more traditional supply and demand components. Our findings show that spatial clustering of OD flow data can contribute to delineating operating zones in strategic DRT planning, but that more research should be done on improving distance metrics that are core to clustering and on refining the supply and demand analysis used to extract the OD flows to be clustered.
 
@@ -489,9 +495,19 @@ The approach can be adopted by practitioners in early stage strategic planning o
 
 # References
 
+::: {#refs}
+:::
+
 \pagebreak
 
-# Appendix A: Sensitivity analysis for speed and demand thresholds {#sec-appendix-sensitivity}
+\setcounter{section}{0}
+\renewcommand{\thesection}{\Alph{section}}
+\setcounter{figure}{0} 
+\counterwithin{figure}{section}
+
+# Appendix
+
+## Sensitivity analysis for speed and demand thresholds {#sec-appendix-sensitivity .appendix}
 
 In @sec-methods-filtering-ods, we filter ODs based on supply and demand thresholds. Below we show the distribution plots and sensitivity analysis that are used to inform these thresholds. For the speed and demand distributions (@fig-speed-pct-distribution and @fig-demand-pct-distribution), we do not include OD pairs with 0 values (OD pairs with no PT connection) as these dominate the distribution and skew the percentile results.
 
