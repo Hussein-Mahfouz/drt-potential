@@ -196,6 +196,36 @@ To overcome the issue of scale associated with OD flows of various lengths, the 
 
 To address the challenges of clustering OD flows of varying lengths, several research directions could be pursued. One approach is to improve the current distance metric by applying transformations that reduce the influence of OD length—such as log transformations to the denominator of the similarity function. Incorporating a parameter that explicitly represents OD flow bearing could also help minimise circular variance within clusters. An alternative direction is to use different distance metrics altogether. For example, the Fréchet distance [@eiter1994computing] could be applied, as it measures the similarity between curves by identifying the minimum “leash” length required to traverse them simultaneously. Another strategy is to explore clustering at different scales, rather than modifying the distance metric itself. This could involve partitioning the data by OD length and running DBSCAN separately for each group. Alternatively, algorithms such as HDBSCAN [@tao2017flowhdbscan] or OPTICS [@fang2021adaptive] may be better suited to this task. These methods are capable of detecting clusters at multiple scales and can extract clusters of different lengths without requiring manual distance normalization.
 
+## Paper that could add value to methodology
+
+> Another issue that significantly makes the paper fragile in its content is the fact that uses static OD data (named as potential demand), although authors mention that better informed data is needed to base DRT models. On this subject, I would suggest authors to read the paper that can bring an added value to their methodology: Melo, S.; Gomes, R.; Abbasi, R.; Arantes, A. Demand-Responsive Transport for Urban Mobility: Integrating Mobile Data Analytics to Enhance Public Transportation Systems. Sustainability 2024, 16, 4367. <https://doi.org/10.3390/su16114367>
+
+### Response
+
+We thank the reviewer for this helpful reference. The paper by [@melo2024demand] is relevant in terms of (a) mobile phone data preprocessing, and (b) using mobile phone data for DRT route optimisation
+
+#### Preprocessing mobile phone data preprocessing
+
+In our case, we do not work with raw mobile phone records, but instead use origin–destination matrices derived from the GB Trip Database (GBTD), a commercial product developed by Telefónica (O2) and the UK Department for Transport. These matrices are already preprocessed and expanded to ensure statistical representativeness at the population level, as described in our response to the following comment. We acknowledge, however, that access to raw mobile data or the use of an activity-based model would allow for more detailed, disaggregate analysis.
+
+#### Using mobile phone data for DRT route optimisation
+
+While our study does not conduct operational optimisation of DRT services, we agree that this is a valuable next step. We now cite [@melo2024demand] in the Discussion section to highlight how simulation-based frameworks such as theirs could be applied to test and refine DRT operations within the candidate zones identified by our method.
+
+### Edits to paper
+
+**Original**
+
+*Discussion: Implications for strategic planning of DRT*
+
+The composition and spatial extent of our clusters inform the design and operation of DRT services. Clusters vary in terms of the number and characteristics of OD pairs they encompass, supporting the evidence that DRT solutions need to be tailored to the area they are serving. Clusters with a high concentration of trips in a small area may require more direct services to one or two stops, while clusters with dispersed demand patterns may benefit from flexible, many-to-many DRT services.
+
+**Edited**
+
+*Discussion: Implications for strategic planning of DRT*
+
+The composition and spatial extent of our clusters inform the design and operation of DRT services. Clusters vary in terms of the number and characteristics of OD pairs they encompass, supporting the evidence that DRT solutions need to be tailored to the area they are serving. Clusters with a high concentration of trips in a small area may require more direct services to one or two stops, while clusters with dispersed demand patterns may benefit from flexible, many-to-many DRT services. Simulation frameworks that incorporate disaggregate travel patterns and DRT routing—such as that of @melo2024demand —can be used to test operational feasibility within each zone under different strategies.
+
 ## Statistical representativeness of the mobile data sample
 
 > “What is the statistical representativeness of the mobile data sample? How do you guarantee the allocation of those signs to road and rail have a reliable accuracy? What you have from mobile signs is the density of signals, so what methodology was performed to guarantee that the average number of trips is reliable and how can you assure it is a reliable sample of all the population?”
@@ -292,6 +322,40 @@ Regarding the availability of GTFS data, we note that while coverage varies acro
 [^5]: <https://gitlab.com/digitaltransport/data>
 
 Regarding demand matrices, we acknowledge that mobile phone data is not free from limitations. However, the GB Trip Database (GBTD) applies a multi-stage methodology to address common sources of bias (which we have detail above). As such, the data used in our analysis represents an adjusted and expanded view of national travel patterns, rather than a raw or uncorrected sample. We also agree with the reviewer’s related comment on the value of activity-based models. As noted in our limitations section, an activity-based demand dataset could offer more detailed insights into individual trip chains and behavioural dependencies, and would allow for more granular temporal clustering.
+
+## Data availability implications on usefulness of methodology 
+
+> Section 5.3.1 line 20 summarizes the previous conclusion: without the right information, which authors could not have, the methodology is not useful or replicable.
+
+We respectfully disagree with the suggestion that the methodology is not useful or replicable. The method we propose is replicable, as it is based on an open-source pipeline and a clearly defined clustering and filtering framework. As with any data-driven method, the quality of input data affects the quality of results, but the underlying approach remains valid and reproducible across different contexts.
+
+Moreover, our contribution is not limited to a specific dataset but includes a conceptual and methodological framework for identifying candidate DRT zones based on travel demand patterns and transport supply. This framework can be adapted to different data sources—including census data, travel surveys, or activity-based models—depending on availability.
+
+## Other limitations
+
+> The paper lacks agent-based analysis, better demand sets, cost-benefit analysis
+
+### Response
+
+Each of the points raised is valid and aligns with potential directions for future work. We respond to each item below:
+
+**Demand sets and temporal variability:**\
+
+We have addressed the representativeness and structure of the demand dataset in response to earlier comments. We also note that temporal variability is considered in the analysis through disaggregation by time period (Section 3.2) and the presentation of time-specific results (Section 4.2.2). While our dataset is not activity-based, we acknowledge in the manuscript that more disaggregate or synthetic data sources could enhance future analyses.
+
+**Agent-based analysis:**\
+
+While an agent-based simulation is not part of the present work, we clearly frame it as a possible next step. The abstract, Discussion, and Conclusion all highlight that the outputs of our clustering method are intended as strategic inputs for downstream simulation or operational planning. We have added clarifying language in the Discussion to reinforce this point. Our intention was to present a method for delineating DRT zones that can feed into, rather replace, further analysis using simulation or optimisation frameworks.
+
+**Cost-benefit analysis:**\
+
+A cost-benefit analysis of different business models is an important consideration for operational decision-making, but it falls outside the scope of this paper. Our focus is on the strategic identification of potential DRT service areas. A full cost-benefit evaluation would require assumptions about fleet size, pricing, subsidies, fleet rebalancing, and drt uptake (using a mode choice model), which are better addressed through agent-based modelling. We now acknowledge this limitation more clearly in the Discussion.
+
+### Edits made
+
+We add the following paragraph in the DIscussion section Implications for strategic planning of DRT:\
+\
+Future work could also assess the financial viability of different DRT service models. A cost–benefit analysis—considering fares, vehicle costs, pooling efficiency, expected mode share (based on mode choice modelling), and potential subsidies—would offer further insight into which service configurations are most appropriate in each zone. While beyond the scope of this study, such analysis is important for evaluating the economic sustainability of DRT deployments.
 
 # Reviewer 2
 
