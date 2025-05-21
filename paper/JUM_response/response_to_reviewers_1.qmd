@@ -84,6 +84,24 @@ We also clarify that DRT takes different forms. In this study, we explicitly con
 
 <!--# Importantly, we acknowledge that DRT is not a monolithic concept—it can serve diverse roles, from a service that operates across the entire city (e.g. MOIA in Hamburg and Hanover) [@zwick2022ride] to targeted rural or night-time coverage. In this study, we explicitly frame DRT as a feeder service that is intended to connect low-density zones with the fixed-route public transport network. We have revised the manuscript to clarify this conceptual framing. -->
 
+### Edits made
+
+**Abstract**
+
+Acknowledged the role of planners and the gap we are trying to fill:
+
+"While planners may already have a general sense of where DRT might be useful, there is limited guidance on how to identify precise operating zones based on spatiotemporal demand."
+
+**Introduction**
+
+Added the following text:
+
+-   Paragraph 2: "When well integrated with high-frequency public transport, DRT may serve as an effective feeder mode—extending the reach of fixed-route services and offering an alternative to private car use in low-density areas."
+
+-   Paragraph 3: "While transport planners and operators often have a good understanding of local mobility needs, data-driven methods can complement this knowledge by helping identify specific service areas where travel demand is both concentrated and underserved."
+
+-   Paragraph 4: "The focus is on identifying feasible service zones for DRT as a feeder to the fixed-route network in low-density areas."
+
 ## Temporal demand variations
 
 > Authors approach the subject without considering temporal demand variations
