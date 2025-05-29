@@ -145,7 +145,7 @@ Our method involves two key steps: (1) identifying demand gaps through a supply-
 
 The overall workflow is illustrated in @fig-workflow. Our approach is applied to a case study city, Leeds (@sec-case-study), to demonstrate its practical utility.
 
-![Workflow for generating potential DRT zones. The workflow is split into 3 separate steps, and the analysis components of each step are given alphabetical labels to show the order they are carried out in.](images/figure_entire_workflow_3.png){#fig-workflow}
+![Workflow for generating potential DRT zones. The workflow is split into 3 separate steps, and the analysis components of each step are given alphabetical labels to show the order they are carried out in.](images/figure_1.png){#fig-workflow}
 
 ## Case Study {#sec-case-study}
 
@@ -153,7 +153,7 @@ This research uses Leeds, UK, as a case study. As one of the largest European ci
 
 Under the Bus Services Act [@uk2017busact], WYCA’s Bus Service Improvement Plan aims to enhance bus services and better integrate multimodal transport [@wyca2021improvement]. DRT is considered a means to improve access in low-density areas, and a pilot service (Flexibus) was trialled in East Leeds. However, during its 18-month pilot phase, it struggled with low ridership, covering only 5% of operating costs [@wyca2022drtflexibusreview]. Its average of 1.38 passengers per trip reflected a service design that failed to effectively pool demand. Services that are informed by spatial concentrations in travel demand could improve DRT viability.
 
-![Urban Rural Classification: Explained in the 2011 Rural-Urban Classification User Guide](images/rural_urban_bus.png){#fig-rural-urban fig-align="center" width="80%"}
+![Urban Rural Classification: Explained in the 2011 Rural-Urban Classification User Guide](images/figure_2.png){#fig-rural-urban fig-align="center" width="80%"}
 
 ## Demand data {#sec-methods-preparing-data}
 
@@ -175,7 +175,7 @@ After disaggregating the OD trip data, we need to decide which OD pairs to use f
 
 $OD_s$ is meant to suggest DRT zones that complement the existing bus network by only including the OD demand that is not well served by said network, as explained in @sec-method-transport-supply. $OD_{sd}$ is similar, but also excludes OD pairs that could be served by a better bus service. This exclusion is based on criteria explained in @sec-method-transport-demand. The workflow for the supply and demand analysis is shown in @fig-flowchart-scenarios. The number of OD pairs in each approach is shown in @tbl-od_pairs_scenarios.
 
-![Flowchart for determining input to clustering algorithm](images/flowchart_od_potential_demand_2.png){#fig-flowchart-scenarios}
+![Flowchart for determining input to clustering algorithm](images/figure_3.png){#fig-flowchart-scenarios}
 
 ### Supply analysis {#sec-method-transport-supply}
 
@@ -371,7 +371,7 @@ These patterns reveal four major challenges for the current public transport net
 
 In these contexts, DRT services could help fill network gaps bycomplementing existing bus services. In some cases, such as along the Guiseley–Pudsey or Morley–Pudsey axes (Clusters 3 and 9), standalone DRT services could address entire trips. In others, especially low-density rural areas (Clusters 1, 2, and 5), DRT could provide first-/last-mile access to frequent bus routes. For clusters that rely on city-centre transfers (e.g. Clusters 2 and 6), a combination of DRT and improved transfer coordination may be needed. Here, DRT alone may not suffice—schedule synchronisation would be necessary to improve the overall passenger experience.
 
-![Clustering results - OD pairs with poor PT supply ($OD_{s}$). Desire lines represent OD pairs making up each cluster, dashed black lines represent convex hull around desire lines, coloured polygons represent part of cluster that does not overlap with existing high frequency bus routes (see @sec-methods-clusters-to-zones)](images/map_clusters_scenario_2_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_crop.png){#fig-cluster-scenario-2 width="95%"}
+![Clustering results - OD pairs with poor PT supply ($OD_{s}$). Desire lines represent OD pairs making up each cluster, dashed black lines represent convex hull around desire lines, coloured polygons represent part of cluster that does not overlap with existing high frequency bus routes (see @sec-methods-clusters-to-zones)](images/figure_4.png){#fig-cluster-scenario-2 width="95%"}
 
 ## Clustering based on transport supply and demand {#sec-results-transport-demand}
 
@@ -381,7 +381,7 @@ The clustering results are similar to those in @sec-results-transport-supply, wi
 
 Another important distinction is that cluster 5 from @fig-cluster-scenario-2 does not appear here. The high demand from the urban core to the North East led the demand analysis (@sec-method-transport-demand) to exclude many of the OD pairs that were in that cluster, as they could be served by improved headways on existing public transport routes. The remaining OD pairs, which lack sufficient concentrated demand, do not form a separate cluster.
 
-![Clustering results - OD pairs with poor PT supply and low potential demand ($OD_{sd}$) - Desire lines represent OD pairs making up each cluster, dashed black lines represent convex hull around desire lines, coloured polygons represent part of cluster that does not overlap with existing high frequency bus routes (see @sec-methods-clusters-to-zones)](images/map_clusters_scenario_3_equal_length_50000_bus_frac_grouped_gtfs_poly_lines_bus_diff_concave2_endpoints_crop.png){#fig-cluster-scenario-3 width="95%"}
+![Clustering results - OD pairs with poor PT supply and low potential demand ($OD_{sd}$) - Desire lines represent OD pairs making up each cluster, dashed black lines represent convex hull around desire lines, coloured polygons represent part of cluster that does not overlap with existing high frequency bus routes (see @sec-methods-clusters-to-zones)](images/figure_5.png){#fig-cluster-scenario-3 width="95%"}
 
 ### Examination of cluster homogeneity {#sec-cluster-examination}
 
@@ -403,7 +403,7 @@ Cluster statistics
 :::
 -->
 
-![Distribution of trips (weighted OD pairs) in each cluster. Each column shows the bearing and length composition of a cluster. This includes histograms of the number of trips (weighted OD pairs) in each (30 degree) bearing range (x-axis). The trips are also faceted by length ranges (10km each)](images/figure_bar_bearing_y_commuters_facet_grid_cluster_distance_3_length_50000.png){#fig-cluster-homogeneity fig-align="center" width="85%"}
+![Distribution of trips (weighted OD pairs) in each cluster. Each column shows the bearing and length composition of a cluster. This includes histograms of the number of trips (weighted OD pairs) in each (30 degree) bearing range (x-axis). The trips are also faceted by length ranges (10km each)](images/figure_6.png){#fig-cluster-homogeneity fig-align="center" width="85%"}
 
 ### Aggregate result and temporal dimension {#sec-clusters-temporal}
 
@@ -413,7 +413,7 @@ The resulting DRT zones form a doughnut-shape around the periphery of the study 
 
 Aggregating the clusters into a single map highlights that potential DRT zones are primarily located in the outskirts where population densities are low.
 
-![Aggregate DRT zones generated by combining individual DRT zones. Each facet shows the result for a different time of day. Analysis is based on weekday supply and demand data](images/map_cluster_results_gtfs_overline_poly_bus_diff_pop_density_facet_ALL_TIMES_scenario_3.png){#fig-zones-one-map fig-align="center"}
+![Aggregate DRT zones generated by combining individual DRT zones. Each facet shows the result for a different time of day. Analysis is based on weekday supply and demand data](images/figure_7.png){#fig-zones-one-map width="95%"}
 
 <!--# Point on limitations from Song 2019 -->
 
@@ -512,9 +512,9 @@ In @sec-methods-filtering-ods, we filter ODs based on supply and demand threshol
 The sensitivity analysis (@fig-sensitivity-demand-speed) shows the number of OD pairs retained at different speed and demand thresholds. <!--# The analysis is based on the morning peak period, but similar results were obtained for other time periods. --> We can see that 60% of OD pairs are retained no matter how low our threshold is set. These OD pairs have no direct PT connection and so their values for speed and demand are 0. The number of OD pairs retained is more sensitive to the speed cutoff threshold than the demand cutoff threshold.
 
 ::: {#fig-distribution-speed-demand layout-ncol="2"}
-![Distribution of speed values](images/plot_speed_perc_reachable_ods_line.png){#fig-speed-pct-distribution}
+![Distribution of speed values](images/figure_A1a.png){#fig-speed-pct-distribution}
 
-![Distribution of potential demand values](images/plot_demand_perc_reachable_ods_line.png){#fig-demand-pct-distribution}
+![Distribution of potential demand values](images/figure_A1b.png){#fig-demand-pct-distribution}
 
 Speed and demand distributions of OD pairs
 :::
