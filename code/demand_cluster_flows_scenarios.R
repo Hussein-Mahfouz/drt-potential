@@ -182,7 +182,7 @@ od_demand %>%
   labs(title = "Average speeds between ODs using PT", subtitle = "Non-zero OD pairs (All OD pairs with viable PT connection)",
        y = "Speed (kph)",
        x = "No. of OD pairs (Percentile)",
-       color = "") +
+       color = "Time of day") +
   theme(legend.position = "bottom")
 
 ggsave(filename = paste0(plots_path, "plot_speed_perc_reachable_ods_line.png"),
