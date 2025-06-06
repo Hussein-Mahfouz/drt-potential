@@ -1,0 +1,227 @@
+---
+title: "Response to reviewers"
+#date: "`r format(Sys.time(), '%d %m %y')`"
+format:
+  #gfm: default
+  html:
+    toc: true
+  # docx:
+  #   toc: false
+  #   number-sections: true
+  #   fig-pos: 'H'
+  # pdf:
+  #   toc: false
+  #   number-sections: true
+  #   extra_dependencies: ["float"]
+  #   pdf-engine: xelatex #pdflatex # xelatex
+  #   geometry:
+  #        - left=15.0mm
+  #        - right=15.0mm
+  #        - top=15mm
+  #   fig-pos: 'H'
+  #   keep-tex: true
+bibliography: ../lit-review.bib
+# elsevier style for referencing (from https://github.com/citation-style-language/styles)
+csl: ../elsevier-harvard.csl
+# so that figures don't float around
+# include-in-header:
+#  \usepackage{float}
+#  \floatplacement{figure}{H}
+ # to add acronyms (only works for pdf output)
+---
+
+```{r, include = FALSE}
+#library(tidyverse)
+knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
+```
+
+<!-- Reviewer #1: The paper is clearly written and easily readable. However, in spite the interesting approach, public transport operators and local municipalities are aware of where DRT can be needed as a complement to the existing PT network. While performing their activities and responsibilities, both are aware of where DRT makes sense, either if it is a night route between university residences and downtown leisure areas or a Weekend higher demand to a beach area. Authors approach the subject without considering temporal demand variations, which is a determinant factor to implement DRT. -->
+
+<!-- In Literature review, similarly to other sections, authors use subsections to organize the content, which follows the current trend of writing reports with the help of bullet points and so on, but is not in line with scientific writing style. I would recommend to change the format. Same to section 4 and 5. Line 58 of section 2.1, again: "identifying suitable areas for DRT remains a research gap" - may be due to the fact that 1) those areas don't need the solution or 2) it is enough to ask to transport planners, public transport operators and local stakeholders as they know the territory and the way their users move. -->
+
+<!-- Another issue that significantly makes the paper fragile in its content is the fact that uses static OD data (named as potential demand), although authors mention that better informed data is needed to base DRT models. On this subject, I would suggest authors to read the paper that can bring an added value to their methodology: Melo, S.; Gomes, R.; Abbasi, R.; Arantes, A. Demand-Responsive Transport for Urban Mobility: Integrating Mobile Data Analytics to Enhance Public Transportation Systems. Sustainability 2024, 16, 4367. https://doi.org/10.3390/su16114367 that introduce "a data-driven framework designed to leverage multi-source data inputs—comprising actual mobile data, demand information from transport operators, and public transportation datasets—to inform and enhance a DRT optimisation solution. Subsequently, the effectiveness of this framework has been empirically evaluated through a comparative analysis with a conventional fixed-schedule bus service in Porto, Portugal. This comparison highlights the potential of data-driven optimisation in improving the responsiveness and efficiency of DRT systems and underscores the significance of adaptable transportation solutions in urban settings." This is an example of using both mobile data, real data from demand from operators and connect it to the territory. -->
+
+<!-- Regarding section 3.2, what is the statistical representativeness of the mobile data sample? How do you guarantee the allocation of those signs to road and rail have a reliable accuracy? What you have from mobile signs is the density of signals, so what methodology was performed to guarantee that the average number of trips is reliable and how can you assure it is a reliable sample of all the population? Nothing is mentioned to explain the accuracy of the demand data. Regarding 3.2.1, it is clearly needed to incorporate activity-based methodologies and indicators to make it valid! -->
+
+<!-- Section 4: I would suggest to try to reduce the length and the number of images. Keep only the ones that add value to the written information. -->
+
+<!-- Section 5: The content of this section does not show any new content related with the topic. Two comments: first, is to ask transport planners, public transport operators and local stakeholders for where and how to place DRTs. Second, regarding line 50, most of the areas and operators cannot (or don't want to) provide a GTFS format and the travel demand matrices are an approximation based on mobile data signs. If the paper is based on the assumption that real demand patterns are determinant to a more suitable DRT design, then all the paper is biased on its results. -->
+
+<!-- Section 5.3.1 line 20 summarizes the previous conclusion: without the right information, which authors could not have, the methodology is not useful or replicable. -->
+
+<!-- Section 6. Line 20. "many fail to capture sufficient passenger demand", which is also the case of this paper. -->
+
+<!-- Lastly, the paper lacks an agent based analysis, better demand sets (with temporal variability) and a cost-benefit analysis for different business models. It's an interesting piece of work but does not bring a scientific added value that justifies its publication. Nevertheless, I would recommend authors to give it a try to short the length of the paper, adapt the format and be more clear about some of these limitations. Good luck and good work! -->
+
+<!-- Reviewer #2: The article "Delineating potential DRT operating areas: an origin-destination clustering approach" is a relevant and timely contribution to the evolving literature on demand responsive transport planning. It proposes a clustering method for outlining appropriate Demand-Responsive Transport (DRT) service areas from origin-destination flow data. The analysis appears satisfactory, and the manuscript is well-written. I have two comments: -->
+
+<!-- The thresholds used to define "poor supply" — OD pairs with travel speeds below the 50th percentile or with more than one transfer — are intuitive, but it is unclear whether these thresholds are arbitrary or are supported by the literature. -->
+
+<!-- Similarly, the use of the 75th percentile of route demand as a cut-off for eliminating OD pairs from ODsd is a major filtering step. This threshold represents a policy assumption that OD pairs with demand greater than this are worthy of fixed-route service, but it is a fairly high bar for demand and may exclude areas that would still be well served by DRT. -->
+
+<!-- If these thresholds are defined arbitrarily, it may be appropriate to conduct sensitivity analyses by varying these thresholds as they have the potential to affect the clustering results. -->
+
+# Introduction {.unnumbered}
+
+We thank the reviewers for their constructive feedback and suggestions, which have helped us improve the manuscript. Below, we respond to each comment and indicate where corresponding edits have been made in the manuscript.
+
+# Reviewer 1 (R1)
+
+> 1.  R1: “The paper is clearly written and easily readable. However, in spite the interesting approach, public transport operators and local municipalities are aware of where DRT can be needed as a complement to the existing PT network. While performing their activities and responsibilities, both are aware of where DRT makes sense, either if it is a night route between university residences and downtown leisure areas or a Weekend higher demand to a beach area. Authors approach the subject without considering temporal demand variations, which is a determinant factor to implement DRT.”
+
+-   We thank the reviewer for this observation. We agree that local knowledge is central to DRT planning. Our approach is intended to complement this expertise by providing a data-driven method to support early-stage, strategic planning.
+
+    DRT failure rates are frequently linked to a mismatch between service design and actual demand patterns [@enoch2006demand; @currie2020most], particularly when services are too flexible or dispersed to support effective pooling. This has prompted calls for methods that can identify viable operating areas based on spatial and temporal demand concentrations [@papanikolaou2017methodological].
+
+    Our method responds to this gap by identifying latent clusters of OD demand where DRT could operate more efficiently. While planners may have a general understanding of where DRT might be useful, our approach offers a reproducible way to define and visualise specific service areas that can then be refined through local insight.
+
+    We also clarify that DRT takes different forms. In this study, we explicitly conceptualise it as a feeder service connecting low-density areas to the fixed-route network. The manuscript has been revised to reflect this framing in both the abstract and introduction:
+
+    <!--# Importantly, we acknowledge that DRT is not a monolithic concept—it can serve diverse roles, from a service that operates across the entire city (e.g. MOIA in Hamburg and Hanover) [@zwick2022ride] to targeted rural or night-time coverage. In this study, we explicitly frame DRT as a feeder service that is intended to connect low-density zones with the fixed-route public transport network. We have revised the manuscript to clarify this conceptual framing. -->
+
+    **Abstract:**
+
+    -   Acknowledged the role of planners and the gap we are trying to fill by adding this sentence:
+
+    -   "While planners may already have a general sense of where DRT might be useful, there is limited guidance on how to identify precise operating zones based on spatiotemporal demand."
+
+    **Introduction**
+
+    Added the following text:
+
+    -   Paragraph 2: "When well integrated with high-frequency public transport, DRT may serve as an effective feeder mode—extending the reach of fixed-route services and offering an alternative to private car use in low-density areas."
+
+    -   Paragraph 3: "While transport planners and operators often have a good understanding of local mobility needs, data-driven methods can complement this knowledge by helping identify specific service areas where travel demand is both concentrated and underserved."
+
+    -   Paragraph 4: "The focus is on identifying feasible service zones for DRT as a feeder to the fixed-route network in low-density areas."
+
+> 1.  *R1: Authors approach the subject without considering temporal demand variations*
+
+-   We note that temporal demand variation is addressed in the paper. As described in Section 3.2, the OD data is disaggregated into five time periods across the day. In terms of the detailed clustering results, we note in the beginning of the Results section that "In this section we present the clustering results for the morning peak period. As described in Section 3.2, the analysis was done for all time periods", and this decision was made to keep the paper concise. For the aggregate results, Section 4.2.2 presents results for each temporal bucket.
+
+    We agree with the reviewer that an note that an activity-based model would be more useful as demand input into our model, and we note this in the Limitations section "5.3.1 Input data and demand analysis". The Discussion (Section 5) also highlights the potential for incorporating temporal clustering more explicitly in future work.
+
+> 1.  R1: “In Literature review, similarly to other sections, authors use subsections to organize the content, which follows the current trend of writing reports with the help of bullet points and so on, but is not in line with scientific writing style. I would recommend to change the format. Same to section 4 and 5."
+
+-   We have edited the text to reduce the use of bullet points in the sections mentioned. We have highlighted the text to show where we have done so
+
+> 1.  R1: “Line 58 of section 2.1, again:”identifying suitable areas for DRT remains a research gap” - may be due to the fact that 1) those areas don’t need the solution or 2) it is enough to ask to transport planners, public transport operators and local stakeholders as they know the territory and the way their users move”
+
+-   We have tried to answer this point in our response to the first comment of the reviewer
+
+> 1.  R1: Another issue that significantly makes the paper fragile in its content is the fact that uses static OD data (named as potential demand), although authors mention that better informed data is needed to base DRT models. On this subject, I would suggest authors to read the paper that can bring an added value to their methodology: Melo, S.; Gomes, R.; Abbasi, R.; Arantes, A. Demand-Responsive Transport for Urban Mobility: Integrating Mobile Data Analytics to Enhance Public Transportation Systems. Sustainability 2024, 16, 4367. [https://doi.org/10.3390/su16114367](https://eur03.safelinks.protection.outlook.com/?url=https%3A%2F%2Fdoi.org%2F10.3390%2Fsu16114367&data=05%7C02%7Ctshma%40leeds.ac.uk%7C5ac34390de5f4f341dec08dd990beca5%7Cbdeaeda8c81d45ce863e5232a535b7cb%7C0%7C0%7C638834998685806842%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=tqCuxxYJSoDhOa7H0VOpQVMh1nKS%2Fr2cZN3AeulCkZc%3D&reserved=0 "Original URL: https://doi.org/10.3390/su16114367. Click or tap if you trust this link.") that introduce "a data-driven framework designed to leverage multi-source data inputs—comprising actual mobile data, demand information from transport operators, and public transportation datasets—to inform and enhance a DRT optimisation solution. Subsequently, the effectiveness of this framework has been empirically evaluated through a comparative analysis with a conventional fixed-schedule bus service in Porto, Portugal. This comparison highlights the potential of data-driven optimisation in improving the responsiveness and efficiency of DRT systems and underscores the significance of adaptable transportation solutions in urban settings." This is an example of using both mobile data, real data from demand from operators and connect it to the territory.
+
+-   We thank the reviewer for this helpful reference. The paper by [@melo2024demand] is relevant in terms of (a) mobile phone data preprocessing, and (b) using mobile phone data for DRT route optimisation. We comment on both points, and then list the changes made in the paper
+
+    **Preprocessing mobile phone data preprocessing**
+
+    In our case, we do not work with raw mobile phone records, but instead use origin–destination matrices derived from the GB Trip Database (GBTD), a commercial product developed by Telefónica (O2) and the UK Department for Transport. These matrices are already preprocessed and expanded to ensure statistical representativeness at the population level, as described in our response to the following comment. We acknowledge, however, that access to raw mobile data or the use of an activity-based model would allow for more detailed, disaggregate analysis.
+
+    **Using mobile phone data for DRT route optimisation**
+
+    While our study does not conduct operational optimisation of DRT services, we agree that this is a valuable next step. We now cite [@melo2024demand] in the Discussion section to highlight how simulation-based frameworks such as theirs could be applied to test and refine DRT operations within the candidate zones identified by our method.
+
+    **Changes made to the paper**
+
+    *Discussion: Implications for strategic planning of DRT*
+
+    We add the italisized line at the end of the paragraph:
+
+    The composition and spatial extent of our clusters inform the design and operation of DRT services. Clusters vary in terms of the number and characteristics of OD pairs they encompass, supporting the evidence that DRT solutions need to be tailored to the area they are serving. Clusters with a high concentration of trips in a small area may require more direct services to one or two stops, while clusters with dispersed demand patterns may benefit from flexible, many-to-many DRT services. *Simulation frameworks that incorporate disaggregate travel patterns and DRT routing—such as that of @melo2024demand —can be used to test operational feasibility within each zone under different strategies.*
+
+> 1.  R1: “Regarding section 3.2, what is the statistical representativeness of the mobile data sample? How do you guarantee the allocation of those signs to road and rail have a reliable accuracy? What you have from mobile signs is the density of signals, so what methodology was performed to guarantee that the average number of trips is reliable and how can you assure it is a reliable sample of all the population? Nothing is mentioned to explain the accuracy of the demand data. Regarding 3.2.1, it is clearly needed to incorporate activity-based methodologies and indicators to make it valid!”
+
+-   We mention in Section 3.2 that we use origin-destination matrices derived from the GB Trip Database (GBTD), a commercial product developed by Telefónica (O2) and the UK Department for Transport. However it is true that we do not go into the statistical representativeness of the data.
+
+    Chapter 3 of the user guide for the GBTD describes their methodology to ensure statistical representativeness, mode attribution, and trip accuracy. Unfortunately, there is no public link to the user guide, but we have submitted the guide as an additional document.
+
+    Specifically:
+
+    -   Representativeness: The database expands observed trip patterns from active O2 users to represent the entire GB population using a statistically derived expansion process. Users included in the sample are filtered using the “Rule of Seven and Ten” (at least 7 events per day on 10 different days) and a 16-day minimum observation period to ensure consistent behavioural data and eliminate visitors or anomalous users
+
+    -   Mode attribution: Trips are classified into motorised road or rail modes using rules that combine cell-type tags, rail-only/walk-only zones, and spatial proximity to stations. These rules differ inside and outside London and include checks for station adjacency, Wi-Fi use on underground services, and distance-based travel time thresholds
+
+    -   Trip inference and OD detection: Trips are inferred from sequences of handover events (transfers between cell towers when a person is moving) and dwell events (periods where a user remains in one location). A dwell threshold (a minimum time that must elapse in one location to count as a trip end) is calculated based on typical journey durations. To avoid misclassifying brief pauses or unstable signals, short-distance cell changes caused by network noise—known as “flickering”—are filtered out using a pattern-detection algorithm
+
+    -   Trip expansion: To address the fact that the source data is drawn from a single mobile network provider, the GBTD applies an expansion process that scales the sample to the full GB population. Expansion factors are calculated at the Middle Layer Super Output Area (MSOA) level, and are based on comparisons with Census journey-to-work data, demographic distributions, and known trip volumes from travel surveys. This helps to correct for demographic and spatial sampling bias, and enables population-level inference
+
+    While no mobile data product is error-free, we believe that the GBTD's multi-stage filtering, triangulation, and expansion methodology provide a robust basis for aggregate OD analysis. We now summarise these key points in the revised manuscript and cite the methodology guide for transparency.
+
+    We have edited section 3.2 and replaced the original text with the following:
+
+    *The origin–destination matrices used in this analysis are derived from the GB Trip Database (GBTD)[^1], a national dataset produced by Telefónica (O2) in partnership with the UK Department for Transport. The data are based on anonymised mobile phone events, filtered to include only users with consistent daily activity over a 16-day window, and expanded to represent the wider population using area-level weighting factors. These factors are calculated at the Middle Layer Super Output Area (MSOA) level using comparisons with Census commuting flows and travel survey data, helping to correct for demographic and spatial bias.*
+
+    *Trips are inferred from sequences of handover events (signal transfers between mobile cells) and dwell periods (extended time spent in one location). Trips are assigned to origin and destination zones based on users’ repeated activity patterns.* <!--# Trips are classified as road or rail using spatial and temporal rules, including distance to stations, journey time, and mobile cell metadata.--> *While no mobile dataset is error-free, the GBTD methodology offers a robust foundation for our OD analysis, and has been used in a study to generate activity patterns for an agent-based simulation [@franco2020demand].*
+
+    *For this study, we requested OD data for 2019 from Connected Places Catapult, covering all motorised road and rail trips in Great Britain. The request specified a date range and a zoning system based on MSOA boundaries (subject to a cap on the number of zones permitted). The resulting dataset provides the average number of trips between each zone pair, disaggregated by hour of day and weekday/weekend. To simplify the analysis, we aggregate the data into five broad time periods: 5–8am, 8–11am, 11am–2pm, 2–5pm, and 5–8pm. However, the clustering method is compatible with other temporal resolutions and could be applied at finer levels where needed.*
+
+[^1]: <https://cp.catapult.org.uk/project/great-britain-trip-database-portal/>
+
+> 1.  R1: "Section 4: I would suggest to try to reduce the length and the number of images. Keep only the ones that add value to the written information."
+
+-   Thank you for the feedback. We have shortened the section by removing visuals and editing text. Figure 6 was a facet with 3 sub figures. We have removed figure 6a and 6b as well as the text describing them. We also made the text more concise while removing bullet points (as suggested in a previous comment)
+
+> 1.  R1: "Section 5: The content of this section does not show any new content related with the topic. Two comments: first, is to ask transport planners, public transport operators and local stakeholders for where and how to place DRTs. Second, regarding line 50, most of the areas and operators cannot (or don't want to) provide a GTFS format and the travel demand matrices are an approximation based on mobile data signs. If the paper is based on the assumption that real demand patterns are determinant to a more suitable DRT design, then all the paper is biased on its results."
+
+-   We address the first point—regarding the role of transport planners and local stakeholders—in our earlier response, where we clarify that our approach is intended to complement local knowledge rather than replace it.
+
+    Regarding the availability of GTFS data, we note that while coverage varies across regions, many publicly accessible repositories exist. In the UK, for example, the Department for Transport maintains the Open Bus Data Service, which provides national GTFS feeds, and all operators are mandated to contribute. Similar open access GTFS feeds are provided by local authorities in different countries, and global repositories such as MobilityData[^2] and DigitalTransportforAfrica[^3] also aggregate feeds from a wide range of contexts—including data-scarce regions. The methodology is also transferable to contexts where GTFS data is not readily available. Planners can often obtain structured data on route alignments and stop locations, and headways directly from operators, or commission it where necessary. At a conceptual level, the method simply requires knowledge of where and when public transport routes run—information that is typically accessible even in data-scarce settings. GTFS feeds are a convenient format, but not a requirement for applying the approach.
+
+    Regarding demand matrices, we acknowledge that mobile phone data is not free from limitations. However, the GB Trip Database (GBTD) applies a multi-stage methodology to address common sources of bias (which we have detail above). As such, the data used in our analysis represents an adjusted and expanded view of national travel patterns, rather than a raw or uncorrected sample. We also agree with the reviewer’s related comment on the value of activity-based models. As noted in our limitations section, an activity-based demand dataset could offer more detailed insights into individual trip chains and behavioural dependencies, and would allow for more granular temporal clustering.
+
+[^2]: <https://mobilitydatabase.org/feeds?gtfs=true&gtfs_rt=true>
+
+[^3]: <https://gitlab.com/digitaltransport/data>
+
+> 1.  R1: "Section 5.3.1 line 20 summarizes the previous conclusion: without the right information, which authors could not have, the methodology is not useful or replicable."
+
+-   We respectfully disagree with the suggestion that the methodology is not useful or replicable. The method we propose is replicable, as it is based on an open-source pipeline and a clearly defined clustering and filtering framework. As with any data-driven method, the quality of input data affects the quality of results, but the underlying approach remains valid and reproducible across different contexts.
+
+    Moreover, our contribution is not limited to a specific dataset but includes a conceptual and methodological framework for identifying candidate DRT zones based on travel demand patterns and transport supply. This framework can be adapted to different data sources—including census data, travel surveys, or activity-based models—depending on availability.
+
+> 1.  *R1: Section 6. Line 20. "many fail to capture sufficient passenger demand", which is also the case of this paper.*
+
+-   We have edited the text to clarify that while our approach aims to improve demand capture through more targeted service area delineation, we do not claim that the zones identified will necessarily lead to high ridership on their own. The italisized text has been added to the end of the first paragraph:
+
+    The need to decarbonise the transport sector, improvements in real-time routing technology, and the proliferation of app-based services have all contributed to a surge in DRT research and real-world schemes [@castellanos2022technology]. However DRT services continue to suffer from the lack of robust strategic level planning, and many fail to capture sufficient passenger demand to make them economically viable [@enoch2006demand; @creutzig2024shared]. The OD clustering approach presented in this paper seeks to address this challenge by identifying potential DRT operating zones that align with spatial concentrations of unmet travel demand. *While we do not claim that these delineated zones will, on their own, guarantee high ridership, they provide a data-driven foundation for more targeted and effective service design. In particular, the method can support planning for DRT as a feeder to public transport where appropriate, while also accommodating the possibility of standalone services in areas with limited transit access. This framing reflects a broader environmental objective: to reduce car dependency and support more sustainable, integrated mobility systems.*
+
+> 1.  R1: "The paper lacks agent-based analysis, better demand sets, cost-benefit analysis"
+
+-   Each of the points raised is valid and aligns with potential directions for future work. We respond to each item below:
+
+    **Demand sets and temporal variability:** We have addressed the representativeness and structure of the demand dataset in response to earlier comments. We also note that temporal variability is considered in the analysis through disaggregation by time period (Section 3.2) and the presentation of time-specific results (Section 4.2.2). While our dataset is not activity-based, we acknowledge in the manuscript that more disaggregate or synthetic data sources could enhance future analyses.
+
+    **Agent-based analysis:** While an agent-based simulation is not part of the present work, we clearly frame it as a possible next step. The abstract, Discussion, and Conclusion all highlight that the outputs of our clustering method are intended as strategic inputs for downstream simulation or operational planning. We have added clarifying language in the Discussion to reinforce this point. Our intention was to present a method for delineating DRT zones that can feed into, rather replace, further analysis using simulation or optimisation frameworks.
+
+    **Cost-benefit analysis:** A cost-benefit analysis of different business models is an important consideration for operational decision-making, but it falls outside the scope of this paper. Our focus is on the strategic identification of potential DRT service areas. A full cost-benefit evaluation would require assumptions about fleet size, pricing, subsidies, fleet rebalancing, and drt uptake (using a mode choice model), which are better addressed through agent-based modelling. We now acknowledge this limitation more clearly in the Discussion.
+
+    We add the following paragraph in the DIscussion section Implications for strategic planning of DRT:\
+    \
+    Future work could also assess the financial viability of different DRT service models. A cost–benefit analysis—considering fares, vehicle costs, pooling efficiency, expected mode share (based on mode choice modelling), and potential subsidies—would offer further insight into which service configurations are most appropriate in each zone. While beyond the scope of this study, such analysis is important for evaluating the economic sustainability of DRT deployments.
+
+# Reviewer 2 (R2)
+
+<!-- "Delineating potential DRT operating areas: an origin-destination clustering approach" is a relevant and timely contribution to the evolving literature on demand responsive transport planning. It proposes a clustering method for outlining appropriate Demand-Responsive Transport (DRT) service areas from origin-destination flow data. The analysis appears satisfactory, and the manuscript is well-written. I have two comments: -->
+
+<!-- The thresholds used to define "poor supply" — OD pairs with travel speeds below the 50th percentile or with more than one transfer — are intuitive, but it is unclear whether these thresholds are arbitrary or are supported by the literature. -->
+
+<!-- Similarly, the use of the 75th percentile of route demand as a cut-off for eliminating OD pairs from ODsd is a major filtering step. This threshold represents a policy assumption that OD pairs with demand greater than this are worthy of fixed-route service, but it is a fairly high bar for demand and may exclude areas that would still be well served by DRT. -->
+
+<!-- If these thresholds are defined arbitrarily, it may be appropriate to conduct sensitivity analyses by varying these thresholds as they have the potential to affect the clustering results. -->
+
+> 1.  R2: "The article "Delineating potential DRT operating areas: an origin-destination clustering approach" is a relevant and timely contribution to the evolving literature on demand responsive transport planning. It proposes a clustering method for outlining appropriate Demand-Responsive Transport (DRT) service areas from origin-destination flow data. The analysis appears satisfactory, and the manuscript is well-written.
+
+We thank the reviewer for their valuable feedback. We appreciate the thoughtful comments
+and constructive suggestions, which we address below
+
+> 1.  R2: "I have two comments: The thresholds used to define "poor supply" — OD pairs with travel speeds below the 50th percentile or with more than one transfer — are intuitive, but it is unclear whether these thresholds are arbitrary or are supported by the literature.\
+>     Similarly, the use of the 75th percentile of route demand as a cut-off for eliminating OD pairs from ODsd is a major filtering step. This threshold represents a policy assumption that OD pairs with demand greater than this are worthy of fixed-route service, but it is a fairly high bar for demand and may exclude areas that would still be well served by DRT.\
+>     If these thresholds are defined arbitrarily, it may be appropriate to conduct sensitivity analyses by varying these thresholds as they have the potential to affect the clustering results."
+
+-   Thank you for the suggestion. We have included a sensitivity analysis in Appendix A to show the number of OD pairs retained for different speed and demand thresholds. We have also edited the text in Preparing Input Data for Clustering by (a) editing Figure 3 to remove the percentile values. they are now only mentioned in the text, as the values should change depending on the data distribution, and (b) editing the explanation for the use of the current thresholds, and referenced Appendix A in the main text
+
+    It should be noted that the percentile values are skewed by a large number of OD pairs with zero values for speed and demand (due to there being no direct PT route connecting them). In our analysis, we exclude zero-value OD pairs when calculating percentiles (and assign them all a percentile value of zero).
+
+    Regarding potential demand, the high threshold means that OD pairs with demand greater than the 75th percentile are worthy of a fixed route service instead of DRT. The high bar means that we may be including additional OD pairs that could be served by fixed-routes, not excluding. As you will see in the figure, we are currently using the majority of OD pairs in our analysis.
+
+# References
