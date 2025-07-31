@@ -75,7 +75,7 @@ od_demand_jittered = od_demand_jittered %>%
 # distance_threshold <- round(max(od_demand_jittered$distance_m), -3)
 
 # # 3) Flows with poor PT supply and low potential demand + and equal weight to origins and destinations (for flow distance)
-scenario <- 3
+# scenario <- 3
 clustering <- "equal"
 distance_threshold <- 50000
 #

@@ -22,8 +22,16 @@ zones_internal = zones %>%
 
 # Define the path to the ZIP file
 zip_file_path <- "data/external/cpc/cpc_west_yorkshire_weekdays_march_may.zip"
-# Create a temporary directory to extract the files
+
+# --- Create a temporary directory to extract the files
+
+# # --- clear temp directory:
+unlink(paste0(normalizePath(tempdir()), "/", dir(tempdir())), recursive = TRUE)
+# confirm it's empty
+dir(tempdir())
+# Create the directory
 temp_dir <- tempdir()
+
 # Extract the ZIP file to the temporary directory
 unzip(zip_file_path, exdir = temp_dir)
 # Get a list of all CSV files in the temporary directory
@@ -117,42 +125,10 @@ cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
 cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
   filter(from_msoa %in% study_area$MSOA11CD & to_msoa %in% study_area$MSOA11CD)
 
-# -------------- 3.  JOIN TRAVEL TIME DATA ---------- #
-
-# ----------  MSOA level
-
-# read in the data
-tt_matrix_msoa <- arrow::read_parquet("data/processed/travel_times/MSOA/travel_time_matrix_expanded_temporal.parquet")
-
-# some OD pairs don't have travel time data (for some combinations). Expand grid so that we explitly mention these OD pairs
-tt_matrix_msoa_exp <- tidyr::crossing(from_id = tt_matrix_msoa$from_id, to_id = tt_matrix_msoa$to_id, combination = tt_matrix_msoa$combination)
-
-tt_matrix_msoa <- tt_matrix_msoa_exp %>%
-  left_join(tt_matrix_msoa, by = c("from_id", "to_id", "combination"))
 
 
 
-# add metadata (MSOA for each home and workplace zone)
-tt_matrix_msoa <- tt_matrix_msoa %>%
-  left_join(study_area %>%
-              select(MSOA21CD, MSOA11CD, OBJECTID) %>%
-              st_drop_geometry() %>%
-              rename_with(~paste0(., "_home")) %>%
-              mutate(across(everything(), ~as.character(.))),
-            by = c("from_id" = "OBJECTID_home")) %>%
-  left_join(study_area %>%
-              select(MSOA21CD, MSOA11CD, OBJECTID) %>%
-              st_drop_geometry() %>%
-              rename_with(~paste0(., "_work")) %>%
-              mutate(across(everything(), ~as.character(.))),
-            by = c("to_id" = "OBJECTID_work"))
-
-
-# ----- Prepare time_of_day column in tt_matrix to match demand matrix
-
-# keep only pt travel times
-tt_matrix_msoa <- tt_matrix_msoa %>%
-  filter(str_detect(combination, "pt_"))
+# --------- Group into time buckets
 
 # add combination column to cpc data
 cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
@@ -162,36 +138,88 @@ cpc_matrices_all_internal <- cpc_matrices_all_internal %>%
     source %in% c("11-12", "12-13", "13-14") ~ "pt_wkday_12_30",
     source %in% c("14-15", "15-16", "16-17") ~ "pt_wkday_15_30",
     source %in% c("17-18", "18-19", "19-20") ~ "pt_wkday_18_30")
-    )
+  )
 
-# group by combination column
+
+
+# group by combination column. #TODO speed up using tidytable
 cols_to_sum = c("hbw_outbound", "hbw_inbound", "hbo_outbound", "hbo_inbound", "nhb", "total_flow")
 
 cpc_matrices_all_internal_grouped <- cpc_matrices_all_internal %>%
   group_by(from_msoa, to_msoa, combination) %>%
-  summarise(across(cols_to_sum, sum, na.rm = TRUE)) %>%
+  summarise(across(all_of(cols_to_sum), sum, na.rm = TRUE)) %>%
   ungroup()
 
 
-# join travel time data and census commute data
-#TODO: join on time of day also!!!
-
-cpc_matrices_all_internal_tt <- cpc_matrices_all_internal_grouped %>%
-  left_join(tt_matrix_msoa, by = c("from_msoa" = "MSOA11CD_home", "to_msoa" = "MSOA11CD_work", "combination"))
-
-
-# # ---------- 4. ADD DESIRE LINES ---------- #
-#
-# # # Filter matrix by distance also adds desire lines
-# cpc_matrices_all_internal_tt_sf <- filter_matrix_by_distance(zones = study_area_large,
-#                                                           od_matrix = cpc_matrices_all_internal_tt,
-#                                                           dist_threshold = 500)
-
-
-
 # save
-#write_csv(cpc_matrices_all_internal_tt, "data/raw/travel_demand/cpc_matrices_2019/demand_study_area_msoa.csv")
-arrow::write_parquet(cpc_matrices_all_internal_tt, "data/raw/travel_demand/cpc_matrices_2019/demand_study_area_msoa.parquet")
+arrow::write_parquet(cpc_matrices_all_internal_grouped, "data/raw/travel_demand/cpc_matrices_2019/demand_study_area_msoa.parquet")
 
 
 
+
+
+
+#
+#
+#
+#
+# # -------------- 3.  JOIN TRAVEL TIME DATA ---------- #
+#
+# # ----------  MSOA level
+#
+# # read in the data
+# tt_matrix_msoa <- arrow::read_parquet("data/processed/travel_times/MSOA/travel_time_matrix_expanded_temporal.parquet")
+#
+# # some OD pairs don't have travel time data (for some combinations). Expand grid so that we explitly mention these OD pairs
+# tt_matrix_msoa_exp <- tidyr::crossing(from_id = tt_matrix_msoa$from_id, to_id = tt_matrix_msoa$to_id, combination = tt_matrix_msoa$combination)
+#
+# tt_matrix_msoa <- tt_matrix_msoa_exp %>%
+#   left_join(tt_matrix_msoa, by = c("from_id", "to_id", "combination"))
+#
+#
+#
+# # add metadata (MSOA for each home and workplace zone)
+# tt_matrix_msoa <- tt_matrix_msoa %>%
+#   left_join(study_area %>%
+#               select(MSOA21CD, MSOA11CD, OBJECTID) %>%
+#               st_drop_geometry() %>%
+#               rename_with(~paste0(., "_home")) %>%
+#               mutate(across(everything(), ~as.character(.))),
+#             by = c("from_id" = "OBJECTID_home")) %>%
+#   left_join(study_area %>%
+#               select(MSOA21CD, MSOA11CD, OBJECTID) %>%
+#               st_drop_geometry() %>%
+#               rename_with(~paste0(., "_work")) %>%
+#               mutate(across(everything(), ~as.character(.))),
+#             by = c("to_id" = "OBJECTID_work"))
+#
+#
+# # ----- Prepare time_of_day column in tt_matrix to match demand matrix
+#
+# # keep only pt travel times
+# tt_matrix_msoa <- tt_matrix_msoa %>%
+#   filter(str_detect(combination, "pt_"))
+#
+#
+# # join travel time data and census commute data
+# #TODO: join on time of day also!!!
+#
+# cpc_matrices_all_internal_tt <- cpc_matrices_all_internal_grouped %>%
+#   left_join(tt_matrix_msoa, by = c("from_msoa" = "MSOA11CD_home", "to_msoa" = "MSOA11CD_work", "combination"))
+#
+#
+# # # ---------- 4. ADD DESIRE LINES ---------- #
+# #
+# # # # Filter matrix by distance also adds desire lines
+# # cpc_matrices_all_internal_tt_sf <- filter_matrix_by_distance(zones = study_area_large,
+# #                                                           od_matrix = cpc_matrices_all_internal_tt,
+# #                                                           dist_threshold = 500)
+#
+#
+#
+# # save
+# #write_csv(cpc_matrices_all_internal_tt, "data/raw/travel_demand/cpc_matrices_2019/demand_study_area_msoa.csv")
+# arrow::write_parquet(cpc_matrices_all_internal_tt, "data/raw/travel_demand/cpc_matrices_2019/demand_study_area_msoa.parquet")
+#
+#
+#
